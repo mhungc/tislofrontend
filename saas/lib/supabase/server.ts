@@ -9,9 +9,23 @@ import { cookies } from "next/headers";
 export async function createClient() {
   const cookieStore = await cookies();
 
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY;
+
+  if (!url || !key) {
+    // Fallback para desarrollo sin variables Supabase.
+    return {
+      auth: {
+        async getClaims() {
+          return { data: { claims: null }, error: null } as const;
+        },
+      },
+    } as any;
+  }
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY!,
+    url,
+    key,
     {
       cookies: {
         getAll() {
