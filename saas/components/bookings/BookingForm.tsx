@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { 
   Calendar, 
@@ -378,15 +378,15 @@ export function BookingForm({
               value={formData.bookingData.status}
               onValueChange={(value) => updateField('bookingData', 'status', value)}
             >
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pendiente</SelectItem>
-                <SelectItem value="confirmed">Confirmado</SelectItem>
-                <SelectItem value="cancelled">Cancelado</SelectItem>
-                <SelectItem value="completed">Completado</SelectItem>
-              </SelectContent>
+              <Select.Trigger className="mt-1">
+                <Select.Value />
+              </Select.Trigger>
+              <Select.Content>
+                <Select.Item value="pending">Pendiente</Select.Item>
+                <Select.Item value="confirmed">Confirmado</Select.Item>
+                <Select.Item value="cancelled">Cancelado</Select.Item>
+                <Select.Item value="completed">Completado</Select.Item>
+              </Select.Content>
             </Select>
           </div>
 
