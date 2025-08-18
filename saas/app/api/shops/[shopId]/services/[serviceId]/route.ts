@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 // GET /api/shops/:shopId/services/:serviceId - Obtener servicio específico
 export async function GET(
   request: NextRequest,
-  { params }: { params: { shopId: string; serviceId: string } }
+  { params }: any
 ) {
   try {
     const supabase = await createClient()
@@ -53,7 +53,7 @@ export async function GET(
 // PUT /api/shops/:shopId/services/:serviceId - Actualizar servicio completo
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { shopId: string; serviceId: string } }
+  { params }: any
 ) {
   try {
     const supabase = await createClient()
@@ -127,7 +127,7 @@ export async function PUT(
 // PATCH /api/shops/:shopId/services/:serviceId - Actualizar servicio parcialmente
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { shopId: string; serviceId: string } }
+  { params }: any
 ) {
   try {
     const supabase = await createClient()
@@ -187,7 +187,7 @@ export async function PATCH(
 // DELETE /api/shops/:shopId/services/:serviceId - Eliminar servicio
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { shopId: string; serviceId: string } }
+  { params }: any
 ) {
   try {
     const supabase = await createClient()

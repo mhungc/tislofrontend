@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 // GET /api/shops/:shopId/services - Listar servicios de la tienda
 export async function GET(
   request: NextRequest,
-  { params }: { params: { shopId: string } }
+  { params }: any
 ) {
   try {
     const supabase = await createClient()
@@ -49,7 +49,7 @@ export async function GET(
 // POST /api/shops/:shopId/services - Crear nuevo servicio
 export async function POST(
   request: NextRequest,
-  { params }: { params: { shopId: string } }
+  { params }: any
 ) {
   try {
     const supabase = await createClient()

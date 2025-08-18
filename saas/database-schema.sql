@@ -31,6 +31,8 @@ CREATE TABLE shops (
   email TEXT,
   website TEXT,
   logo_url TEXT,
+  timezone TEXT,
+  business_hours JSONB,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

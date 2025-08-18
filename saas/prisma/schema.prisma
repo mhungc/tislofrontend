@@ -1,0 +1,29 @@
+// Prisma schema to work with Supabase Postgres
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Shop {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  owner_id       String   @db.Uuid
+  name           String
+  description    String?
+  address        String?
+  phone          String?
+  email          String?
+  website        String?
+  logo_url       String?
+  timezone       String?
+  business_hours Json?
+  is_active      Boolean  @default(true)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("shops")
+}
+
