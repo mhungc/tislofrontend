@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select } from '@/components/ui/select'
 import { Save, X, Store, MapPin, Phone, Mail, Globe, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -254,23 +254,19 @@ export function ShopForm({
               <Label htmlFor="shop-timezone">Zona Horaria</Label>
               <Select
                 value={formData.timezone}
-                onValueChange={(value) => updateField('timezone', value)}
+                onChange={(e) => updateField('timezone', e.target.value)}
+                className="mt-1"
               >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="America/New_York">Este (EST/EDT)</SelectItem>
-                  <SelectItem value="America/Chicago">Centro (CST/CDT)</SelectItem>
-                  <SelectItem value="America/Denver">Montaña (MST/MDT)</SelectItem>
-                  <SelectItem value="America/Los_Angeles">Pacífico (PST/PDT)</SelectItem>
-                  <SelectItem value="America/Anchorage">Alaska (AKST/AKDT)</SelectItem>
-                  <SelectItem value="Pacific/Honolulu">Hawaii (HST)</SelectItem>
-                  <SelectItem value="Europe/Madrid">España (CET/CEST)</SelectItem>
-                  <SelectItem value="America/Mexico_City">México (CST/CDT)</SelectItem>
-                  <SelectItem value="America/Bogota">Colombia (COT)</SelectItem>
-                  <SelectItem value="America/Argentina/Buenos_Aires">Argentina (ART)</SelectItem>
-                </SelectContent>
+                <option value="America/New_York">Este (EST/EDT)</option>
+                <option value="America/Chicago">Centro (CST/CDT)</option>
+                <option value="America/Denver">Montaña (MST/MDT)</option>
+                <option value="America/Los_Angeles">Pacífico (PST/PDT)</option>
+                <option value="America/Anchorage">Alaska (AKST/AKDT)</option>
+                <option value="Pacific/Honolulu">Hawaii (HST)</option>
+                <option value="Europe/Madrid">España (CET/CEST)</option>
+                <option value="America/Mexico_City">México (CST/CDT)</option>
+                <option value="America/Bogota">Colombia (COT)</option>
+                <option value="America/Argentina/Buenos_Aires">Argentina (ART)</option>
               </Select>
             </div>
           </div>

@@ -6,7 +6,7 @@ import { ServiceService } from '@/lib/services/service-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select } from '@/components/ui/select'
 import { Calendar, ChevronLeft, ChevronRight, Clock, Check, X } from 'lucide-react'
 
 interface AvailabilityCalendarProps {
@@ -197,26 +197,19 @@ export function AvailabilityCalendar({
         <CardContent>
           <Select
             value={selectedService?.id || ''}
-            onValueChange={(value) => {
+            onChange={(e) => {
+              const value = e.target.value
               const service = services.find(s => s.id === value)
               setSelectedService(service)
             }}
+            className="mt-1"
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona un servicio" />
-            </SelectTrigger>
-            <SelectContent>
-              {services.map((service) => (
-                <SelectItem key={service.id} value={service.id}>
-                  <div className="flex items-center justify-between w-full">
-                    <span>{service.name}</span>
-                    <Badge variant="secondary">
-                      {service.duration_minutes} min
-                    </Badge>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
+            <option value="" disabled>Selecciona un servicio</option>
+            {services.map((service) => (
+              <option key={service.id} value={service.id}>
+                {service.name} ({service.duration_minutes} min)
+              </option>
+            ))}
           </Select>
         </CardContent>
       </Card>
