@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { 
   Calendar, 
@@ -115,7 +115,7 @@ export function BookingForm({
 
     setLoading(true)
     try {
-      const booking = await bookingService.getBooking(bookingId)
+      const booking: any = await bookingService.getBooking(bookingId)
       if (booking) {
         setFormData({
           customerData: {
@@ -124,9 +124,9 @@ export function BookingForm({
             phone: booking.customer.phone || ''
           },
           bookingData: {
-            booking_date: booking.booking_date,
-            start_time: booking.start_time,
-            end_time: booking.end_time,
+            booking_date: booking.booking_date ?? booking.bookingDate ?? '',
+            start_time: booking.start_time ?? booking.startTime ?? '',
+            end_time: booking.end_time ?? booking.endTime ?? '',
             notes: booking.notes || '',
             status: booking.status
           },
@@ -376,17 +376,13 @@ export function BookingForm({
             <Label htmlFor="booking-status">Estado</Label>
             <Select
               value={formData.bookingData.status}
-              onValueChange={(value) => updateField('bookingData', 'status', value)}
+              onChange={(e) => updateField('bookingData', 'status', e.target.value)}
+              className="mt-1"
             >
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pendiente</SelectItem>
-                <SelectItem value="confirmed">Confirmado</SelectItem>
-                <SelectItem value="cancelled">Cancelado</SelectItem>
-                <SelectItem value="completed">Completado</SelectItem>
-              </SelectContent>
+              <option value="pending">Pendiente</option>
+              <option value="confirmed">Confirmado</option>
+              <option value="cancelled">Cancelado</option>
+              <option value="completed">Completado</option>
             </Select>
           </div>
 

@@ -224,7 +224,7 @@ export function WeeklyScheduleEditor({
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={schedule.isWorkingDay}
-                      onCheckedChange={() => toggleWorkingDay(schedule.dayOfWeek)}
+                      onClick={() => toggleWorkingDay(schedule.dayOfWeek)}
                     />
                     <Label className="font-medium">
                       {schedule.dayName}

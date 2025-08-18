@@ -4,10 +4,11 @@ import { createClient } from '@/lib/supabase/server'
 // GET /api/shops/:shopId/services - Listar servicios de la tienda
 export async function GET(
   request: NextRequest,
-  { params }: { params: { shopId: string } }
+  context: { params: Promise<{ shopId: string }> }
 ) {
   try {
     const supabase = await createClient()
+    const { shopId } = await context.params
     
     // Verificar autenticación
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -19,7 +20,7 @@ export async function GET(
     const { data: shop, error: shopError } = await supabase
       .from('shops')
       .select('id')
-      .eq('id', params.shopId)
+      .eq('id', shopId)
       .eq('owner_id', user.id)
       .single()
 
@@ -31,7 +32,7 @@ export async function GET(
     const { data: services, error } = await supabase
       .from('services')
       .select('*')
-      .eq('shop_id', params.shopId)
+      .eq('shop_id', shopId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -49,10 +50,11 @@ export async function GET(
 // POST /api/shops/:shopId/services - Crear nuevo servicio
 export async function POST(
   request: NextRequest,
-  { params }: { params: { shopId: string } }
+  context: { params: Promise<{ shopId: string }> }
 ) {
   try {
     const supabase = await createClient()
+    const { shopId } = await context.params
     
     // Verificar autenticación
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -64,7 +66,7 @@ export async function POST(
     const { data: shop, error: shopError } = await supabase
       .from('shops')
       .select('id')
-      .eq('id', params.shopId)
+      .eq('id', shopId)
       .eq('owner_id', user.id)
       .single()
 
@@ -91,7 +93,7 @@ export async function POST(
         duration_minutes,
         price,
         is_active: is_active !== undefined ? is_active : true,
-        shop_id: params.shopId
+        shop_id: shopId
       })
       .select()
       .single()

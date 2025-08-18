@@ -242,7 +242,7 @@ export function ServiceForm({
         <div className="flex items-center gap-3">
           <Switch
             checked={formData.is_active}
-            onCheckedChange={(checked) => updateField('is_active', checked)}
+            onClick={() => updateField('is_active', !formData.is_active)}
           />
           <Label>Servicio activo</Label>
           <Badge variant={formData.is_active ? "default" : "secondary"}>
