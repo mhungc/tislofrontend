@@ -115,7 +115,7 @@ export function BookingForm({
 
     setLoading(true)
     try {
-      const booking = await bookingService.getBooking(bookingId)
+      const booking: any = await bookingService.getBooking(bookingId)
       if (booking) {
         setFormData({
           customerData: {
@@ -124,9 +124,9 @@ export function BookingForm({
             phone: booking.customer.phone || ''
           },
           bookingData: {
-            booking_date: booking.booking_date,
-            start_time: booking.start_time,
-            end_time: booking.end_time,
+            booking_date: booking.booking_date ?? booking.bookingDate ?? '',
+            start_time: booking.start_time ?? booking.startTime ?? '',
+            end_time: booking.end_time ?? booking.endTime ?? '',
             notes: booking.notes || '',
             status: booking.status
           },
@@ -376,17 +376,13 @@ export function BookingForm({
             <Label htmlFor="booking-status">Estado</Label>
             <Select
               value={formData.bookingData.status}
-              onValueChange={(value) => updateField('bookingData', 'status', value)}
+              onChange={(e) => updateField('bookingData', 'status', e.target.value)}
+              className="mt-1"
             >
-              <Select.Trigger className="mt-1">
-                <Select.Value />
-              </Select.Trigger>
-              <Select.Content>
-                <Select.Item value="pending">Pendiente</Select.Item>
-                <Select.Item value="confirmed">Confirmado</Select.Item>
-                <Select.Item value="cancelled">Cancelado</Select.Item>
-                <Select.Item value="completed">Completado</Select.Item>
-              </Select.Content>
+              <option value="pending">Pendiente</option>
+              <option value="confirmed">Confirmado</option>
+              <option value="cancelled">Cancelado</option>
+              <option value="completed">Completado</option>
             </Select>
           </div>
 
