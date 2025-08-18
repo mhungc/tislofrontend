@@ -4,10 +4,11 @@ import { createClient } from '@/lib/supabase/server'
 // GET /api/shops/:shopId/services/:serviceId - Obtener servicio específico
 export async function GET(
   request: NextRequest,
-  { params }: any
+  context: { params: Promise<{ shopId: string; serviceId: string }> }
 ) {
   try {
     const supabase = await createClient()
+    const { shopId, serviceId } = await context.params
     
     // Verificar autenticación
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -19,7 +20,7 @@ export async function GET(
     const { data: shop, error: shopError } = await supabase
       .from('shops')
       .select('id')
-      .eq('id', params.shopId)
+      .eq('id', shopId)
       .eq('owner_id', user.id)
       .single()
 
@@ -31,8 +32,8 @@ export async function GET(
     const { data: service, error } = await supabase
       .from('services')
       .select('*')
-      .eq('id', params.serviceId)
-      .eq('shop_id', params.shopId)
+      .eq('id', serviceId)
+      .eq('shop_id', shopId)
       .single()
 
     if (error) {
@@ -53,10 +54,11 @@ export async function GET(
 // PUT /api/shops/:shopId/services/:serviceId - Actualizar servicio completo
 export async function PUT(
   request: NextRequest,
-  { params }: any
+  context: { params: Promise<{ shopId: string; serviceId: string }> }
 ) {
   try {
     const supabase = await createClient()
+    const { shopId, serviceId } = await context.params
     
     // Verificar autenticación
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -68,7 +70,7 @@ export async function PUT(
     const { data: shop, error: shopError } = await supabase
       .from('shops')
       .select('id')
-      .eq('id', params.shopId)
+      .eq('id', shopId)
       .eq('owner_id', user.id)
       .single()
 
@@ -90,8 +92,8 @@ export async function PUT(
     const { data: existingService, error: checkError } = await supabase
       .from('services')
       .select('id')
-      .eq('id', params.serviceId)
-      .eq('shop_id', params.shopId)
+      .eq('id', serviceId)
+      .eq('shop_id', shopId)
       .single()
 
     if (checkError || !existingService) {
@@ -108,7 +110,7 @@ export async function PUT(
         price,
         is_active
       })
-      .eq('id', params.serviceId)
+      .eq('id', serviceId)
       .select()
       .single()
 
@@ -127,10 +129,11 @@ export async function PUT(
 // PATCH /api/shops/:shopId/services/:serviceId - Actualizar servicio parcialmente
 export async function PATCH(
   request: NextRequest,
-  { params }: any
+  context: { params: Promise<{ shopId: string; serviceId: string }> }
 ) {
   try {
     const supabase = await createClient()
+    const { shopId, serviceId } = await context.params
     
     // Verificar autenticación
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -142,7 +145,7 @@ export async function PATCH(
     const { data: shop, error: shopError } = await supabase
       .from('shops')
       .select('id')
-      .eq('id', params.shopId)
+      .eq('id', shopId)
       .eq('owner_id', user.id)
       .single()
 
@@ -154,8 +157,8 @@ export async function PATCH(
     const { data: existingService, error: checkError } = await supabase
       .from('services')
       .select('id')
-      .eq('id', params.serviceId)
-      .eq('shop_id', params.shopId)
+      .eq('id', serviceId)
+      .eq('shop_id', shopId)
       .single()
 
     if (checkError || !existingService) {
@@ -168,7 +171,7 @@ export async function PATCH(
     const { data: service, error } = await supabase
       .from('services')
       .update(body)
-      .eq('id', params.serviceId)
+      .eq('id', serviceId)
       .select()
       .single()
 
@@ -187,10 +190,11 @@ export async function PATCH(
 // DELETE /api/shops/:shopId/services/:serviceId - Eliminar servicio
 export async function DELETE(
   request: NextRequest,
-  { params }: any
+  context: { params: Promise<{ shopId: string; serviceId: string }> }
 ) {
   try {
     const supabase = await createClient()
+    const { shopId, serviceId } = await context.params
     
     // Verificar autenticación
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -202,7 +206,7 @@ export async function DELETE(
     const { data: shop, error: shopError } = await supabase
       .from('shops')
       .select('id')
-      .eq('id', params.shopId)
+      .eq('id', shopId)
       .eq('owner_id', user.id)
       .single()
 
@@ -214,8 +218,8 @@ export async function DELETE(
     const { data: existingService, error: checkError } = await supabase
       .from('services')
       .select('id')
-      .eq('id', params.serviceId)
-      .eq('shop_id', params.shopId)
+      .eq('id', serviceId)
+      .eq('shop_id', shopId)
       .single()
 
     if (checkError || !existingService) {
@@ -226,7 +230,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('services')
       .delete()
-      .eq('id', params.serviceId)
+      .eq('id', serviceId)
 
     if (error) {
       console.error('Error al eliminar servicio:', error)

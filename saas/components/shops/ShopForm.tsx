@@ -94,7 +94,7 @@ export function ShopForm({
           website: shop.website || '',
           timezone: shop.timezone || 'America/New_York',
           is_active: shop.is_active,
-          business_hours: shop.business_hours || {
+          business_hours: (shop.business_hours as ShopFormData['business_hours']) || {
             monday: { open: '09:00', close: '18:00', is_open: true },
             tuesday: { open: '09:00', close: '18:00', is_open: true },
             wednesday: { open: '09:00', close: '18:00', is_open: true },
@@ -388,7 +388,7 @@ export function ShopForm({
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={hours.is_open}
-                    onCheckedChange={(checked) => updateBusinessHours(day, 'is_open', checked)}
+                    onClick={() => updateBusinessHours(day, 'is_open', !hours.is_open)}
                   />
                   <span className="text-sm text-muted-foreground">
                     {hours.is_open ? 'Abierto' : 'Cerrado'}
@@ -421,7 +421,7 @@ export function ShopForm({
         <div className="flex items-center gap-3">
           <Switch
             checked={formData.is_active}
-            onCheckedChange={(checked) => updateField('is_active', checked)}
+            onClick={() => updateField('is_active', !formData.is_active)}
           />
           <Label>Tienda activa</Label>
           <Badge variant={formData.is_active ? "default" : "secondary"}>

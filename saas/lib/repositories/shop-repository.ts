@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 
 export interface CreateShopInput {
   owner_id: string
@@ -9,7 +9,7 @@ export interface CreateShopInput {
   email?: string | null
   website?: string | null
   timezone?: string | null
-  business_hours?: Record<string, unknown> | null
+  business_hours?: Prisma.InputJsonValue | null
 }
 
 export interface UpdateShopInput {
@@ -20,7 +20,7 @@ export interface UpdateShopInput {
   email?: string | null
   website?: string | null
   timezone?: string | null
-  business_hours?: Record<string, unknown> | null
+  business_hours?: Prisma.InputJsonValue | null
   is_active?: boolean
 }
 
@@ -39,11 +39,34 @@ export class ShopRepository {
   }
 
   async create(input: CreateShopInput) {
-    return prisma.shop.create({ data: input })
+    const data: Prisma.ShopCreateInput = {
+      owner_id: input.owner_id,
+      name: input.name,
+      description: input.description ?? undefined,
+      address: input.address ?? undefined,
+      phone: input.phone ?? undefined,
+      email: input.email ?? undefined,
+      website: input.website ?? undefined,
+      timezone: input.timezone ?? undefined,
+      business_hours: input.business_hours ?? undefined,
+      is_active: true,
+    }
+    return prisma.shop.create({ data })
   }
 
   async update(shopId: string, input: UpdateShopInput) {
-    return prisma.shop.update({ where: { id: shopId }, data: input })
+    const data: Prisma.ShopUpdateInput = {
+      name: input.name ?? undefined,
+      description: input.description ?? undefined,
+      address: input.address ?? undefined,
+      phone: input.phone ?? undefined,
+      email: input.email ?? undefined,
+      website: input.website ?? undefined,
+      timezone: input.timezone ?? undefined,
+      business_hours: input.business_hours ?? undefined,
+      is_active: input.is_active ?? undefined,
+    }
+    return prisma.shop.update({ where: { id: shopId }, data })
   }
 
   async delete(shopId: string) {
