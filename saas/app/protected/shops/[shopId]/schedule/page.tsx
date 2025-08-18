@@ -53,7 +53,7 @@ export default function SchedulePage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Horario semanal</h1>
-      <WeeklyScheduleEditor value={schedule} onChange={setSchedule} timezoneOptions={timezones} />
+      <WeeklyScheduleEditor shopId={shopId} />
       <Card>
         <CardContent className="pt-6">
           <Button onClick={save} disabled={saving}>Guardar cambios</Button>

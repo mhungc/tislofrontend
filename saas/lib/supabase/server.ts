@@ -10,17 +10,17 @@ export async function createClient() {
   const cookieStore = await cookies();
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
     // Fallback para desarrollo sin variables Supabase.
     return {
       auth: {
-        async getClaims() {
-          return { data: { claims: null }, error: null } as const;
+        async getUser() {
+          return { data: { user: null }, error: null } as const;
         },
       },
-    } as any;
+    } as unknown as ReturnType<typeof createServerClient>;
   }
 
   return createServerClient(

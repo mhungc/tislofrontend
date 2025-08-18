@@ -30,10 +30,29 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ShopsList } from '@/components/shops/ShopsList'
+import { CreateShopForm } from '@/components/shops/CreateShopForm'
 
 export default function ShopsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterByStatus, setFilterByStatus] = useState<'all' | 'active' | 'inactive'>('all')
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleCreateSuccess = () => {
+    setShowCreateForm(false)
+    setRefreshKey(prev => prev + 1)
+  }
+
+  if (showCreateForm) {
+    return (
+      <div className="space-y-6">
+        <CreateShopForm 
+          onSuccess={handleCreateSuccess}
+          onCancel={() => setShowCreateForm(false)}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -45,7 +64,7 @@ export default function ShopsPage() {
             Gestiona todas tus tiendas y locales desde un solo lugar.
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setShowCreateForm(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Nueva Tienda
         </Button>
@@ -53,6 +72,7 @@ export default function ShopsPage() {
 
       {/* Contenido principal */}
       <ShopsList 
+        key={refreshKey}
         onShopSelect={(shopId) => console.log('Seleccionar tienda:', shopId)}
         onShopEdit={(shopId) => console.log('Editar tienda:', shopId)}
       />

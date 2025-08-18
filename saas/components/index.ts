@@ -15,12 +15,13 @@ export { ServicesList } from './services/ServicesList'
 
 // 📋 Componentes de Reservas
 export { BookingForm } from './bookings/BookingForm'
-export { BookingsList } from './bookings/BookingsList'
+// export { BookingsList } from './bookings/BookingsList'
 
-// 👥 Componentes de Clientes
-export { CustomerForm } from './customers/CustomerForm'
-export { CustomersList } from './customers/CustomersList'
+// 👥 Componentes de Clientes (pendientes)
+// export { CustomerForm } from './customers/CustomerForm'
+// export { CustomersList } from './customers/CustomersList'
 
+<<<<<<< Current (Your changes)
 // 🎨 Componentes UI (re-exportar desde shadcn/ui)
 export {
   Button,
@@ -98,3 +99,6 @@ export {
   Toaster,
   toast
 } from '@/components/ui'
+=======
+// 🎨 Re-exports de UI deshabilitados (no hay barrel en components/ui)
+>>>>>>> Incoming (Background Agent changes)

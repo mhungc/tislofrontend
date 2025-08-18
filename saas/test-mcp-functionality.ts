@@ -13,14 +13,15 @@ const supabase = createClient(
 // Escribe esto y verifica si sugiere tus tablas reales:
 async function testTableSuggestions() {
   const { data, error } = await supabase
-    .from('') // ← Escribe aquí y debería sugerir tus tablas
+    .from('users') // ← Escribe aquí y debería sugerir tus tablas
     .select('*')
 }
 
 // 🎯 PRUEBA 2: Autocompletado de Columnas
-// Si tienes una tabla llamada 'users', prueba esto:
+// Si-
+// - tienes una tabla llamada 'users', prueba esto:
 async function testColumnSuggestions() {
-  const { data, error } = await supabase
+  co nst { data, error } = await supabase
     .from('users') // ← Cambia por una tabla que tengas
     .select('') // ← Escribe aquí y debería sugerir las columnas
 }
