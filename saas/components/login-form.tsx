@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GoogleAuthButton } from "@/components/google-auth-button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -38,7 +39,6 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
       router.push("/protected");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
@@ -46,6 +46,8 @@ export function LoginForm({
       setIsLoading(false);
     }
   };
+
+
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -57,6 +59,24 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex flex-col gap-6">
+            <GoogleAuthButton 
+              className="w-full" 
+              disabled={isLoading}
+              onError={setError}
+              redirectTo="/protected"
+            />
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">O continúa con</span>
+              </div>
+            </div>
+          </div>
+          
           <form onSubmit={handleLogin}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">

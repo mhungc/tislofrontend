@@ -1,90 +1,69 @@
-// 🏪 Servicio CRUD para Tiendas
-// Ahora consume nuestras rutas API para mantenerse agnóstico al proveedor
-// y facilitar un futuro cambio de backend (.NET, etc.).
-
-export type Shop = {
-  id: string
-  owner_id: string
+export interface CreateShopData {
   name: string
-  description?: string | null
-  address?: string | null
-  phone?: string | null
-  email?: string | null
-  website?: string | null
-  timezone?: string | null
-  business_hours?: Record<string, unknown> | null
-  is_active: boolean
-  created_at: string
-  updated_at: string
+  description?: string
+  address: string
+  phone?: string
+  email?: string
+  website?: string
+  timezone?: string
 }
 
 export class ShopService {
-  private async fetchJSON<T>(input: string, init?: RequestInit): Promise<T> {
-    const res = await fetch(input, {
-      ...init,
+  async createShop(data: CreateShopData) {
+    const response = await fetch('/api/shops', {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(init?.headers || {})
       },
-      cache: 'no-store'
+      body: JSON.stringify(data),
     })
-    if (!res.ok) {
-      const text = await res.text()
-      throw new Error(text || `HTTP ${res.status}`)
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al crear la tienda')
     }
-    return (await res.json()) as T
+
+    return response.json()
   }
 
-  // 📋 Obtener todas las tiendas del usuario
-  async getUserShops(): Promise<Shop[]> {
-    const data = await this.fetchJSON<{ shops: Shop[] }>('/api/shops')
-    return data.shops
+  async getShops() {
+    const response = await fetch('/api/shops')
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al obtener las tiendas')
+    }
+
+    return response.json()
   }
 
-  // 📋 Obtener una tienda específica
-  async getShop(shopId: string): Promise<Shop | null> {
-    const data = await this.fetchJSON<{ shop: Shop }>(`/api/shops/${shopId}`)
-    return data.shop
+  async updateShop(shopId: string, data: Partial<CreateShopData>) {
+    const response = await fetch(`/api/shops/${shopId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al actualizar la tienda')
+    }
+
+    return response.json()
   }
 
-  // ➕ Crear nueva tienda
-  async createShop(shopData: Omit<Shop, 'id' | 'owner_id' | 'created_at' | 'updated_at'>): Promise<Shop> {
-    const data = await this.fetchJSON<{ shop: Shop }>(
-      '/api/shops',
-      { method: 'POST', body: JSON.stringify(shopData) }
-    )
-    return data.shop
-  }
+  async deleteShop(shopId: string) {
+    const response = await fetch(`/api/shops/${shopId}`, {
+      method: 'DELETE',
+    })
 
-  // ✏️ Actualizar tienda
-  async updateShop(shopId: string, shopData: Partial<Shop>): Promise<Shop> {
-    const data = await this.fetchJSON<{ shop: Shop }>(
-      `/api/shops/${shopId}`,
-      { method: 'PATCH', body: JSON.stringify(shopData) }
-    )
-    return data.shop
-  }
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al eliminar la tienda')
+    }
 
-  // 🗑️ Eliminar tienda
-  async deleteShop(shopId: string): Promise<void> {
-    await this.fetchJSON<{ message: string }>(
-      `/api/shops/${shopId}`,
-      { method: 'DELETE' }
-    )
-  }
-
-  // 🔄 Cambiar estado de tienda (activar/desactivar)
-  async toggleShopStatus(shopId: string): Promise<Shop> {
-    const currentShop = await this.getShop(shopId)
-    if (!currentShop) throw new Error('Tienda no encontrada')
-    return this.updateShop(shopId, { is_active: !currentShop.is_active })
-  }
-
-  // 📊 Obtener estadísticas de la tienda
-  async getShopStats(shopId: string) {
-    // Mantener por ahora desde /bookings en Supabase o futura API
-    // Aquí devolvemos una estructura mínima
-    return { totalBookings: 0, pendingBookings: 0, confirmedBookings: 0, completedBookings: 0, totalRevenue: 0 }
+    return response.json()
   }
 }
-

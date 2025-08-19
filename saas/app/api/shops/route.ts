@@ -36,24 +36,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, address, phone, email, website, timezone, business_hours } = body
+    const { name, description, address, phone, email, website } = body
 
     // Validar campos requeridos
     if (!name || !address) {
       return NextResponse.json({ 
         error: 'Nombre y dirección son requeridos' 
       }, { status: 400 })
-    }
-
-    // Crear tienda via Prisma
-    const defaultHours = {
-      monday: { open: '09:00', close: '18:00', is_open: true },
-      tuesday: { open: '09:00', close: '18:00', is_open: true },
-      wednesday: { open: '09:00', close: '18:00', is_open: true },
-      thursday: { open: '09:00', close: '18:00', is_open: true },
-      friday: { open: '09:00', close: '18:00', is_open: true },
-      saturday: { open: '10:00', close: '16:00', is_open: true },
-      sunday: { open: '10:00', close: '16:00', is_open: false }
     }
 
     const shop = await repo.create({
@@ -64,8 +53,6 @@ export async function POST(request: NextRequest) {
       phone,
       email,
       website,
-      timezone: timezone || 'America/New_York',
-      business_hours: business_hours || defaultHours,
     })
 
     return NextResponse.json({ shop }, { status: 201 })

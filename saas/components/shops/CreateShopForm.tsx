@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select } from '@/components/ui/select'
 import { Store, Save, X } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -44,12 +43,12 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
 
     setSaving(true)
     try {
-      await shopService.createShop(formData)
+      const result = await shopService.createShop(formData)
       toast.success('Tienda creada correctamente')
       onSuccess?.()
     } catch (error) {
       console.error('Error al crear tienda:', error)
-      toast.error('Error al crear la tienda')
+      toast.error(error instanceof Error ? error.message : 'Error al crear la tienda')
     } finally {
       setSaving(false)
     }
@@ -79,9 +78,11 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
             
             <div>
               <Label htmlFor="timezone">Zona Horaria</Label>
-              <Select
+              <select
+                id="timezone"
                 value={formData.timezone}
                 onChange={(e) => updateField('timezone', e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="America/New_York">Este (EST/EDT)</option>
                 <option value="America/Chicago">Centro (CST/CDT)</option>
@@ -89,7 +90,7 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
                 <option value="America/Los_Angeles">Pacífico (PST/PDT)</option>
                 <option value="America/Mexico_City">México (CST/CDT)</option>
                 <option value="Europe/Madrid">España (CET/CEST)</option>
-              </Select>
+              </select>
             </div>
           </div>
 
