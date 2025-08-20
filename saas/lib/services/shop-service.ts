@@ -37,6 +37,23 @@ export class ShopService {
     return response.json()
   }
 
+  async getUserShops() {
+    return this.getShops()
+  }
+
+  async toggleShopStatus(shopId: string) {
+    const response = await fetch(`/api/shops/${shopId}/toggle`, {
+      method: 'PATCH'
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al cambiar estado')
+    }
+
+    return response.json()
+  }
+
   async updateShop(shopId: string, data: Partial<CreateShopData>) {
     const response = await fetch(`/api/shops/${shopId}`, {
       method: 'PATCH',

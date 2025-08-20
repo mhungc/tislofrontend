@@ -35,7 +35,6 @@ export class ShopRepository {
 
   async create(input: CreateShopInput) {
     const data: Prisma.shopsCreateInput = {
-      id: input.owner_id,
       name: input.name,
       description: input.description ?? undefined,
       address: input.address ?? undefined,
@@ -43,6 +42,9 @@ export class ShopRepository {
       email: input.email ?? undefined,
       website: input.website ?? undefined,
       is_active: true,
+      profiles: {
+        connect: { id: input.owner_id }
+      }
     }
     return prisma.shops.create({ data })
   }
