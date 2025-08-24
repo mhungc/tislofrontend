@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -33,14 +34,18 @@ import { ShopsList } from '@/components/shops/ShopsList'
 import { CreateShopForm } from '@/components/shops/CreateShopForm'
 
 export default function ShopsPage() {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterByStatus, setFilterByStatus] = useState<'all' | 'active' | 'inactive'>('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const handleCreateSuccess = () => {
+  const handleCreateSuccess = (shopId?: string) => {
     setShowCreateForm(false)
     setRefreshKey(prev => prev + 1)
+    if (shopId) {
+      router.push(`/dashboard/shops/${shopId}/schedule`)
+    }
   }
 
   if (showCreateForm) {

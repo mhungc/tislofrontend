@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { ShopService } from '@/lib/services/shop-service'
+import { useRouter } from 'next/navigation'
+import { useShopStore } from '@/lib/stores/shop-store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -19,7 +20,8 @@ import {
   Mail,
   Globe,
   Clock,
-  Filter
+  Filter,
+  Settings
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -34,33 +36,18 @@ export function ShopsList({
   onShopEdit,
   className = ''
 }: ShopsListProps) {
-  const [shops, setShops] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const { shops, loading, loadShops, updateShop, removeShop } = useShopStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterByStatus, setFilterByStatus] = useState<'all' | 'active' | 'inactive'>('all')
-
-  const shopService = new ShopService()
 
   // Cargar tiendas
   useEffect(() => {
     loadShops()
-  }, [])
-
-  const loadShops = async () => {
-    setLoading(true)
-    try {
-      const userShops = await shopService.getUserShops()
-      setShops(userShops)
-    } catch (error) {
-      console.error('Error al cargar tiendas:', error)
-      toast.error('Error al cargar las tiendas')
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [loadShops])
 
   // Filtrar tiendas
-  const filteredShops = shops.filter(shop => {
+  const filteredShops = Array.isArray(shops) ? shops.filter(shop => {
     const matchesSearch = shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          shop.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          shop.address?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -70,14 +57,17 @@ export function ShopsList({
                          (filterByStatus === 'inactive' && !shop.is_active)
 
     return matchesSearch && matchesStatus
-  })
+  }) : []
 
   // Cambiar estado de tienda
   const toggleShopStatus = async (shopId: string) => {
     try {
-      await shopService.toggleShopStatus(shopId)
-      toast.success('Estado de la tienda actualizado')
-      loadShops()
+      const response = await fetch(`/api/shops/${shopId}/toggle`, { method: 'PATCH' })
+      if (response.ok) {
+        const updatedShop = await response.json()
+        updateShop(shopId, updatedShop)
+        toast.success('Estado de la tienda actualizado')
+      }
     } catch (error) {
       console.error('Error al cambiar estado:', error)
       toast.error('Error al cambiar el estado de la tienda')
@@ -91,9 +81,11 @@ export function ShopsList({
     }
 
     try {
-      await shopService.deleteShop(shopId)
-      toast.success('Tienda eliminada correctamente')
-      loadShops()
+      const response = await fetch(`/api/shops/${shopId}`, { method: 'DELETE' })
+      if (response.ok) {
+        removeShop(shopId)
+        toast.success('Tienda eliminada correctamente')
+      }
     } catch (error) {
       console.error('Error al eliminar tienda:', error)
       toast.error('Error al eliminar la tienda')
@@ -288,10 +280,13 @@ export function ShopsList({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onShopSelect?.(shop.id)}
+                    onClick={() => {
+                      router.push(`/dashboard/shops/${shop.id}/config?shop=${encodeURIComponent(JSON.stringify(shop))}`)
+                    }}
                     className="flex-1"
                   >
-                    Gestionar
+                    <Settings className="h-4 w-4 mr-1" />
+                    Configurar
                   </Button>
                   <Button
                     variant="ghost"
@@ -323,7 +318,7 @@ export function ShopsList({
           <div className="grid grid-cols-4 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-primary">
-                {shops.length}
+                {Array.isArray(shops) ? shops.length : 0}
               </div>
               <div className="text-sm text-muted-foreground">
                 Total Tiendas
@@ -331,7 +326,7 @@ export function ShopsList({
             </div>
             <div>
               <div className="text-2xl font-bold text-green-600">
-                {shops.filter(s => s.is_active).length}
+                {Array.isArray(shops) ? shops.filter(s => s.is_active).length : 0}
               </div>
               <div className="text-sm text-muted-foreground">
                 Activas
@@ -339,7 +334,7 @@ export function ShopsList({
             </div>
             <div>
               <div className="text-2xl font-bold text-orange-600">
-                {shops.filter(s => !s.is_active).length}
+                {Array.isArray(shops) ? shops.filter(s => !s.is_active).length : 0}
               </div>
               <div className="text-sm text-muted-foreground">
                 Inactivas
@@ -347,7 +342,7 @@ export function ShopsList({
             </div>
             <div>
               <div className="text-2xl font-bold text-blue-600">
-                {shops.filter(s => s.business_hours).length}
+                {Array.isArray(shops) ? shops.filter(s => s.business_hours).length : 0}
               </div>
               <div className="text-sm text-muted-foreground">
                 Con Horarios

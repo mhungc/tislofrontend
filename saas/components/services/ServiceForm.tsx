@@ -1,52 +1,43 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { ServiceService } from '@/lib/services/service-service'
+import { ServiceService, ServiceData } from '@/lib/services/service-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
-import { Save, X, Clock, DollarSign, Package } from 'lucide-react'
+import { ArrowLeft, Save, Clock, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ServiceFormProps {
   shopId: string
   serviceId?: string
-  onSave?: () => void
+  onSuccess?: (serviceId?: string) => void
   onCancel?: () => void
   className?: string
-}
-
-interface ServiceFormData {
-  name: string
-  description: string
-  duration_minutes: number
-  price: number
-  is_active: boolean
 }
 
 export function ServiceForm({
   shopId,
   serviceId,
-  onSave,
+  onSuccess,
   onCancel,
   className = ''
 }: ServiceFormProps) {
-  const [formData, setFormData] = useState<ServiceFormData>({
+  const [formData, setFormData] = useState<ServiceData>({
     name: '',
     description: '',
     duration_minutes: 60,
-    price: 0,
+    price: null,
     is_active: true
   })
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
 
   const serviceService = new ServiceService()
+  const isEditing = !!serviceId
 
   // Cargar servicio si estamos editando
   useEffect(() => {
@@ -57,19 +48,18 @@ export function ServiceForm({
 
   const loadService = async () => {
     if (!serviceId) return
-
+    
     setLoading(true)
     try {
-      const service = await serviceService.getService(serviceId)
+      const service = await serviceService.getService(shopId, serviceId)
       if (service) {
         setFormData({
           name: service.name,
           description: service.description || '',
           duration_minutes: service.duration_minutes,
-          price: service.price || 0,
+          price: service.price,
           is_active: service.is_active
         })
-        setIsEditing(true)
       }
     } catch (error) {
       console.error('Error al cargar servicio:', error)
@@ -79,77 +69,50 @@ export function ServiceForm({
     }
   }
 
-  // Actualizar campo del formulario
-  const updateField = (field: keyof ServiceFormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
-
-  // Validar formulario
-  const validateForm = (): { valid: boolean; errors: string[] } => {
-    const errors: string[] = []
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Validaciones
     if (!formData.name.trim()) {
-      errors.push('El nombre del servicio es requerido')
+      toast.error('El nombre del servicio es requerido')
+      return
     }
-
-    if (formData.duration_minutes <= 0) {
-      errors.push('La duración debe ser mayor a 0')
-    }
-
-    if (formData.duration_minutes > 480) { // 8 horas máximo
-      errors.push('La duración no puede ser mayor a 8 horas')
-    }
-
-    if (formData.price < 0) {
-      errors.push('El precio no puede ser negativo')
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors
-    }
-  }
-
-  // Guardar servicio
-  const saveService = async () => {
-    const validation = validateForm()
-    if (!validation.valid) {
-      validation.errors.forEach(error => toast.error(error))
+    
+    if (!formData.duration_minutes || formData.duration_minutes <= 0) {
+      toast.error('La duración debe ser mayor a 0 minutos')
       return
     }
 
     setSaving(true)
     try {
       if (isEditing && serviceId) {
-        await serviceService.updateService(serviceId, formData)
+        await serviceService.updateService(shopId, serviceId, formData)
         toast.success('Servicio actualizado correctamente')
       } else {
-        await serviceService.createService(formData, shopId)
+        const newService = await serviceService.createService(shopId, formData)
         toast.success('Servicio creado correctamente')
+        onSuccess?.(newService.id)
+        return
       }
       
-      onSave?.()
+      onSuccess?.(serviceId)
     } catch (error) {
       console.error('Error al guardar servicio:', error)
-      toast.error('Error al guardar el servicio')
+      toast.error(isEditing ? 'Error al actualizar servicio' : 'Error al crear servicio')
     } finally {
       setSaving(false)
     }
   }
 
-  // Formatear duración
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    
-    if (hours > 0 && mins > 0) {
-      return `${hours}h ${mins}min`
-    } else if (hours > 0) {
-      return `${hours}h`
-    } else {
-      return `${mins}min`
-    }
+  const handleInputChange = (field: keyof ServiceData, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
   }
+
+  // Sugerencias de duración
+  const durationSuggestions = [15, 30, 45, 60, 90, 120, 180]
 
   if (loading) {
     return (
@@ -162,143 +125,152 @@ export function ServiceForm({
   }
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5" />
-          {isEditing ? 'Editar Servicio' : 'Nuevo Servicio'}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Nombre del servicio */}
-        <div>
-          <Label htmlFor="service-name">Nombre del Servicio *</Label>
-          <Input
-            id="service-name"
-            placeholder="Ej: Corte de cabello, Masaje, Consulta médica"
-            value={formData.name}
-            onChange={(e) => updateField('name', e.target.value)}
-            className="mt-1"
-          />
-        </div>
+    <div className={`space-y-6 ${className}`}>
+      {/* Header */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCancel}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Volver
+            </Button>
+            <CardTitle>
+              {isEditing ? 'Editar Servicio' : 'Nuevo Servicio'}
+            </CardTitle>
+          </div>
+        </CardHeader>
+      </Card>
 
-        {/* Descripción */}
-        <div>
-          <Label htmlFor="service-description">Descripción</Label>
-          <Textarea
-            id="service-description"
-            placeholder="Describe el servicio, incluye detalles importantes..."
-            value={formData.description}
-            onChange={(e) => updateField('description', e.target.value)}
-            rows={3}
-            className="mt-1"
-          />
-        </div>
+      {/* Formulario */}
+      <Card>
+        <CardContent className="pt-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Información básica */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nombre del Servicio *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="Ej: Corte de cabello"
+                  required
+                />
+              </div>
 
-        {/* Duración y Precio */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="service-duration">Duración (minutos) *</Label>
-            <div className="relative mt-1">
-              <Input
-                id="service-duration"
-                type="number"
-                min="15"
-                max="480"
-                step="15"
-                value={formData.duration_minutes}
-                onChange={(e) => updateField('duration_minutes', parseInt(e.target.value) || 0)}
-                className="pr-12"
+              <div className="space-y-2">
+                <Label htmlFor="price">Precio</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.price || ''}
+                    onChange={(e) => handleInputChange('price', e.target.value ? parseFloat(e.target.value) : null)}
+                    placeholder="0.00"
+                    className="pl-10"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Deja vacío si el servicio es gratuito
+                </p>
+              </div>
+            </div>
+
+            {/* Descripción */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                value={formData.description || ''}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="Describe tu servicio..."
+                rows={3}
               />
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            </div>
+
+            {/* Duración */}
+            <div className="space-y-2">
+              <Label htmlFor="duration">Duración (minutos) *</Label>
+              <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="duration"
+                  type="number"
+                  min="1"
+                  value={formData.duration_minutes}
+                  onChange={(e) => handleInputChange('duration_minutes', parseInt(e.target.value))}
+                  className="w-32"
+                  required
+                />
+                <span className="text-sm text-muted-foreground">minutos</span>
+              </div>
+              
+              {/* Sugerencias de duración */}
+              <div className="flex flex-wrap gap-2 mt-2">
+                <span className="text-xs text-muted-foreground">Sugerencias:</span>
+                {durationSuggestions.map(duration => (
+                  <Button
+                    key={duration}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleInputChange('duration_minutes', duration)}
+                    className="text-xs h-6"
+                  >
+                    {duration}min
+                  </Button>
+                ))}
               </div>
             </div>
-            <div className="text-sm text-muted-foreground mt-1">
-              {formatDuration(formData.duration_minutes)}
-            </div>
-          </div>
 
-          <div>
-            <Label htmlFor="service-price">Precio *</Label>
-            <div className="relative mt-1">
-              <Input
-                id="service-price"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => updateField('price', parseFloat(e.target.value) || 0)}
-                className="pl-8"
+            {/* Estado activo */}
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="is_active"
+                checked={formData.is_active}
+                onCheckedChange={(checked) => handleInputChange('is_active', checked)}
               />
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </div>
+              <Label htmlFor="is_active">Servicio activo</Label>
             </div>
-          </div>
-        </div>
 
-        {/* Estado activo */}
-        <div className="flex items-center gap-3">
-          <Switch
-            checked={formData.is_active}
-            onClick={() => updateField('is_active', !formData.is_active)}
-          />
-          <Label>Servicio activo</Label>
-          <Badge variant={formData.is_active ? "default" : "secondary"}>
-            {formData.is_active ? 'Activo' : 'Inactivo'}
-          </Badge>
-        </div>
-
-        {/* Resumen del servicio */}
-        <Card className="bg-muted/50">
-          <CardContent className="pt-4">
-            <h4 className="font-medium mb-2">Resumen del Servicio</h4>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Nombre:</span>
-                <span className="font-medium">{formData.name || 'Sin nombre'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Duración:</span>
-                <span className="font-medium">{formatDuration(formData.duration_minutes)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Precio:</span>
-                <span className="font-medium">${formData.price.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Estado:</span>
-                <Badge variant={formData.is_active ? "default" : "secondary"} className="text-xs">
-                  {formData.is_active ? 'Activo' : 'Inactivo'}
-                </Badge>
-              </div>
+            {/* Botones */}
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={saving}
+                className="min-w-32"
+              >
+                {saving ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Guardando...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Save className="h-4 w-4" />
+                    {isEditing ? 'Actualizar' : 'Crear'} Servicio
+                  </div>
+                )}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Botones */}
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={saveService}
-            disabled={saving}
-            className="flex items-center gap-2"
-          >
-            <Save className="h-4 w-4" />
-            {saving ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Crear')}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={onCancel}
-            disabled={saving}
-            className="flex items-center gap-2"
-          >
-            <X className="h-4 w-4" />
-            Cancelar
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
-

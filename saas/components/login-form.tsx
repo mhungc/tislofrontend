@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { useAuthStore } from "@/lib/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,6 +26,7 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { setUser } = useAuthStore();
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -34,11 +36,13 @@ export function LoginForm({
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
+      
+      setUser(data.user);
       router.push("/protected");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");

@@ -23,7 +23,8 @@ export class ShopService {
       throw new Error(error.error || 'Error al crear la tienda')
     }
 
-    return response.json()
+    const result = await response.json()
+    return result.shop || result
   }
 
   async getShops() {

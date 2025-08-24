@@ -38,7 +38,7 @@ export default function SchedulePage() {
     setSaving(true);
     try {
       const res = await fetch(`/api/shops/${shopId}/schedule`, {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(schedule),
       });

@@ -15,24 +15,32 @@ interface WeeklyScheduleEditorProps {
   shopId: string
   onScheduleUpdated?: () => void
   className?: string
+  existingSchedules?: any[]
+}
+
+interface TimeBlock {
+  id?: string
+  openTime: string
+  closeTime: string
 }
 
 interface DaySchedule {
   dayOfWeek: number
   dayName: string
   isWorkingDay: boolean
-  openTime: string
-  closeTime: string
+  timeBlocks: TimeBlock[]
 }
 
 export function WeeklyScheduleEditor({
   shopId,
   onScheduleUpdated,
-  className = ''
+  className = '',
+  existingSchedules = []
 }: WeeklyScheduleEditorProps) {
   const [schedules, setSchedules] = useState<DaySchedule[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
 
   const scheduleService = new ScheduleService()
 
@@ -46,44 +54,72 @@ export function WeeklyScheduleEditor({
     'Sábado'
   ]
 
-  // Inicializar horarios semanales
   useEffect(() => {
     const initializeSchedules = () => {
+      // Si hay horarios existentes, no inicializar con defaults
+      if (existingSchedules.length > 0) return
+      
       const defaultSchedules: DaySchedule[] = dayNames.map((name, index) => ({
         dayOfWeek: index,
         dayName: name,
-        isWorkingDay: index >= 1 && index <= 5, // Lunes a Viernes por defecto
-        openTime: '09:00',
-        closeTime: '18:00'
+        isWorkingDay: index >= 1 && index <= 5,
+        timeBlocks: [{ openTime: '09:00', closeTime: '18:00' }]
       }))
       setSchedules(defaultSchedules)
     }
 
     initializeSchedules()
-  }, [])
+  }, [existingSchedules])
 
-  // Cargar horarios existentes
   useEffect(() => {
     const loadSchedules = async () => {
       setLoading(true)
       try {
-        const existingSchedules = await scheduleService.getShopSchedules(shopId)
+        // Si se pasan horarios existentes, usarlos directamente
+        const schedulesToLoad = existingSchedules.length > 0 ? existingSchedules : await scheduleService.getShopSchedules(shopId)
         
-        if (existingSchedules.length > 0) {
-          const updatedSchedules = schedules.map(schedule => {
-            const existing = existingSchedules.find(s => s.day_of_week === schedule.dayOfWeek)
-            if (existing) {
-              return {
-                ...schedule,
-                isWorkingDay: existing.is_working_day,
-                openTime: existing.open_time,
-                closeTime: existing.close_time
-              }
+        // Crear estructura completa para todos los días
+        const fullSchedules: DaySchedule[] = dayNames.map((name, index) => {
+          const daySchedules = schedulesToLoad.filter(s => s.day_of_week === index)
+          
+          if (daySchedules.length > 0) {
+            // Día con horarios configurados
+            return {
+              dayOfWeek: index,
+              dayName: name,
+              isWorkingDay: true, // Si existe en BD, es día laborable
+              timeBlocks: daySchedules.map(s => {
+                // Formatear tiempo desde la base de datos
+                const formatTime = (timeString: string) => {
+                  if (timeString.includes('T')) {
+                    return new Date(timeString).toLocaleTimeString('en-GB', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false
+                    })
+                  }
+                  return timeString
+                }
+                
+                return {
+                  id: s.id,
+                  openTime: formatTime(s.open_time),
+                  closeTime: formatTime(s.close_time)
+                }
+              })
             }
-            return schedule
-          })
-          setSchedules(updatedSchedules)
-        }
+          } else {
+            // Día sin horarios = día cerrado
+            return {
+              dayOfWeek: index,
+              dayName: name,
+              isWorkingDay: false,
+              timeBlocks: [{ openTime: '09:00', closeTime: '18:00' }]
+            }
+          }
+        })
+        
+        setSchedules(fullSchedules)
       } catch (error) {
         console.error('Error al cargar horarios:', error)
         toast.error('Error al cargar los horarios existentes')
@@ -92,12 +128,12 @@ export function WeeklyScheduleEditor({
       }
     }
 
-    if (schedules.length > 0) {
+    // Solo cargar si hay horarios existentes o si no hay schedules inicializados
+    if (existingSchedules.length > 0 || schedules.length === 0) {
       loadSchedules()
     }
-  }, [shopId])
+  }, [shopId, existingSchedules])
 
-  // Actualizar horario de un día
   const updateDaySchedule = (dayOfWeek: number, updates: Partial<DaySchedule>) => {
     setSchedules(prev => prev.map(schedule => 
       schedule.dayOfWeek === dayOfWeek 
@@ -106,56 +142,104 @@ export function WeeklyScheduleEditor({
     ))
   }
 
-  // Cambiar estado de día laborable
   const toggleWorkingDay = (dayOfWeek: number) => {
     updateDaySchedule(dayOfWeek, { isWorkingDay: !schedules.find(s => s.dayOfWeek === dayOfWeek)?.isWorkingDay })
   }
 
-  // Actualizar hora de apertura
-  const updateOpenTime = (dayOfWeek: number, time: string) => {
-    updateDaySchedule(dayOfWeek, { openTime: time })
+  const updateTimeBlock = (dayOfWeek: number, blockIndex: number, field: 'openTime' | 'closeTime', value: string) => {
+    setSchedules(prev => prev.map(schedule => {
+      if (schedule.dayOfWeek === dayOfWeek) {
+        const newTimeBlocks = [...schedule.timeBlocks]
+        newTimeBlocks[blockIndex] = { ...newTimeBlocks[blockIndex], [field]: value }
+        return { ...schedule, timeBlocks: newTimeBlocks }
+      }
+      return schedule
+    }))
   }
 
-  // Actualizar hora de cierre
-  const updateCloseTime = (dayOfWeek: number, time: string) => {
-    updateDaySchedule(dayOfWeek, { closeTime: time })
+  const addTimeBlock = (dayOfWeek: number) => {
+    setSchedules(prev => prev.map(schedule => {
+      if (schedule.dayOfWeek === dayOfWeek) {
+        return {
+          ...schedule,
+          timeBlocks: [...schedule.timeBlocks, { openTime: '09:00', closeTime: '18:00' }]
+        }
+      }
+      return schedule
+    }))
   }
 
-  // Guardar horarios
+  const removeTimeBlock = (dayOfWeek: number, blockIndex: number) => {
+    setSchedules(prev => prev.map(schedule => {
+      if (schedule.dayOfWeek === dayOfWeek && schedule.timeBlocks.length > 1) {
+        return {
+          ...schedule,
+          timeBlocks: schedule.timeBlocks.filter((_, index) => index !== blockIndex)
+        }
+      }
+      return schedule
+    }))
+  }
+
   const saveSchedules = async () => {
     setSaving(true)
     try {
       const schedulesToSave = schedules
         .filter(schedule => schedule.isWorkingDay)
-        .map(schedule => ({
-          day_of_week: schedule.dayOfWeek,
-          open_time: schedule.openTime,
-          close_time: schedule.closeTime,
-          is_working_day: schedule.isWorkingDay
-        }))
+        .flatMap(schedule => 
+          schedule.timeBlocks.map((block, index) => ({
+            day_of_week: schedule.dayOfWeek,
+            open_time: block.openTime,
+            close_time: block.closeTime,
+            is_working_day: schedule.isWorkingDay,
+            block_order: index + 1
+          }))
+        )
 
       await scheduleService.setWeeklySchedule(shopId, schedulesToSave)
       
-      toast.success('Horarios guardados correctamente')
+      // Toast de éxito con información útil
+      const workingDays = schedules.filter(s => s.isWorkingDay).length
+      toast.success(`✅ Horarios guardados correctamente`, {
+        description: `${workingDays} días laborables configurados. ¡Tu tienda ya tiene horarios!`,
+        duration: 4000
+      })
+      
+      // Mostrar estado de éxito temporalmente
+      setJustSaved(true)
+      setTimeout(() => setJustSaved(false), 3000)
+      
       onScheduleUpdated?.()
     } catch (error) {
       console.error('Error al guardar horarios:', error)
-      toast.error('Error al guardar los horarios')
+      toast.error('❌ Error al guardar los horarios', {
+        description: 'Por favor, inténtalo de nuevo o contacta soporte si persiste.'
+      })
     } finally {
       setSaving(false)
     }
   }
 
-  // Validar horarios
   const validateSchedules = () => {
     const errors: string[] = []
 
     schedules.forEach(schedule => {
       if (schedule.isWorkingDay) {
-        if (!schedule.openTime || !schedule.closeTime) {
-          errors.push(`${schedule.dayName}: Horarios incompletos`)
-        } else if (schedule.openTime >= schedule.closeTime) {
-          errors.push(`${schedule.dayName}: Hora de cierre debe ser posterior a la de apertura`)
+        schedule.timeBlocks.forEach((block, index) => {
+          if (!block.openTime || !block.closeTime) {
+            errors.push(`${schedule.dayName} - Bloque ${index + 1}: Horarios incompletos`)
+          } else if (block.openTime >= block.closeTime) {
+            errors.push(`${schedule.dayName} - Bloque ${index + 1}: Hora de cierre debe ser posterior a la de apertura`)
+          }
+        })
+        
+        // Validar que no se solapen los bloques
+        for (let i = 0; i < schedule.timeBlocks.length - 1; i++) {
+          const current = schedule.timeBlocks[i]
+          const next = schedule.timeBlocks[i + 1]
+          if (current.closeTime > next.openTime) {
+            errors.push(`${schedule.dayName}: Los bloques ${i + 1} y ${i + 2} se solapan`)
+          }
         }
       }
     })
@@ -163,28 +247,31 @@ export function WeeklyScheduleEditor({
     return errors
   }
 
-  // Aplicar horario a todos los días laborables
   const applyToAllWorkingDays = (openTime: string, closeTime: string) => {
     setSchedules(prev => prev.map(schedule => 
       schedule.isWorkingDay 
-        ? { ...schedule, openTime, closeTime }
+        ? { ...schedule, timeBlocks: [{ openTime, closeTime }] }
         : schedule
     ))
   }
 
-  // Copiar horario de un día a otro
-  const copyDaySchedule = (fromDay: number, toDay: number) => {
-    const fromSchedule = schedules.find(s => s.dayOfWeek === fromDay)
-    if (fromSchedule) {
-      updateDaySchedule(toDay, {
-        isWorkingDay: fromSchedule.isWorkingDay,
-        openTime: fromSchedule.openTime,
-        closeTime: fromSchedule.closeTime
-      })
-    }
+  const setAllDaysWorking = (working: boolean) => {
+    setSchedules(prev => prev.map(schedule => ({ 
+      ...schedule, 
+      isWorkingDay: working 
+    })))
+  }
+
+  const resetToDefaults = () => {
+    setSchedules(prev => prev.map(schedule => ({
+      ...schedule,
+      isWorkingDay: schedule.dayOfWeek >= 1 && schedule.dayOfWeek <= 5,
+      timeBlocks: [{ openTime: '09:00', closeTime: '18:00' }]
+    })))
   }
 
   const validationErrors = validateSchedules()
+  const workingDaysCount = schedules.filter(s => s.isWorkingDay).length
 
   if (loading) {
     return (
@@ -198,7 +285,6 @@ export function WeeklyScheduleEditor({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Encabezado */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -207,77 +293,94 @@ export function WeeklyScheduleEditor({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Configura los horarios de trabajo para cada día de la semana. 
-            Los días marcados como "Cerrado" no tendrán disponibilidad para reservas.
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Configura los horarios de trabajo para cada día de la semana.
+            </p>
+            <Badge variant="outline">
+              {workingDaysCount} días laborables
+            </Badge>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Horarios por día */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {schedules.map((schedule) => (
-          <Card key={schedule.dayOfWeek}>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
+          <Card key={schedule.dayOfWeek} className={schedule.isWorkingDay ? 'border-green-200' : 'border-gray-200'}>
+            <CardContent className="pt-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                     <Switch
                       checked={schedule.isWorkingDay}
                       onClick={() => toggleWorkingDay(schedule.dayOfWeek)}
                     />
-                    <Label className="font-medium">
-                      {schedule.dayName}
-                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Label className="font-medium w-20">
+                        {schedule.dayName}
+                      </Label>
+                      {schedule.isWorkingDay ? (
+                        <Badge variant="default" className="text-xs">
+                          <Check className="h-3 w-3 mr-1" />
+                          Abierto ({schedule.timeBlocks.length} bloque{schedule.timeBlocks.length > 1 ? 's' : ''})
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">
+                          <X className="h-3 w-3 mr-1" />
+                          Cerrado
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  
-                  {schedule.isWorkingDay ? (
-                    <Badge variant="default" className="flex items-center gap-1">
-                      <Check className="h-3 w-3" />
-                      Abierto
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      <X className="h-3 w-3" />
-                      Cerrado
-                    </Badge>
+
+                  {schedule.isWorkingDay && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addTimeBlock(schedule.dayOfWeek)}
+                      className="text-xs"
+                    >
+                      + Agregar Bloque
+                    </Button>
                   )}
                 </div>
 
                 {schedule.isWorkingDay && (
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor={`open-${schedule.dayOfWeek}`} className="text-sm">
-                        Apertura:
-                      </Label>
-                      <Input
-                        id={`open-${schedule.dayOfWeek}`}
-                        type="time"
-                        value={schedule.openTime}
-                        onChange={(e) => updateOpenTime(schedule.dayOfWeek, e.target.value)}
-                        className="w-24"
-                      />
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor={`close-${schedule.dayOfWeek}`} className="text-sm">
-                        Cierre:
-                      </Label>
-                      <Input
-                        id={`close-${schedule.dayOfWeek}`}
-                        type="time"
-                        value={schedule.closeTime}
-                        onChange={(e) => updateCloseTime(schedule.dayOfWeek, e.target.value)}
-                        className="w-24"
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        {schedule.openTime} - {schedule.closeTime}
-                      </span>
-                    </div>
+                  <div className="space-y-2 ml-8">
+                    {schedule.timeBlocks.map((block, blockIndex) => (
+                      <div key={blockIndex} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
+                        <Label className="text-xs text-muted-foreground w-16">
+                          Bloque {blockIndex + 1}:
+                        </Label>
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="time"
+                            value={block.openTime}
+                            onChange={(e) => updateTimeBlock(schedule.dayOfWeek, blockIndex, 'openTime', e.target.value)}
+                            className="w-20 h-8 text-sm"
+                          />
+                        </div>
+                        <span className="text-muted-foreground">-</span>
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="time"
+                            value={block.closeTime}
+                            onChange={(e) => updateTimeBlock(schedule.dayOfWeek, blockIndex, 'closeTime', e.target.value)}
+                            className="w-20 h-8 text-sm"
+                          />
+                        </div>
+                        {schedule.timeBlocks.length > 1 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeTimeBlock(schedule.dayOfWeek, blockIndex)}
+                            className="text-red-500 hover:text-red-700 p-1 h-8 w-8"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -286,70 +389,12 @@ export function WeeklyScheduleEditor({
         ))}
       </div>
 
-      {/* Acciones rápidas */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Acciones Rápidas</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Label className="text-sm">Aplicar a todos los días laborables:</Label>
-            <Input
-              type="time"
-              placeholder="09:00"
-              className="w-24"
-              onChange={(e) => {
-                const openTime = e.target.value
-                const closeTime = schedules.find(s => s.isWorkingDay)?.closeTime || '18:00'
-                applyToAllWorkingDays(openTime, closeTime)
-              }}
-            />
-            <span>-</span>
-            <Input
-              type="time"
-              placeholder="18:00"
-              className="w-24"
-              onChange={(e) => {
-                const closeTime = e.target.value
-                const openTime = schedules.find(s => s.isWorkingDay)?.openTime || '09:00'
-                applyToAllWorkingDays(openTime, closeTime)
-              }}
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Label className="text-sm">Copiar horario:</Label>
-            <select 
-              className="border rounded px-2 py-1 text-sm"
-              onChange={(e) => {
-                const [fromDay, toDay] = e.target.value.split('-').map(Number)
-                if (fromDay !== undefined && toDay !== undefined) {
-                  copyDaySchedule(fromDay, toDay)
-                }
-              }}
-            >
-              <option value="">Seleccionar...</option>
-              {schedules.filter(s => s.isWorkingDay).map(schedule => 
-                schedules.filter(s => s.isWorkingDay && s.dayOfWeek !== schedule.dayOfWeek).map(otherSchedule => (
-                  <option key={`${schedule.dayOfWeek}-${otherSchedule.dayOfWeek}`} 
-                          value={`${schedule.dayOfWeek}-${otherSchedule.dayOfWeek}`}>
-                    {schedule.dayName} → {otherSchedule.dayName}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Errores de validación */}
       {validationErrors.length > 0 && (
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-red-600 mb-2">
-              <X className="h-4 w-4" />
-              <span className="font-medium">Errores de validación:</span>
-            </div>
+        <Card className="border-red-200">
+          <CardHeader>
+            <CardTitle className="text-red-600">Errores de Validación</CardTitle>
+          </CardHeader>
+          <CardContent>
             <ul className="list-disc list-inside space-y-1">
               {validationErrors.map((error, index) => (
                 <li key={index} className="text-sm text-red-600">{error}</li>
@@ -359,24 +404,115 @@ export function WeeklyScheduleEditor({
         </Card>
       )}
 
-      {/* Botón de guardar */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              {schedules.filter(s => s.isWorkingDay).length} días laborables configurados
-            </div>
+        <CardHeader>
+          <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <Button
-              onClick={saveSchedules}
-              disabled={saving || validationErrors.length > 0}
-              className="flex items-center gap-2"
+              variant="outline"
+              size="sm"
+              onClick={() => applyToAllWorkingDays('09:00', '18:00')}
             >
-              <Save className="h-4 w-4" />
-              {saving ? 'Guardando...' : 'Guardar Horarios'}
+              Aplicar 9-18h
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAllDaysWorking(true)}
+            >
+              Todos Abiertos
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAllDaysWorking(false)}
+            >
+              Todos Cerrados
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetToDefaults}
+            >
+              Restablecer
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Mensaje de éxito y próximos pasos */}
+      {justSaved && (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <Check className="h-5 w-5 text-green-600" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-green-900 mb-1">¡Horarios configurados exitosamente!</h3>
+                <p className="text-sm text-green-700 mb-3">
+                  Tu tienda ya tiene horarios definidos. Ahora puedes:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => window.location.href = `/dashboard/shops/${shopId}/services`}
+                    className="border-green-300 text-green-700 hover:bg-green-100"
+                  >
+                    📋 Configurar Servicios
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => window.location.href = `/dashboard/shops/${shopId}/calendar`}
+                    className="border-green-300 text-green-700 hover:bg-green-100"
+                  >
+                    📅 Ver Calendario
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => window.location.href = `/dashboard/shops`}
+                    className="border-green-300 text-green-700 hover:bg-green-100"
+                  >
+                    🏪 Volver a Tiendas
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex justify-end gap-3">
+        <Button
+          onClick={saveSchedules}
+          disabled={saving || validationErrors.length > 0}
+          className={`min-w-32 ${justSaved ? 'bg-green-600 hover:bg-green-700' : ''}`}
+        >
+          {saving ? (
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              Guardando...
+            </div>
+          ) : justSaved ? (
+            <div className="flex items-center gap-2">
+              <Check className="h-4 w-4" />
+              ¡Guardado!
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Save className="h-4 w-4" />
+              Guardar Horarios
+            </div>
+          )}
+        </Button>
+      </div>
     </div>
   )
 }

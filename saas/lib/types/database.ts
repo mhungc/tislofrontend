@@ -57,6 +57,7 @@ export interface ShopSchedule {
   open_time: string
   close_time: string
   is_working_day: boolean
+  block_order?: number | null
   created_at: string
   updated_at: string
 }

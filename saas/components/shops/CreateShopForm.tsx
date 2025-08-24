@@ -11,7 +11,7 @@ import { Store, Save, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface CreateShopFormProps {
-  onSuccess?: () => void
+  onSuccess?: (shopId?: string) => void
   onCancel?: () => void
 }
 
@@ -45,7 +45,7 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
     try {
       const result = await shopService.createShop(formData)
       toast.success('Tienda creada correctamente')
-      onSuccess?.()
+      onSuccess?.(result.id)
     } catch (error) {
       console.error('Error al crear tienda:', error)
       toast.error(error instanceof Error ? error.message : 'Error al crear la tienda')

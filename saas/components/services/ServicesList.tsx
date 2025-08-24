@@ -7,12 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { 
-  Package, 
   Plus, 
   Search, 
   Edit, 
   Trash2, 
-  Copy, 
   Eye, 
   EyeOff,
   Clock,
@@ -25,6 +23,7 @@ interface ServicesListProps {
   shopId: string
   onServiceSelect?: (serviceId: string) => void
   onServiceEdit?: (serviceId: string) => void
+  onCreateNew?: () => void
   className?: string
 }
 
@@ -32,12 +31,12 @@ export function ServicesList({
   shopId,
   onServiceSelect,
   onServiceEdit,
+  onCreateNew,
   className = ''
 }: ServicesListProps) {
   const [services, setServices] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [showInactive, setShowInactive] = useState(false)
   const [filterByStatus, setFilterByStatus] = useState<'all' | 'active' | 'inactive'>('all')
 
   const serviceService = new ServiceService()
@@ -50,11 +49,11 @@ export function ServicesList({
   const loadServices = async () => {
     setLoading(true)
     try {
-      const allServices = await serviceService.getAllShopServices(shopId)
-      setServices(allServices)
+      const data = await serviceService.getShopServices(shopId)
+      setServices(data)
     } catch (error) {
       console.error('Error al cargar servicios:', error)
-      toast.error('Error al cargar los servicios')
+      toast.error('Error al cargar servicios')
     } finally {
       setLoading(false)
     }
@@ -75,9 +74,9 @@ export function ServicesList({
   // Cambiar estado de servicio
   const toggleServiceStatus = async (serviceId: string) => {
     try {
-      await serviceService.toggleServiceStatus(serviceId)
+      await serviceService.toggleServiceStatus(shopId, serviceId)
+      await loadServices()
       toast.success('Estado del servicio actualizado')
-      loadServices()
     } catch (error) {
       console.error('Error al cambiar estado:', error)
       toast.error('Error al cambiar el estado del servicio')
@@ -85,53 +84,35 @@ export function ServicesList({
   }
 
   // Eliminar servicio
-  const deleteService = async (serviceId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este servicio?')) {
+  const deleteService = async (serviceId: string, serviceName: string) => {
+    if (!confirm(`¿Estás seguro de que quieres eliminar "${serviceName}"? Esta acción no se puede deshacer.`)) {
       return
     }
 
     try {
-      await serviceService.deleteService(serviceId)
+      await serviceService.deleteService(shopId, serviceId)
+      await loadServices()
       toast.success('Servicio eliminado correctamente')
-      loadServices()
     } catch (error) {
       console.error('Error al eliminar servicio:', error)
       toast.error('Error al eliminar el servicio')
     }
   }
 
-  // Duplicar servicio
-  const duplicateService = async (serviceId: string) => {
-    try {
-      await serviceService.duplicateService(serviceId)
-      toast.success('Servicio duplicado correctamente')
-      loadServices()
-    } catch (error) {
-      console.error('Error al duplicar servicio:', error)
-      toast.error('Error al duplicar el servicio')
-    }
+  // Formatear precio
+  const formatPrice = (price: number | string | null) => {
+    if (!price || price === 0) return 'Gratis'
+    const numPrice = typeof price === 'string' ? parseFloat(price) : price
+    if (isNaN(numPrice)) return 'Gratis'
+    return `$${numPrice.toFixed(2)}`
   }
 
   // Formatear duración
   const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes}min`
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
-    
-    if (hours > 0 && mins > 0) {
-      return `${hours}h ${mins}min`
-    } else if (hours > 0) {
-      return `${hours}h`
-    } else {
-      return `${mins}min`
-    }
-  }
-
-  // Formatear precio
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(price)
+    return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`
   }
 
   if (loading) {
@@ -146,19 +127,15 @@ export function ServicesList({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Encabezado */}
+      {/* Header */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Servicios ({filteredServices.length})
+              🛍️ Servicios ({filteredServices.length})
             </CardTitle>
-            <Button
-              onClick={() => onServiceEdit?.('new')}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
+            <Button onClick={onCreateNew}>
+              <Plus className="h-4 w-4 mr-2" />
               Nuevo Servicio
             </Button>
           </div>
@@ -197,22 +174,19 @@ export function ServicesList({
       {filteredServices.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
-            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <div className="text-6xl mb-4">🛍️</div>
             <h3 className="text-lg font-medium mb-2">
-              {searchTerm ? 'No se encontraron servicios' : 'No hay servicios'}
+              {searchTerm ? 'No se encontraron servicios' : 'No tienes servicios'}
             </h3>
             <p className="text-muted-foreground mb-4">
               {searchTerm 
                 ? 'Intenta con otros términos de búsqueda'
-                : 'Crea tu primer servicio para comenzar'
+                : 'Crea tu primer servicio para comenzar a recibir reservas'
               }
             </p>
             {!searchTerm && (
-              <Button
-                onClick={() => onServiceEdit?.('new')}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
+              <Button onClick={onCreateNew}>
+                <Plus className="h-4 w-4 mr-2" />
                 Crear Primer Servicio
               </Button>
             )}
@@ -223,7 +197,7 @@ export function ServicesList({
           {filteredServices.map((service) => (
             <Card key={service.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
-                {/* Encabezado del servicio */}
+                {/* Header del servicio */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <h3 className="font-medium text-lg mb-1">{service.name}</h3>
@@ -254,12 +228,13 @@ export function ServicesList({
                   </p>
                 )}
 
-                {/* Detalles del servicio */}
+                {/* Información del servicio */}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>{formatDuration(service.duration_minutes)}</span>
                   </div>
+                  
                   <div className="flex items-center gap-2 text-sm">
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{formatPrice(service.price)}</span>
@@ -271,32 +246,16 @@ export function ServicesList({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onServiceSelect?.(service.id)}
+                    onClick={() => onServiceEdit?.(service.id)}
                     className="flex-1"
                   >
-                    Seleccionar
+                    <Edit className="h-4 w-4 mr-1" />
+                    Editar
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onServiceEdit?.(service.id)}
-                    title="Editar"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => duplicateService(service.id)}
-                    title="Duplicar"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteService(service.id)}
-                    title="Eliminar"
+                    onClick={() => deleteService(service.id, service.name)}
                     className="text-red-600 hover:text-red-700"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -338,7 +297,10 @@ export function ServicesList({
             </div>
             <div>
               <div className="text-2xl font-bold text-blue-600">
-                {formatPrice(services.reduce((sum, s) => sum + (s.price || 0), 0))}
+                ${services.reduce((sum, s) => {
+                  const price = typeof s.price === 'string' ? parseFloat(s.price) : s.price
+                  return sum + (isNaN(price) ? 0 : price || 0)
+                }, 0).toFixed(0)}
               </div>
               <div className="text-sm text-muted-foreground">
                 Valor Total
@@ -350,4 +312,3 @@ export function ServicesList({
     </div>
   )
 }
-
