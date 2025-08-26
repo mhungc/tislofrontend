@@ -1,375 +1,152 @@
-// 📅 Servicio CRUD para Reservas
-import { createClient } from '@/lib/supabase/client'
-import type { 
-  Booking, 
-  BookingInsert, 
-  BookingUpdate,
-  Customer,
-  CustomerInsert,
-  BookingService,
-  BookingServiceInsert,
-  Service
-} from '@/lib/types/database'
-
-export interface BookingWithDetails extends Booking {
-  customer: Customer
-  services: (BookingService & { service: Service })[]
-  shop: any
-}
-
-export interface CreateBookingData {
-  shopId: string
-  customerData: Omit<CustomerInsert, 'id'>
-  bookingData: Omit<BookingInsert, 'shop_id' | 'customer_id' | 'id'>
-  serviceIds: string[]
-}
+import { BookingRepository, BookingData, BookingServiceData } from '@/lib/repositories/booking-repository'
+import { BookingLinkRepository } from '@/lib/repositories/booking-link-repository'
 
 export class BookingService {
-  private supabase = createClient()
+  private bookingRepo = new BookingRepository()
+  private linkRepo = new BookingLinkRepository()
 
-  // 📋 Obtener todas las reservas de una tienda
-  async getShopBookings(shopId: string, status?: string): Promise<BookingWithDetails[]> {
-    let query = this.supabase
-      .from('bookings')
-      .select(`
-        *,
-        customer:customers(*),
-        services:booking_services(
-          *,
-          service:services(*)
-        ),
-        shop:shops(*)
-      `)
-      .eq('shop_id', shopId)
-      .order('booking_date', { ascending: false })
+  async createBookingLink(shopId: string, expiresInDays: number = 30) {
+    const response = await fetch(`/api/shops/${shopId}/booking-links`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ expiresInDays })
+    })
 
-    if (status) {
-      query = query.eq('status', status)
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al crear enlace')
     }
 
-    const { data: bookings, error } = await query
-
-    if (error) throw new Error(`Error al obtener reservas: ${error.message}`)
-    return bookings || []
+    return await response.json()
   }
 
-  // 📋 Obtener reservas por fecha
-  async getBookingsByDate(shopId: string, date: string): Promise<BookingWithDetails[]> {
-    const { data: bookings, error } = await this.supabase
-      .from('bookings')
-      .select(`
-        *,
-        customer:customers(*),
-        services:booking_services(
-          *,
-          service:services(*)
-        ),
-        shop:shops(*)
-      `)
-      .eq('shop_id', shopId)
-      .eq('booking_date', date)
-      .order('start_time')
+  async getBookingLinks(shopId: string) {
+    const response = await fetch(`/api/shops/${shopId}/booking-links`, {
+      credentials: 'include'
+    })
 
-    if (error) throw new Error(`Error al obtener reservas por fecha: ${error.message}`)
-    return bookings || []
-  }
-
-  // 📋 Obtener una reserva específica
-  async getBooking(bookingId: string): Promise<BookingWithDetails | null> {
-    const { data: booking, error } = await this.supabase
-      .from('bookings')
-      .select(`
-        *,
-        customer:customers(*),
-        services:booking_services(
-          *,
-          service:services(*)
-        ),
-        shop:shops(*)
-      `)
-      .eq('id', bookingId)
-      .single()
-
-    if (error) throw new Error(`Error al obtener reserva: ${error.message}`)
-    return booking
-  }
-
-  // ➕ Crear nueva reserva
-  async createBooking(bookingData: CreateBookingData): Promise<BookingWithDetails> {
-    const { shopId, customerData, bookingData: bookingInfo, serviceIds } = bookingData
-
-    // 1. Crear o encontrar cliente
-    let customer: Customer
-    if (customerData.email) {
-      // Buscar cliente existente por email
-      const { data: existingCustomer } = await this.supabase
-        .from('customers')
-        .select('*')
-        .eq('email', customerData.email)
-        .single()
-
-      if (existingCustomer) {
-        customer = existingCustomer
-      } else {
-        // Crear nuevo cliente
-        const { data: newCustomer, error: customerError } = await this.supabase
-          .from('customers')
-          .insert(customerData)
-          .select()
-          .single()
-
-        if (customerError) throw new Error(`Error al crear cliente: ${customerError.message}`)
-        customer = newCustomer
-      }
-    } else {
-      // Crear cliente sin email
-      const { data: newCustomer, error: customerError } = await this.supabase
-        .from('customers')
-        .insert(customerData)
-        .select()
-        .single()
-
-      if (customerError) throw new Error(`Error al crear cliente: ${customerError.message}`)
-      customer = newCustomer
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al obtener enlaces')
     }
 
-    // 2. Obtener servicios y calcular precio total
-    const { data: services, error: servicesError } = await this.supabase
-      .from('services')
-      .select('*')
-      .in('id', serviceIds)
-
-    if (servicesError) throw new Error(`Error al obtener servicios: ${servicesError.message}`)
-    if (!services || services.length === 0) throw new Error('No se encontraron servicios')
-
-    const totalAmount = services.reduce((sum, service) => sum + (service.price || 0), 0)
-
-    // 3. Crear reserva
-    const { data: booking, error: bookingError } = await this.supabase
-      .from('bookings')
-      .insert({
-        ...bookingInfo,
-        shop_id: shopId,
-        customer_id: customer.id,
-        total_amount: totalAmount
-      })
-      .select()
-      .single()
-
-    if (bookingError) throw new Error(`Error al crear reserva: ${bookingError.message}`)
-
-    // 4. Crear detalles de servicios
-    const bookingServices: BookingServiceInsert[] = services.map(service => ({
-      booking_id: booking.id,
-      service_id: service.id,
-      price: service.price || 0
-    }))
-
-    const { error: servicesInsertError } = await this.supabase
-      .from('booking_services')
-      .insert(bookingServices)
-
-    if (servicesInsertError) throw new Error(`Error al crear detalles de servicios: ${servicesInsertError.message}`)
-
-    // 5. Retornar reserva completa
-    return this.getBooking(booking.id) as Promise<BookingWithDetails>
+    const data = await response.json()
+    return data.links || []
   }
 
-  // ✏️ Actualizar reserva
-  async updateBooking(bookingId: string, bookingData: BookingUpdate): Promise<Booking> {
-    const { data: booking, error } = await this.supabase
-      .from('bookings')
-      .update(bookingData)
-      .eq('id', bookingId)
-      .select()
-      .single()
+  async getBookingData(token: string) {
+    const response = await fetch(`/api/booking/${token}`)
 
-    if (error) throw new Error(`Error al actualizar reserva: ${error.message}`)
-    return booking
-  }
-
-  // 🗑️ Eliminar reserva
-  async deleteBooking(bookingId: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('bookings')
-      .delete()
-      .eq('id', bookingId)
-
-    if (error) throw new Error(`Error al eliminar reserva: ${error.message}`)
-  }
-
-  // 🔄 Cambiar estado de reserva
-  async updateBookingStatus(bookingId: string, status: 'pending' | 'confirmed' | 'cancelled' | 'completed'): Promise<Booking> {
-    return this.updateBooking(bookingId, { status })
-  }
-
-  // ✅ Confirmar reserva
-  async confirmBooking(bookingId: string): Promise<Booking> {
-    return this.updateBookingStatus(bookingId, 'confirmed')
-  }
-
-  // ❌ Cancelar reserva
-  async cancelBooking(bookingId: string): Promise<Booking> {
-    return this.updateBookingStatus(bookingId, 'cancelled')
-  }
-
-  // ✅ Completar reserva
-  async completeBooking(bookingId: string): Promise<Booking> {
-    return this.updateBookingStatus(bookingId, 'completed')
-  }
-
-  // 📊 Obtener estadísticas de reservas
-  async getBookingStats(shopId: string, startDate?: string, endDate?: string) {
-    let query = this.supabase
-      .from('bookings')
-      .select('status, total_amount, booking_date')
-      .eq('shop_id', shopId)
-
-    if (startDate) {
-      query = query.gte('booking_date', startDate)
-    }
-    if (endDate) {
-      query = query.lte('booking_date', endDate)
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Enlace inválido o expirado')
     }
 
-    const { data: bookings, error } = await query
+    return await response.json()
+  }
 
-    if (error) throw new Error(`Error al obtener estadísticas: ${error.message}`)
+  async getAvailableSlots(token: string, date: string, serviceIds: string[] = []) {
+    const servicesParam = serviceIds.length > 0 ? `&services=${serviceIds.join(',')}` : ''
+    const response = await fetch(`/api/booking/${token}/availability?date=${date}${servicesParam}`)
 
-    const stats = {
-      totalBookings: bookings?.length || 0,
-      pendingBookings: bookings?.filter(b => b.status === 'pending').length || 0,
-      confirmedBookings: bookings?.filter(b => b.status === 'confirmed').length || 0,
-      cancelledBookings: bookings?.filter(b => b.status === 'cancelled').length || 0,
-      completedBookings: bookings?.filter(b => b.status === 'completed').length || 0,
-      totalRevenue: bookings?.reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0,
-      averageRevenue: bookings && bookings.length > 0 
-        ? bookings.reduce((sum, b) => sum + (b.total_amount || 0), 0) / bookings.length 
-        : 0
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al obtener disponibilidad')
     }
 
-    return stats
+    const data = await response.json()
+    return data.slots || []
   }
 
-  // 📅 Obtener reservas por rango de fechas
-  async getBookingsByDateRange(shopId: string, startDate: string, endDate: string): Promise<BookingWithDetails[]> {
-    const { data: bookings, error } = await this.supabase
-      .from('bookings')
-      .select(`
-        *,
-        customer:customers(*),
-        services:booking_services(
-          *,
-          service:services(*)
-        ),
-        shop:shops(*)
-      `)
-      .eq('shop_id', shopId)
-      .gte('booking_date', startDate)
-      .lte('booking_date', endDate)
-      .order('booking_date', { ascending: true })
+  async createBooking(token: string, bookingData: {
+    customer_name: string
+    customer_email: string
+    customer_phone?: string
+    booking_date: string
+    start_time: string
+    services: string[]
+    notes?: string
+  }) {
+    const response = await fetch(`/api/booking/${token}/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bookingData)
+    })
 
-    if (error) throw new Error(`Error al obtener reservas por rango: ${error.message}`)
-    return bookings || []
-  }
-
-  // 👤 Obtener reservas de un cliente
-  async getCustomerBookings(customerId: string): Promise<BookingWithDetails[]> {
-    const { data: bookings, error } = await this.supabase
-      .from('bookings')
-      .select(`
-        *,
-        customer:customers(*),
-        services:booking_services(
-          *,
-          service:services(*)
-        ),
-        shop:shops(*)
-      `)
-      .eq('customer_id', customerId)
-      .order('booking_date', { ascending: false })
-
-    if (error) throw new Error(`Error al obtener reservas del cliente: ${error.message}`)
-    return bookings || []
-  }
-
-  // 🔍 Buscar reservas por cliente
-  async searchBookingsByCustomer(shopId: string, searchTerm: string): Promise<BookingWithDetails[]> {
-    const { data: bookings, error } = await this.supabase
-      .from('bookings')
-      .select(`
-        *,
-        customer:customers(*),
-        services:booking_services(
-          *,
-          service:services(*)
-        ),
-        shop:shops(*)
-      `)
-      .eq('shop_id', shopId)
-      .or(`customer.full_name.ilike.%${searchTerm}%,customer.email.ilike.%${searchTerm}%,customer.phone.ilike.%${searchTerm}%`)
-      .order('booking_date', { ascending: false })
-
-    if (error) throw new Error(`Error al buscar reservas: ${error.message}`)
-    return bookings || []
-  }
-
-  // 📋 Validar disponibilidad para nueva reserva
-  async validateBookingAvailability(
-    shopId: string,
-    date: string,
-    startTime: string,
-    endTime: string,
-    excludeBookingId?: string
-  ): Promise<{ available: boolean; message?: string }> {
-    let query = this.supabase
-      .from('bookings')
-      .select('id')
-      .eq('shop_id', shopId)
-      .eq('booking_date', date)
-      .in('status', ['pending', 'confirmed'])
-      .or(`start_time.lt.${endTime},end_time.gt.${startTime}`)
-
-    if (excludeBookingId) {
-      query = query.neq('id', excludeBookingId)
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al crear reserva')
     }
 
-    const { data: conflictingBookings, error } = await query
-
-    if (error) throw new Error(`Error al validar disponibilidad: ${error.message}`)
-
-    const hasConflict = (conflictingBookings?.length || 0) > 0
-
-    return {
-      available: !hasConflict,
-      message: hasConflict ? 'Horario no disponible' : undefined
-    }
+    return await response.json()
   }
 
-  // 📊 Obtener próximas reservas
-  async getUpcomingBookings(shopId: string, limit: number = 10): Promise<BookingWithDetails[]> {
-    const today = new Date().toISOString().split('T')[0]
+  async getBookingsByShop(shopId: string) {
+    const bookings = await this.bookingRepo.getByShopId(shopId)
     
-    const { data: bookings, error } = await this.supabase
-      .from('bookings')
-      .select(`
-        *,
-        customer:customers(*),
-        services:booking_services(
-          *,
-          service:services(*)
-        ),
-        shop:shops(*)
-      `)
-      .eq('shop_id', shopId)
-      .gte('booking_date', today)
-      .in('status', ['pending', 'confirmed'])
-      .order('booking_date', { ascending: true })
-      .order('start_time', { ascending: true })
-      .limit(limit)
+    return bookings.map(booking => ({
+      ...booking,
+      booking_date: booking.booking_date.toISOString().split('T')[0],
+      total_price: parseFloat(booking.total_price?.toString() || '0'),
+      services: booking.booking_services?.map((bs: any) => ({
+        id: bs.services?.id || '',
+        name: bs.services?.name || 'Servicio',
+        duration_minutes: bs.duration_minutes || 0,
+        price: parseFloat(bs.price.toString()) || 0
+      })) || []
+    }))
+  }
 
-    if (error) throw new Error(`Error al obtener próximas reservas: ${error.message}`)
-    return bookings || []
+  async getBookingsByDateRange(
+    shopId: string, 
+    startDate: string, 
+    endDate: string
+  ): Promise<BookingWithServices[]> {
+    const bookings = await this.bookingRepo.getByDateRange(shopId, startDate, endDate)
+    
+    return bookings.map(booking => ({
+      ...booking,
+      booking_date: booking.booking_date.toISOString().split('T')[0],
+      total_price: parseFloat(booking.total_price?.toString() || '0'),
+      services: booking.booking_services?.map((bs: any) => ({
+        id: bs.services?.id || '',
+        name: bs.services?.name || 'Servicio',
+        duration_minutes: bs.duration_minutes || 0,
+        price: parseFloat(bs.price.toString()) || 0
+      })) || []
+    }))
+  }
+
+  async updateBookingStatus(id: string, status: 'pending' | 'confirmed' | 'cancelled') {
+    return await this.bookingRepo.updateStatus(id, status)
+  }
+
+  calculateEndTime(startTime: string, totalMinutes: number): string {
+    const [hours, minutes] = startTime.split(':').map(Number)
+    const startDate = new Date()
+    startDate.setHours(hours, minutes, 0, 0)
+    
+    const endDate = new Date(startDate.getTime() + totalMinutes * 60000)
+    
+    return `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`
+  }
+
+  validateTimeSlot(startTime: string, duration: number, availableSlots: any[]): boolean {
+    const endTime = this.calculateEndTime(startTime, duration)
+    
+    const slotsNeeded = Math.ceil(duration / 30)
+    const startIndex = availableSlots.findIndex(slot => slot.time === startTime)
+    
+    if (startIndex === -1) return false
+    
+    for (let i = 0; i < slotsNeeded; i++) {
+      const slotIndex = startIndex + i
+      if (slotIndex >= availableSlots.length || !availableSlots[slotIndex].available) {
+        return false
+      }
+    }
+    
+    return true
   }
 }
-

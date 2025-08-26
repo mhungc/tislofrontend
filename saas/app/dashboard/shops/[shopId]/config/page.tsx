@@ -6,11 +6,12 @@ import { WeeklyScheduleEditor } from '@/components/schedule/WeeklyScheduleEditor
 import { ScheduleViewer } from '@/components/schedule/ScheduleViewer'
 import { ServicesList } from '@/components/services/ServicesList'
 import { ServiceForm } from '@/components/services/ServiceForm'
+import { BookingLinks } from '@/components/booking/BookingLinks'
 import { ScheduleService } from '@/lib/services/schedule-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Clock, Wrench, Store, Plus, Edit } from 'lucide-react'
+import { ArrowLeft, Clock, Wrench, Store, Plus, Edit, Link } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function ShopConfigPage() {
@@ -105,7 +106,7 @@ export default function ShopConfigPage() {
       )}
 
       <Tabs defaultValue="schedule" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="schedule">
             <Clock className="h-4 w-4 mr-2" />
             Horarios
@@ -113,6 +114,10 @@ export default function ShopConfigPage() {
           <TabsTrigger value="services">
             <Wrench className="h-4 w-4 mr-2" />
             Servicios
+          </TabsTrigger>
+          <TabsTrigger value="booking">
+            <Link className="h-4 w-4 mr-2" />
+            Reservas
           </TabsTrigger>
         </TabsList>
 
@@ -201,6 +206,15 @@ export default function ShopConfigPage() {
               }}
             />
           )}
+        </TabsContent>
+
+        {/* Tab de Reservas */}
+        <TabsContent value="booking" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Enlaces de Reserva</h2>
+          </div>
+
+          <BookingLinks shopId={shopId} shopName={shop?.name || 'Tienda'} />
         </TabsContent>
       </Tabs>
     </div>
