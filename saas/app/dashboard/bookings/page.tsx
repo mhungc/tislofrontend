@@ -6,7 +6,7 @@ import { FullBookingCalendar } from '@/components/booking/FullBookingCalendar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Calendar, Store } from 'lucide-react'
+import { Calendar, Store, Plus } from 'lucide-react'
 
 export default function BookingsPage() {
   const { shops, loading, loadShops } = useShopStore()
@@ -56,20 +56,28 @@ export default function BookingsPage() {
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Store className="h-4 w-4 text-muted-foreground" />
-          <Select value={selectedShopId} onValueChange={setSelectedShopId}>
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="Selecciona una tienda" />
-            </SelectTrigger>
-            <SelectContent>
-              {shops.map(shop => (
-                <SelectItem key={shop.id} value={shop.id}>
-                  {shop.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-center gap-4">
+          {selectedShopId && (
+            <Button onClick={() => window.location.href = `/dashboard/bookings/new?shop=${selectedShopId}`}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva Reserva
+            </Button>
+          )}
+          <div className="flex items-center gap-2">
+            <Store className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedShopId} onValueChange={setSelectedShopId}>
+              <SelectTrigger className="w-64">
+                <SelectValue placeholder="Selecciona una tienda" />
+              </SelectTrigger>
+              <SelectContent>
+                {shops.map(shop => (
+                  <SelectItem key={shop.id} value={shop.id}>
+                    {shop.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 

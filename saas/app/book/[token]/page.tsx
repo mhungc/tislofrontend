@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { MapPin, Clock, CheckCircle, ArrowLeft, User, Mail, Phone } from 'lucide-react'
 import { toast } from 'sonner'
+import { ModifierSelector } from '@/components/booking/ModifierSelector'
 
 export default function BookingPage() {
   const params = useParams()
@@ -35,6 +36,8 @@ export default function BookingPage() {
   const [step, setStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [bookingComplete, setBookingComplete] = useState(false)
+  const [selectedModifiers, setSelectedModifiers] = useState<string[]>([])
+  const [modifierAdjustments, setModifierAdjustments] = useState({ duration: 0, price: 0 })
 
   const bookingService = new BookingService()
 
@@ -74,17 +77,19 @@ export default function BookingPage() {
   }
 
   const getTotalDuration = () => {
-    return selectedServices.reduce((total, serviceId) => {
+    const baseDuration = selectedServices.reduce((total, serviceId) => {
       const service = services.find(s => s.id === serviceId)
       return total + (service?.duration_minutes || 0)
     }, 0)
+    return baseDuration + modifierAdjustments.duration
   }
 
   const getTotalPrice = () => {
-    return selectedServices.reduce((total, serviceId) => {
+    const basePrice = selectedServices.reduce((total, serviceId) => {
       const service = services.find(s => s.id === serviceId)
-      return total + (service?.price || 0)
+      return total + Number(service?.price || 0)
     }, 0)
+    return basePrice + Number(modifierAdjustments.price || 0)
   }
 
   const handleServiceToggle = (serviceId: string) => {
@@ -93,6 +98,11 @@ export default function BookingPage() {
         ? prev.filter(id => id !== serviceId)
         : [...prev, serviceId]
     )
+  }
+
+  const handleModifiersChange = (modifierIds: string[], totalDuration: number, totalPrice: number) => {
+    setSelectedModifiers(modifierIds)
+    setModifierAdjustments({ duration: totalDuration, price: totalPrice })
   }
 
   const handleSubmit = async () => {
@@ -110,7 +120,8 @@ export default function BookingPage() {
         booking_date: selectedDate,
         start_time: selectedTime,
         services: selectedServices,
-        notes: customerData.notes
+        notes: customerData.notes,
+        modifiers: selectedModifiers
       })
       
       setBookingComplete(true)
@@ -272,6 +283,25 @@ export default function BookingPage() {
               </Card>
             )}
 
+            {/* Modificadores - Solo mostrar si hay servicios seleccionados */}
+            {step === 1 && selectedServices.length > 0 && (
+              <div className="space-y-4">
+                {selectedServices.map(serviceId => (
+                  <ModifierSelector
+                    key={serviceId}
+                    serviceId={serviceId}
+                    customerData={{
+                      customer_name: customerData.name,
+                      customer_email: customerData.email,
+                      customer_phone: customerData.phone
+                    }}
+                    selectedModifiers={selectedModifiers}
+                    onModifiersChange={handleModifiersChange}
+                  />
+                ))}
+              </div>
+            )}
+
             {/* Step 2: Date & Time */}
             {step === 2 && (
               <div className="space-y-6">
@@ -396,15 +426,33 @@ export default function BookingPage() {
                         return service ? (
                           <div key={serviceId} className="flex justify-between text-sm">
                             <span>{service.name}</span>
-                            <span>${service.price || 0}</span>
+                            <span>${Number(service.price || 0).toFixed(2)}</span>
                           </div>
                         ) : null
                       })}
                     </div>
                     <Separator className="my-3" />
+                    {(modifierAdjustments.duration !== 0 || modifierAdjustments.price !== 0) && (
+                      <>
+                        <div className="text-xs text-gray-600 mb-1">Ajustes:</div>
+                        {modifierAdjustments.duration !== 0 && (
+                          <div className="flex justify-between text-xs text-gray-600">
+                            <span>Tiempo adicional:</span>
+                            <span>+{modifierAdjustments.duration} min</span>
+                          </div>
+                        )}
+                        {modifierAdjustments.price !== 0 && (
+                          <div className="flex justify-between text-xs text-gray-600">
+                            <span>Costo adicional:</span>
+                            <span>+${Number(modifierAdjustments.price).toFixed(2)}</span>
+                          </div>
+                        )}
+                        <Separator className="my-2" />
+                      </>
+                    )}
                     <div className="flex justify-between font-medium">
                       <span>Total: {formatDuration(getTotalDuration())}</span>
-                      <span>${getTotalPrice()}</span>
+                      <span>${getTotalPrice().toFixed(2)}</span>
                     </div>
                   </div>
                 )}

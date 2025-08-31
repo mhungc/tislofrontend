@@ -25,6 +25,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ModifierSelector } from '../booking/ModifierSelector'
 
 interface BookingFormProps {
   shopId: string
@@ -78,6 +79,8 @@ export function BookingForm({
   const [isEditing, setIsEditing] = useState(false)
   const [totalAmount, setTotalAmount] = useState(0)
   const [totalDuration, setTotalDuration] = useState(0)
+  const [selectedModifiers, setSelectedModifiers] = useState<string[]>([])
+  const [modifierAdjustments, setModifierAdjustments] = useState({ duration: 0, price: 0 })
 
   const bookingService = new BookingService()
   const serviceService = new ServiceService()
@@ -95,10 +98,10 @@ export function BookingForm({
     }
   }, [bookingId])
 
-  // Calcular total cuando cambien los servicios seleccionados
+  // Calcular total cuando cambien los servicios seleccionados o modificadores
   useEffect(() => {
     calculateTotals()
-  }, [formData.selectedServices])
+  }, [formData.selectedServices, modifierAdjustments])
 
   const loadServices = async () => {
     try {
@@ -144,11 +147,15 @@ export function BookingForm({
 
   const calculateTotals = () => {
     const selectedServiceObjects = services.filter(s => formData.selectedServices.includes(s.id))
-    const total = selectedServiceObjects.reduce((sum, service) => sum + (service.price || 0), 0)
-    const duration = selectedServiceObjects.reduce((sum, service) => sum + service.duration_minutes, 0)
+    const baseTotal = selectedServiceObjects.reduce((sum, service) => sum + (service.price || 0), 0)
+    const baseDuration = selectedServiceObjects.reduce((sum, service) => sum + service.duration_minutes, 0)
     
-    setTotalAmount(total)
-    setTotalDuration(duration)
+    // Aplicar ajustes de modificadores
+    const finalTotal = baseTotal + modifierAdjustments.price
+    const finalDuration = baseDuration + modifierAdjustments.duration
+    
+    setTotalAmount(finalTotal)
+    setTotalDuration(finalDuration)
   }
 
   // Actualizar campo del formulario
@@ -170,6 +177,12 @@ export function BookingForm({
         ? [...prev.selectedServices, serviceId]
         : prev.selectedServices.filter(id => id !== serviceId)
     }))
+  }
+
+  // Manejar cambios en modificadores
+  const handleModifiersChange = (modifierIds: string[], totalDuration: number, totalPrice: number) => {
+    setSelectedModifiers(modifierIds)
+    setModifierAdjustments({ duration: totalDuration, price: totalPrice })
   }
 
   // Validar formulario
@@ -448,6 +461,25 @@ export function BookingForm({
           )}
         </div>
 
+        {/* Modificadores */}
+        {formData.selectedServices.length > 0 && (
+          <div className="space-y-4">
+            {formData.selectedServices.map(serviceId => (
+              <ModifierSelector
+                key={serviceId}
+                serviceId={serviceId}
+                customerData={{
+                  customer_name: formData.customerData.full_name,
+                  customer_email: formData.customerData.email,
+                  customer_phone: formData.customerData.phone
+                }}
+                selectedModifiers={selectedModifiers}
+                onModifiersChange={handleModifiersChange}
+              />
+            ))}
+          </div>
+        )}
+
         {/* Resumen */}
         {formData.selectedServices.length > 0 && (
           <Card className="bg-muted/50">
@@ -462,7 +494,26 @@ export function BookingForm({
                   <span className="text-muted-foreground">Duración total:</span>
                   <span className="font-medium">{formatDuration(totalDuration)}</span>
                 </div>
-                <div className="flex justify-between">
+                {(modifierAdjustments.duration !== 0 || modifierAdjustments.price !== 0) && (
+                  <>
+                    <div className="border-t pt-2 mt-2">
+                      <div className="text-xs text-muted-foreground mb-1">Ajustes por modificadores:</div>
+                      {modifierAdjustments.duration !== 0 && (
+                        <div className="flex justify-between text-xs">
+                          <span>Tiempo adicional:</span>
+                          <span>+{modifierAdjustments.duration} min</span>
+                        </div>
+                      )}
+                      {modifierAdjustments.price !== 0 && (
+                        <div className="flex justify-between text-xs">
+                          <span>Costo adicional:</span>
+                          <span>+{formatPrice(modifierAdjustments.price)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+                <div className="flex justify-between border-t pt-2">
                   <span className="text-muted-foreground">Total:</span>
                   <span className="font-medium text-lg">{formatPrice(totalAmount)}</span>
                 </div>

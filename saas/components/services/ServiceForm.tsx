@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { ArrowLeft, Save, Clock, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
+import { ServiceModifiers } from './ServiceModifiers'
 
 interface ServiceFormProps {
   shopId: string
@@ -271,6 +272,15 @@ export function ServiceForm({
           </form>
         </CardContent>
       </Card>
+
+      {/* Modificadores */}
+      {isEditing && serviceId && (
+        <Card>
+          <CardContent className="pt-6">
+            <ServiceModifiers serviceId={serviceId} />
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

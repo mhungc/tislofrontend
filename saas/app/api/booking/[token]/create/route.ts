@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { BookingLinkRepository } from '@/lib/repositories/booking-link-repository'
 import { BookingRepository } from '@/lib/repositories/booking-repository'
 import { ServiceRepository } from '@/lib/repositories/service-repository'
+import { ModifierService } from '@/lib/services/modifier-service'
 
 export async function POST(
   request: NextRequest,
@@ -30,7 +31,8 @@ export async function POST(
       booking_date,
       start_time,
       services: serviceIds,
-      notes
+      notes,
+      modifiers: modifierIds = []
     } = await request.json()
 
     // Validar datos requeridos
@@ -48,9 +50,40 @@ export async function POST(
       return NextResponse.json({ error: 'Algunos servicios no son válidos' }, { status: 400 })
     }
 
-    // Calcular duración y precio total
-    const totalDuration = validServices.reduce((sum, service) => sum + service.duration_minutes, 0)
-    const totalPrice = validServices.reduce((sum, service) => sum + (service.price || 0), 0)
+    // Obtener modificadores si se proporcionaron
+    const modifierService = new ModifierService()
+    let appliedModifiers: any[] = []
+    let modifierDurationAdjustment = 0
+    let modifierPriceAdjustment = 0
+
+    if (modifierIds.length > 0) {
+      try {
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+        
+        appliedModifiers = await Promise.all(
+          modifierIds.map(async (id: string) => {
+            const { data } = await supabase
+              .from('service_modifiers')
+              .select('*')
+              .eq('id', id)
+              .single()
+            return data
+          })
+        )
+        
+        modifierDurationAdjustment = appliedModifiers.reduce((sum, mod) => sum + (mod?.duration_modifier || 0), 0)
+        modifierPriceAdjustment = appliedModifiers.reduce((sum, mod) => sum + (mod?.price_modifier || 0), 0)
+      } catch (error) {
+        console.warn('Error loading modifiers:', error)
+      }
+    }
+
+    // Calcular duración y precio total (incluyendo modificadores)
+    const baseDuration = validServices.reduce((sum, service) => sum + service.duration_minutes, 0)
+    const basePrice = validServices.reduce((sum, service) => sum + (service.price || 0), 0)
+    const totalDuration = baseDuration + modifierDurationAdjustment
+    const totalPrice = basePrice + modifierPriceAdjustment
 
     // Calcular hora de fin
     const [hours, minutes] = start_time.split(':').map(Number)
@@ -78,6 +111,11 @@ export async function POST(
         service_id: service.id,
         price: service.price || 0,
         duration_minutes: service.duration_minutes
+      })),
+      appliedModifiers.map(modifier => ({
+        service_modifier_id: modifier.id,
+        applied_duration: modifier.duration_modifier || 0,
+        applied_price: modifier.price_modifier || 0
       }))
     )
 

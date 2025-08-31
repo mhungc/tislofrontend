@@ -22,9 +22,15 @@ export interface BookingServiceData {
   duration_minutes: number
 }
 
+export interface BookingModifierData {
+  service_modifier_id: string
+  applied_duration: number
+  applied_price: number
+}
+
 export class BookingRepository {
   
-  async create(bookingData: BookingData, services: BookingServiceData[]) {
+  async create(bookingData: BookingData, services: BookingServiceData[], modifiers: BookingModifierData[] = []) {
     return await prisma.$transaction(async (tx) => {
       // Crear reserva
       const booking = await tx.bookings.create({
@@ -51,6 +57,18 @@ export class BookingRepository {
             service_id: service.service_id,
             price: service.price,
             duration_minutes: service.duration_minutes
+          }))
+        })
+      }
+
+      // Crear modificadores aplicados
+      if (modifiers.length > 0) {
+        await tx.booking_service_modifiers.createMany({
+          data: modifiers.map(modifier => ({
+            booking_id: booking.id,
+            service_modifier_id: modifier.service_modifier_id,
+            applied_duration: modifier.applied_duration,
+            applied_price: modifier.applied_price
           }))
         })
       }

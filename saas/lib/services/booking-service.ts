@@ -67,6 +67,7 @@ export class BookingService {
     start_time: string
     services: string[]
     notes?: string
+    modifiers?: string[]
   }) {
     const response = await fetch(`/api/booking/${token}/create`, {
       method: 'POST',
@@ -148,5 +149,32 @@ export class BookingService {
     }
     
     return true
+  }
+
+  async createManualBooking(shopId: string, bookingData: {
+    customer_name: string
+    customer_email: string
+    customer_phone: string
+    booking_date: string
+    start_time: string
+    end_time: string
+    service_id: string
+    notes: string
+    total_duration: number
+    total_price: number
+  }) {
+    const response = await fetch(`/api/shops/${shopId}/bookings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(bookingData)
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al crear reserva')
+    }
+
+    return await response.json()
   }
 }
