@@ -43,7 +43,7 @@ export function LoginForm({
       if (error) throw error;
       
       setUser(data.user);
-      router.push("/protected");
+      router.push("/dashboard");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -68,7 +68,7 @@ export function LoginForm({
               className="w-full" 
               disabled={isLoading}
               onError={setError}
-              redirectTo="/protected"
+              redirectTo="/dashboard"
             />
             
             <div className="relative">

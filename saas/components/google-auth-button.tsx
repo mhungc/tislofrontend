@@ -12,7 +12,7 @@ interface GoogleAuthButtonProps {
 }
 
 export function GoogleAuthButton({ 
-  redirectTo = "/protected", 
+  redirectTo = "/dashboard", 
   className,
   disabled = false,
   onError 
