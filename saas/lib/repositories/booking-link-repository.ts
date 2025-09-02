@@ -13,7 +13,23 @@ export interface BookingLinkData {
 export class BookingLinkRepository {
   
   async create(shopId: string, expiresInDays: number = 30, maxUses?: number) {
-    const token = randomBytes(32).toString('hex')
+    // Obtener información de la tienda para generar token más descriptivo
+    const shop = await prisma.shops.findUnique({
+      where: { id: shopId },
+      select: { name: true }
+    })
+    
+    // Generar token más descriptivo
+    const shopSlug = shop?.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .substring(0, 20) || 'tienda'
+    
+    const randomPart = randomBytes(16).toString('hex')
+    const token = `${shopSlug}-${randomPart}`
+    
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + expiresInDays)
 
