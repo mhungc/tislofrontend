@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useUser } from '@/hooks/use-user'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -92,9 +93,22 @@ const navigation = [
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+  const { user, profile, loading, signOut } = useUser()
   
   // Extract locale from pathname
   const locale = pathname.split('/')[1] || 'es'
+  
+  const handleSignOut = async () => {
+    await signOut()
+    router.push(`/${locale}/auth/login`)
+  }
+  
+  // Función para obtener iniciales del nombre
+  const getInitials = (name: string | null) => {
+    if (!name) return 'U'
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  }
   
   // Create localized navigation
   const localizedNavigation = navigation.map(item => ({
@@ -224,17 +238,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/avatars/01.png" alt="Usuario" />
-                    <AvatarFallback>JD</AvatarFallback>
+                    <AvatarImage 
+                      src={profile?.avatar_url || undefined} 
+                      alt={profile?.full_name || 'Usuario'} 
+                    />
+                    <AvatarFallback>
+                      {loading ? '...' : getInitials(profile?.full_name)}
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Juan Dueño</p>
+                    <p className="text-sm font-medium leading-none">
+                      {loading ? 'Cargando...' : (profile?.full_name || 'Usuario')}
+                    </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      juan@mitienda.com
+                      {loading ? '' : (profile?.email || user?.email || '')}
                     </p>
                   </div>
                 </DropdownMenuLabel>
@@ -248,7 +269,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <span>Configuración</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Cerrar Sesión</span>
                 </DropdownMenuItem>

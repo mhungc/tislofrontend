@@ -1,105 +1,243 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# ReservaFácil - Sistema de Gestión de Reservas
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+Sistema completo de gestión de reservas online para negocios de servicios como peluquerías, consultorios médicos, spas y centros de bienestar.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+## 🚀 Características Principales
 
-## Features
+### ✅ Autenticación y Usuarios
+- **Google OAuth2** integrado con Supabase Auth
+- **Gestión de perfiles** automática
+- **Protección de rutas** con middleware
+- **Soporte multiidioma** (ES/EN)
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+### ✅ Gestión de Tiendas
+- **CRUD completo** de tiendas
+- **Configuración de horarios** semanales
+- **Excepciones de horario** (días festivos, vacaciones)
+- **Múltiples tiendas** por usuario
 
-## Demo
+### ✅ Sistema de Servicios
+- **Gestión de servicios** con precios y duración
+- **Modificadores inteligentes** para ajustes automáticos:
+  - Por tipo de cliente (niños, adultos mayores)
+  - Por primera visita
+  - Por etiquetas personalizadas
+- **Activación/desactivación** de servicios
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+### ✅ Reservas Online
+- **Enlaces públicos** de reserva por tienda
+- **Calendario interactivo** con disponibilidad en tiempo real
+- **Selección múltiple** de servicios
+- **Aplicación automática** de modificadores
+- **Formulario de contacto** del cliente
+- **Confirmación por email**
 
-## Deploy to Vercel
+### ✅ Dashboard Administrativo
+- **Vista de calendario** con todas las reservas
+- **Gestión manual** de reservas
+- **Estados de reserva** (pendiente, confirmada, cancelada)
+- **Filtros por servicio** y fecha
+- **Resumen financiero**
 
-Vercel deployment will guide you through creating a Supabase account and project.
+### ✅ Calendario y Disponibilidad
+- **Cálculo automático** de slots disponibles
+- **Consideración de horarios** de la tienda
+- **Bloqueo de horarios** ocupados
+- **Duración variable** según servicios seleccionados
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+## 🛠️ Stack Tecnológico
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+### Frontend
+- **Next.js 15** con App Router
+- **React 19** con TypeScript
+- **Tailwind CSS** para estilos
+- **Radix UI** para componentes
+- **Lucide React** para iconos
+- **Sonner** para notificaciones
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+### Backend
+- **Supabase** como BaaS (Backend as a Service)
+- **PostgreSQL** como base de datos
+- **Prisma ORM** para manejo de datos
+- **Supabase Auth** para autenticación
+- **Edge Functions** para lógica de negocio
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+### Deployment
+- **Vercel** para hosting y CI/CD
+- **Variables de entorno** configuradas
+- **Build optimizado** para producción
 
-## Clone and run locally
+## 📁 Estructura del Proyecto
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+```
+saas/
+├── app/                          # App Router de Next.js
+│   ├── [locale]/                # Rutas internacionalizadas
+│   │   ├── auth/               # Páginas de autenticación
+│   │   ├── dashboard/          # Dashboard administrativo
+│   │   │   ├── bookings/       # Gestión de reservas
+│   │   │   ├── services/       # Gestión de servicios
+│   │   │   ├── shops/          # Gestión de tiendas
+│   │   │   └── schedule/       # Configuración de horarios
+│   │   └── protected/          # Rutas protegidas
+│   ├── book/                   # Reservas públicas
+│   │   └── [token]/           # Página de reserva por token
+│   └── api/                    # API Routes
+│       ├── auth/              # Endpoints de autenticación
+│       ├── booking/           # API de reservas públicas
+│       └── shops/             # API de gestión de tiendas
+├── components/                 # Componentes React
+│   ├── booking/               # Componentes de reserva
+│   ├── calendar/              # Componentes de calendario
+│   ├── services/              # Componentes de servicios
+│   ├── shops/                 # Componentes de tiendas
+│   └── ui/                    # Componentes base (shadcn/ui)
+├── lib/                       # Librerías y utilidades
+│   ├── repositories/          # Capa de acceso a datos
+│   ├── services/              # Lógica de negocio
+│   ├── supabase/             # Configuración de Supabase
+│   └── types/                # Definiciones de tipos
+└── prisma/                   # Esquema de base de datos
+```
 
-2. Create a Next.js app using the Supabase Starter template npx command
+## 🗄️ Modelo de Base de Datos
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+### Tablas Principales
+- **profiles** - Perfiles de usuario
+- **shops** - Tiendas/negocios
+- **services** - Servicios ofrecidos
+- **shop_schedules** - Horarios semanales
+- **schedule_exceptions** - Excepciones de horario
+- **service_modifiers** - Modificadores de servicios
+- **bookings** - Reservas
+- **booking_services** - Servicios por reserva
+- **booking_links** - Enlaces de reserva
+- **customers** - Clientes (generados automáticamente)
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+### Relaciones Clave
+- Usuario → Múltiples Tiendas
+- Tienda → Múltiples Servicios
+- Tienda → Horarios Semanales
+- Servicio → Modificadores
+- Reserva → Múltiples Servicios
+- Reserva → Cliente
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+## ⚙️ Configuración del Proyecto
 
-3. Use `cd` to change into the app's directory
+### 1. Variables de Entorno
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=tu_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
 
-   ```bash
-   cd with-supabase-app
-   ```
+# Base de datos
+DATABASE_URL=tu_database_url
 
-4. Rename `.env.example` to `.env.local` and update the following:
+# Sitio
+NEXT_PUBLIC_SITE_URL=https://tu-dominio.vercel.app
+```
 
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=[INSERT SUPABASE PROJECT API ANON KEY]
-   ```
+### 2. Configuración de Google OAuth2
 
-   Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+**Google Cloud Console:**
+- Authorized JavaScript origins: `http://localhost:3000`, `https://tu-app.vercel.app`
+- Authorized redirect URIs: `http://localhost:3000/auth/callback`, `https://tu-app.vercel.app/auth/callback`
 
-5. You can now run the Next.js local development server:
+**Supabase Dashboard:**
+- Site URL: `https://tu-app.vercel.app`
+- Redirect URLs: `http://localhost:3000/**`, `https://tu-app.vercel.app/**`
 
-   ```bash
-   npm run dev
-   ```
+### 3. Scripts de Desarrollo
+```bash
+# Desarrollo
+npm run dev
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+# Build para producción
+npm run build
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+# Generar cliente Prisma
+npm run prisma:generate
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+# Sincronizar esquema con DB
+npm run prisma:push
+```
 
-## Feedback and issues
+## 🚀 Deployment en Vercel
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+### Configuración Automática
+- **Build Command:** `prisma generate && next build`
+- **Install Command:** `npm install`
+- **Output Directory:** `.next`
 
-## More Supabase examples
+### Variables de Entorno en Vercel
+Configurar todas las variables de entorno en el dashboard de Vercel bajo Settings → Environment Variables.
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+## 🔧 Funcionalidades Implementadas Hoy
+
+### ✅ Correcciones de Build
+- Resueltos **todos los errores de TypeScript**
+- Corregidos **componentes de Radix UI** (Select, Switch)
+- Agregados **métodos faltantes** en servicios y repositorios
+- Solucionados **problemas de tipos** en Supabase
+
+### ✅ Configuración de Deployment
+- **Script de build** con Prisma generate
+- **Variables de entorno** para producción
+- **Configuración OAuth2** para múltiples dominios
+- **Layout correcto** para rutas públicas
+
+### ✅ Estructura de Rutas
+- **Rutas internacionalizadas** con [locale]
+- **Rutas públicas** para reservas (/book/[token])
+- **API endpoints** completos
+- **Middleware** de autenticación
+
+### ✅ Componentes y UI
+- **Formularios de reserva** completos
+- **Calendario interactivo** con disponibilidad
+- **Dashboard administrativo** funcional
+- **Modificadores inteligentes** implementados
+
+## 📋 Casos de Uso
+
+### Para Dueños de Negocio
+1. **Registro** con Google OAuth2
+2. **Crear tienda** con información básica
+3. **Configurar servicios** con precios y duración
+4. **Establecer horarios** semanales
+5. **Generar enlaces** de reserva
+6. **Gestionar reservas** desde el dashboard
+
+### Para Clientes
+1. **Acceder** al enlace de reserva
+2. **Seleccionar servicios** deseados
+3. **Elegir fecha y hora** disponible
+4. **Completar información** de contacto
+5. **Confirmar reserva** y recibir confirmación
+
+## 🎯 Tipos de Negocio Soportados
+
+- **💇‍♀️ Peluquerías y Salones**
+- **🏥 Consultorios Médicos**
+- **💆‍♀️ Spas y Centros de Bienestar**
+- **🎉 Organización de Eventos**
+- **🏋️‍♂️ Entrenadores Personales**
+- **🎓 Tutorías y Clases**
+
+## 🔮 Próximas Funcionalidades
+
+- **📊 Reportes y Analytics** avanzados
+- **📱 Notificaciones push** y SMS
+- **💳 Integración de pagos** online
+- **📧 Templates de email** personalizables
+- **🔄 Sincronización** con calendarios externos
+- **👥 Gestión de empleados** y roles
+
+## 🤝 Contribución
+
+El proyecto está listo para producción y puede ser extendido con nuevas funcionalidades según las necesidades del negocio.
+
+---
+
+**Desarrollado con ❤️ usando Next.js, Supabase y Vercel**
