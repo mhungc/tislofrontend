@@ -92,6 +92,15 @@ const navigation = [
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
+  
+  // Extract locale from pathname
+  const locale = pathname.split('/')[1] || 'es'
+  
+  // Create localized navigation
+  const localizedNavigation = navigation.map(item => ({
+    ...item,
+    href: `/${locale}${item.href}`
+  }))
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -114,7 +123,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
           <ScrollArea className="h-[calc(100vh-4rem)]">
             <nav className="p-4 space-y-2">
-              {navigation.map((item) => (
+              {localizedNavigation.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -148,7 +157,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
-                  {navigation.map((item) => (
+                  {localizedNavigation.map((item) => (
                     <li key={item.href}>
                       <Link
                         href={item.href}
