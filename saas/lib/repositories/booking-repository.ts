@@ -133,6 +133,17 @@ export class BookingRepository {
     })
   }
 
+  async update(id: string, data: Partial<BookingData>) {
+    return await prisma.bookings.update({
+      where: { id },
+      data: {
+        ...data,
+        booking_date: data.booking_date ? new Date(data.booking_date) : undefined,
+        updated_at: new Date()
+      }
+    })
+  }
+
   async updateStatus(id: string, status: 'pending' | 'confirmed' | 'cancelled') {
     return await prisma.bookings.update({
       where: { id },

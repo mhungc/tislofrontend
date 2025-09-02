@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { useTranslations } from 'next-intl'
+// import { useTranslations } from 'next-intl' // No usado
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -22,7 +22,6 @@ import {
 } from 'lucide-react'
 
 export function LandingPage() {
-  const t = useTranslations('landing');
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
@@ -39,10 +38,10 @@ export function LandingPage() {
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
             <Button variant="ghost" onClick={() => window.location.href = '/auth/login'}>
-              {t('header.login')}
+              Iniciar Sesión
             </Button>
             <Button onClick={() => window.location.href = '/auth/sign-up'}>
-              {t('header.signup')}
+              Comenzar Gratis
             </Button>
           </div>
         </div>
@@ -52,16 +51,16 @@ export function LandingPage() {
       <section className="container mx-auto px-4 py-20">
         <div className="text-center max-w-4xl mx-auto">
           <Badge className="mb-4 bg-blue-100 text-blue-700 border-blue-200">
-            {t('hero.badge')}
+            🚀 Nuevo: Modificadores Inteligentes
           </Badge>
           
           <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            {t('hero.title')}
-            <span className="block">{t('hero.subtitle')}</span>
+            Gestiona tu Negocio de Servicios
+            <span className="block">Sin Complicaciones</span>
           </h1>
           
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            {t('hero.description')}
+            La plataforma todo-en-uno para reservas online, gestión de clientes y crecimiento de tu negocio.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
@@ -71,22 +70,22 @@ export function LandingPage() {
             />
             <Button variant="outline" className="w-full sm:w-auto px-8 py-3 text-lg group">
               <Play className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-              {t('hero.demo')}
+              Ver Demo
             </Button>
           </div>
 
           <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
-              {t('hero.benefits.free')}
+              Gratis por 30 días
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
-              {t('hero.benefits.noCard')}
+              Sin tarjeta de crédito
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
-              {t('hero.benefits.setup')}
+              Configuración en 5 minutos
             </div>
           </div>
         </div>

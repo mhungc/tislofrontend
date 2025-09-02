@@ -103,7 +103,7 @@ export class BookingService {
     shopId: string, 
     startDate: string, 
     endDate: string
-  ): Promise<BookingWithServices[]> {
+  ): Promise<any[]> {
     const bookings = await this.bookingRepo.getByDateRange(shopId, startDate, endDate)
     
     return bookings.map(booking => ({
@@ -117,6 +117,27 @@ export class BookingService {
         price: parseFloat(bs.price.toString()) || 0
       })) || []
     }))
+  }
+
+  async getBooking(id: string) {
+    const booking = await this.bookingRepo.getById(id)
+    if (!booking) return null
+    
+    return {
+      ...booking,
+      booking_date: booking.booking_date.toISOString().split('T')[0],
+      total_price: parseFloat(booking.total_price?.toString() || '0'),
+      services: booking.booking_services?.map((bs: any) => ({
+        id: bs.services?.id || '',
+        name: bs.services?.name || 'Servicio',
+        duration_minutes: bs.duration_minutes || 0,
+        price: parseFloat(bs.price.toString()) || 0
+      })) || []
+    }
+  }
+
+  async updateBooking(id: string, bookingData: any) {
+    return await this.bookingRepo.update(id, bookingData)
   }
 
   async updateBookingStatus(id: string, status: 'pending' | 'confirmed' | 'cancelled') {

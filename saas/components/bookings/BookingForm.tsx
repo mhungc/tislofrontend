@@ -232,12 +232,18 @@ export function BookingForm({
       } else {
         // Crear nueva reserva
         const bookingData = {
-          shopId,
-          customerData: formData.customerData,
-          bookingData: formData.bookingData,
-          serviceIds: formData.selectedServices
+          customer_name: formData.customerData.full_name,
+          customer_email: formData.customerData.email,
+          customer_phone: formData.customerData.phone,
+          booking_date: formData.bookingData.booking_date,
+          start_time: formData.bookingData.start_time,
+          end_time: formData.bookingData.end_time,
+          service_id: formData.selectedServices[0], // Por ahora solo el primer servicio
+          notes: formData.bookingData.notes,
+          total_duration: totalDuration,
+          total_price: totalAmount
         }
-        await bookingService.createBooking(bookingData)
+        await bookingService.createManualBooking(shopId, bookingData)
         toast.success('Reserva creada correctamente')
       }
       
@@ -387,16 +393,16 @@ export function BookingForm({
 
           <div>
             <Label htmlFor="booking-status">Estado</Label>
-            <Select
+            <select
               value={formData.bookingData.status}
               onChange={(e) => updateField('bookingData', 'status', e.target.value)}
-              className="mt-1"
+              className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="pending">Pendiente</option>
               <option value="confirmed">Confirmado</option>
               <option value="cancelled">Cancelado</option>
               <option value="completed">Completado</option>
-            </Select>
+            </select>
           </div>
 
           <div>

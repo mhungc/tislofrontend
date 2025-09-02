@@ -78,7 +78,7 @@ export class BookingLinkRepository {
     
     if (!link || !link.is_active) return false
     if (link.expires_at < new Date()) return false
-    if (link.max_uses && link.current_uses >= link.max_uses) return false
+    if (link.max_uses && (link.current_uses || 0) >= link.max_uses) return false
     
     return true
   }

@@ -21,7 +21,7 @@ async function testTableSuggestions() {
 // Si-
 // - tienes una tabla llamada 'users', prueba esto:
 async function testColumnSuggestions() {
-  co nst { data, error } = await supabase
+  const { data, error } = await supabase
     .from('users') // ← Cambia por una tabla que tengas
     .select('') // ← Escribe aquí y debería sugerir las columnas
 }
@@ -38,11 +38,12 @@ async function testSQLQueries() {
 // Prueba las funciones disponibles:
 async function testSupabaseFunctions() {
   // Auth
-  const { user, error: authError } = await supabase.auth.getUser()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
   
   // Storage
   const { data: files, error: storageError } = await supabase.storage
     .from('') // ← Debería sugerir tus buckets de storage
+    .list()
   
   // RPC (funciones personalizadas)
   const { data: rpcData, error: rpcError } = await supabase.rpc('') // ← Debería sugerir tus funciones

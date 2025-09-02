@@ -25,10 +25,10 @@ export class ProfileService {
       data: {
         id: userId,
         email: user.email || '',
-        full_name: user.raw_user_meta_data?.full_name || 
-                  user.raw_user_meta_data?.name || 
+        full_name: (user.raw_user_meta_data as any)?.full_name || 
+                  (user.raw_user_meta_data as any)?.name || 
                   null,
-        avatar_url: user.raw_user_meta_data?.avatar_url || null
+        avatar_url: (user.raw_user_meta_data as any)?.avatar_url || null
       }
     })
 

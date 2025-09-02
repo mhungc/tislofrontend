@@ -139,7 +139,7 @@ export function ScheduleViewer({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {daySchedules.map((schedule, index) => (
+                    {daySchedules.map((schedule: any, index: number) => (
                       <div key={index} className="flex items-center gap-1 text-sm">
                         <Clock className="h-3 w-3 text-muted-foreground" />
                         <span>

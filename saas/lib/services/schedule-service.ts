@@ -71,6 +71,78 @@ export class ScheduleService {
     return data.schedules || []
   }
 
+  // 📊 Calcular disponibilidad para un rango de fechas
+  async calculateAvailability(
+    shopId: string, 
+    startDate: string, 
+    endDate: string, 
+    serviceIds: string[] = []
+  ): Promise<DayAvailability[]> {
+    const servicesParam = serviceIds.length > 0 ? `&services=${serviceIds.join(',')}` : ''
+    const response = await fetch(
+      `/api/shops/${shopId}/calendar?start=${startDate}&end=${endDate}${servicesParam}`
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al calcular disponibilidad')
+    }
+
+    const data = await response.json()
+    return data.calendar || []
+  }
+
+  // 📅 Obtener excepciones de horario
+  async getScheduleExceptions(
+    shopId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<ScheduleException[]> {
+    const response = await fetch(
+      `/api/shops/${shopId}/schedule/exceptions?start=${startDate}&end=${endDate}`
+    )
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al obtener excepciones')
+    }
+
+    const data = await response.json()
+    return data.exceptions || []
+  }
+
+  // ➕ Crear excepción de horario
+  async createScheduleException(exceptionData: Omit<ScheduleExceptionInsert, 'id'>): Promise<ScheduleException> {
+    const response = await fetch('/api/schedule/exceptions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(exceptionData),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al crear excepción')
+    }
+
+    const data = await response.json()
+    return data.exception
+  }
+
+  // 🗑️ Eliminar excepción de horario
+  async deleteScheduleException(exceptionId: string): Promise<void> {
+    const response = await fetch(`/api/schedule/exceptions/${exceptionId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al eliminar excepción')
+    }
+  }
 
 }
 
