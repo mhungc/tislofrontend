@@ -1,0 +1,20 @@
+{
+  "landing": {
+    "header": {
+      "login": "Sign In",
+      "signup": "Get Started Free"
+    },
+    "hero": {
+      "badge": "🚀 New: Smart Service Modifiers",
+      "title": "Manage Your Service Business",
+      "subtitle": "Without Complications",
+      "description": "The all-in-one platform for salons, clinics, spas and events. Online bookings, smart management and happy customers.",
+      "demo": "Watch Demo",
+      "benefits": {
+        "free": "Free for 30 days",
+        "noCard": "No credit card required",
+        "setup": "5-minute setup"
+      }
+    }
+  }
+}

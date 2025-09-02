@@ -1,0 +1,20 @@
+{
+  "landing": {
+    "header": {
+      "login": "Iniciar Sesión",
+      "signup": "Comenzar Gratis"
+    },
+    "hero": {
+      "badge": "🚀 Nuevo: Modificadores Inteligentes de Servicio",
+      "title": "Gestiona tu Negocio de Servicios",
+      "subtitle": "Sin Complicaciones",
+      "description": "La plataforma todo-en-uno para peluquerías, consultorios, spas y eventos. Reservas online, gestión inteligente y clientes felices.",
+      "demo": "Ver Demo",
+      "benefits": {
+        "free": "Gratis por 30 días",
+        "noCard": "Sin tarjeta de crédito",
+        "setup": "Configuración en 5 minutos"
+      }
+    }
+  }
+}

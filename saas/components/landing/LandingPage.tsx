@@ -1,10 +1,12 @@
 'use client'
 
 import React from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { GoogleAuthButton } from '@/components/google-auth-button'
+import { LanguageSwitcher } from '@/components/language-switcher'
 import { 
   Calendar, 
   Clock, 
@@ -20,6 +22,7 @@ import {
 } from 'lucide-react'
 
 export function LandingPage() {
+  const t = useTranslations('landing');
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
@@ -34,11 +37,12 @@ export function LandingPage() {
             </span>
           </div>
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <Button variant="ghost" onClick={() => window.location.href = '/auth/login'}>
-              Iniciar Sesión
+              {t('header.login')}
             </Button>
             <Button onClick={() => window.location.href = '/auth/sign-up'}>
-              Comenzar Gratis
+              {t('header.signup')}
             </Button>
           </div>
         </div>
@@ -48,17 +52,16 @@ export function LandingPage() {
       <section className="container mx-auto px-4 py-20">
         <div className="text-center max-w-4xl mx-auto">
           <Badge className="mb-4 bg-blue-100 text-blue-700 border-blue-200">
-            🚀 Nuevo: Modificadores Inteligentes de Servicio
+            {t('hero.badge')}
           </Badge>
           
           <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Gestiona tu Negocio de Servicios
-            <span className="block">Sin Complicaciones</span>
+            {t('hero.title')}
+            <span className="block">{t('hero.subtitle')}</span>
           </h1>
           
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            La plataforma todo-en-uno para peluquerías, consultorios, spas y eventos. 
-            Reservas online, gestión inteligente y clientes felices.
+            {t('hero.description')}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
@@ -68,22 +71,22 @@ export function LandingPage() {
             />
             <Button variant="outline" className="w-full sm:w-auto px-8 py-3 text-lg group">
               <Play className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-              Ver Demo
+              {t('hero.demo')}
             </Button>
           </div>
 
           <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
-              Gratis por 30 días
+              {t('hero.benefits.free')}
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
-              Sin tarjeta de crédito
+              {t('hero.benefits.noCard')}
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
-              Configuración en 5 minutos
+              {t('hero.benefits.setup')}
             </div>
           </div>
         </div>
