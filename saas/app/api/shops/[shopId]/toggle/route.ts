@@ -6,7 +6,7 @@ const shopRepository = new ShopRepository()
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { shopId: string } }
+  { params }: { params: Promise<{ shopId: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -16,7 +16,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 
-    const shopId = params.shopId
+    const { shopId } = await params
     const shop = await shopRepository.getByIdForOwner(shopId, user.id)
     
     if (!shop) {

@@ -38,6 +38,18 @@ export class ShopService {
     return response.json()
   }
 
+  async getShop(shopId: string) {
+    const response = await fetch(`/api/shops/${shopId}`)
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al obtener la tienda')
+    }
+
+    const data = await response.json()
+    return data.shop
+  }
+
   async getUserShops() {
     return this.getShops()
   }

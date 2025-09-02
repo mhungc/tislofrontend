@@ -252,10 +252,10 @@ export function ShopForm({
             
             <div>
               <Label htmlFor="shop-timezone">Zona Horaria</Label>
-              <Select
+              <select
                 value={formData.timezone}
                 onChange={(e) => updateField('timezone', e.target.value)}
-                className="mt-1"
+                className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="America/New_York">Este (EST/EDT)</option>
                 <option value="America/Chicago">Centro (CST/CDT)</option>
@@ -267,7 +267,7 @@ export function ShopForm({
                 <option value="America/Mexico_City">México (CST/CDT)</option>
                 <option value="America/Bogota">Colombia (COT)</option>
                 <option value="America/Argentina/Buenos_Aires">Argentina (ART)</option>
-              </Select>
+              </select>
             </div>
           </div>
 

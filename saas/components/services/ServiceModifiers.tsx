@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
+// import { Switch } from '@/components/ui/switch' // No usado
 import { Badge } from '@/components/ui/badge'
 import { Plus, Edit, Trash2, Clock, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
@@ -235,9 +235,11 @@ function ModifierForm({ serviceId, modifier, onSuccess, onCancel }: ModifierForm
           </div>
 
           <div className="flex items-center space-x-2">
-            <Switch
+            <input
+              type="checkbox"
               checked={formData.auto_apply}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, auto_apply: checked }))}
+              onChange={(e) => setFormData(prev => ({ ...prev, auto_apply: e.target.checked }))}
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
             <Label>Aplicar automáticamente</Label>
           </div>

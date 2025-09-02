@@ -234,10 +234,12 @@ export function ServiceForm({
 
             {/* Estado activo */}
             <div className="flex items-center space-x-2">
-              <Switch
+              <input
+                type="checkbox"
                 id="is_active"
                 checked={formData.is_active}
-                onCheckedChange={(checked) => handleInputChange('is_active', checked)}
+                onChange={(e) => handleInputChange('is_active', e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
               <Label htmlFor="is_active">Servicio activo</Label>
             </div>

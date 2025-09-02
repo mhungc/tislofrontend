@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { ManualBookingForm } from '@/components/bookings/ManualBookingForm'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export default function NewBookingPage() {
+function NewBookingContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [shopId, setShopId] = useState<string>('')
@@ -59,5 +59,17 @@ export default function NewBookingPage() {
         />
       </div>
     </div>
+  )
+}
+
+export default function NewBookingPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <NewBookingContent />
+    </Suspense>
   )
 }

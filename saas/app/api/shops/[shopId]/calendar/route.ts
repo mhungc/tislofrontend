@@ -49,6 +49,14 @@ export async function GET(
         const bookingWithServices = await bookingRepo.getById(booking.id)
         return {
           ...booking,
+          customer_name: booking.customer_name || 'Cliente',
+          customer_email: booking.customer_email || '',
+          customer_phone: booking.customer_phone || undefined,
+          booking_date: booking.booking_date.toISOString().split('T')[0],
+          total_duration: booking.total_duration || 0,
+          total_price: booking.total_price ? parseFloat(booking.total_price.toString()) : 0,
+          status: (booking.status as 'pending' | 'confirmed' | 'cancelled') || 'pending',
+          notes: booking.notes || undefined,
           services: bookingWithServices?.booking_services?.map((bs: any) => ({
             name: bs.services?.name || 'Servicio',
             duration_minutes: bs.duration_minutes || 0,

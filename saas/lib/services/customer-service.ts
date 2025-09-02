@@ -171,8 +171,8 @@ export class CustomerService {
         sum:total_amount
       `)
       .eq('shop_id', shopId)
-      .group('customer_id, customers.full_name, customers.email, customers.phone')
-      .order('count', { ascending: false })
+      // .group('customer_id, customers.full_name, customers.email, customers.phone') // No soportado
+      .order('created_at', { ascending: false })
       .limit(limit)
 
     if (error) throw new Error(`Error al obtener clientes top: ${error.message}`)
@@ -189,8 +189,8 @@ export class CustomerService {
         sum:total_amount
       `)
       .eq('shop_id', shopId)
-      .group('customer_id, customers.full_name, customers.email, customers.phone')
-      .order('sum', { ascending: false })
+      // .group('customer_id, customers.full_name, customers.email, customers.phone') // No soportado
+      .order('created_at', { ascending: false })
       .limit(limit)
 
     if (error) throw new Error(`Error al obtener clientes por valor: ${error.message}`)
