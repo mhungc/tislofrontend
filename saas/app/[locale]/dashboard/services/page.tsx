@@ -61,7 +61,8 @@ export default function ServicesPage() {
   )
 
   const handleShopSelect = (shop: Shop) => {
-    router.push(`/dashboard/shops/${shop.id}/services?shop=${encodeURIComponent(JSON.stringify(shop))}`)
+    const locale = window.location.pathname.split('/')[1] || 'es'
+    router.push(`/${locale}/dashboard/shops/${shop.id}/services?shop=${encodeURIComponent(JSON.stringify(shop))}`)
   }
 
   if (loading) {
@@ -82,7 +83,10 @@ export default function ServicesPage() {
             Gestiona los servicios de tus tiendas
           </p>
         </div>
-        <Button onClick={() => router.push('/dashboard/shops')}>
+        <Button onClick={() => {
+          const locale = window.location.pathname.split('/')[1] || 'es'
+          router.push(`/${locale}/dashboard/shops`)
+        }}>
           <Plus className="mr-2 h-4 w-4" />
           Nueva Tienda
         </Button>
@@ -123,7 +127,10 @@ export default function ServicesPage() {
                   }
                 </p>
                 {!searchTerm && (
-                  <Button onClick={() => router.push('/dashboard/shops')}>
+                  <Button onClick={() => {
+                    const locale = window.location.pathname.split('/')[1] || 'es'
+                    router.push(`/${locale}/dashboard/shops`)
+                  }}>
                     <Plus className="h-4 w-4 mr-2" />
                     Crear Primera Tienda
                   </Button>

@@ -44,7 +44,9 @@ export default function ShopsPage() {
     setShowCreateForm(false)
     setRefreshKey(prev => prev + 1)
     if (shopId) {
-      router.push(`/dashboard/shops/${shopId}/schedule`)
+      // Get current locale from pathname
+      const locale = window.location.pathname.split('/')[1] || 'es'
+      router.push(`/${locale}/dashboard/shops/${shopId}/schedule`)
     }
   }
 

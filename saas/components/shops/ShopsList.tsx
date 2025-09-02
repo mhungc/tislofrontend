@@ -281,7 +281,8 @@ export function ShopsList({
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      router.push(`/dashboard/shops/${shop.id}/config?shop=${encodeURIComponent(JSON.stringify(shop))}`)
+                      const locale = window.location.pathname.split('/')[1] || 'es'
+                      router.push(`/${locale}/dashboard/shops/${shop.id}/config?shop=${encodeURIComponent(JSON.stringify(shop))}`)
                     }}
                     className="flex-1"
                   >
