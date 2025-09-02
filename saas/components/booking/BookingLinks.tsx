@@ -80,9 +80,17 @@ export function BookingLinks({ shopId, shopName }: BookingLinksProps) {
   }
 
   const getBaseUrl = () => {
-    return typeof window !== 'undefined' 
-      ? `${window.location.protocol}//${window.location.host}`
-      : process.env.NEXT_PUBLIC_APP_URL || ''
+    // En el cliente, usar la URL actual
+    if (typeof window !== 'undefined') {
+      return `${window.location.protocol}//${window.location.host}`
+    }
+    
+    // En el servidor, usar variables de entorno
+    return process.env.NEXT_PUBLIC_SITE_URL || 
+           process.env.NEXT_PUBLIC_APP_URL || 
+           (process.env.NODE_ENV === 'production' 
+             ? 'https://tu-app.vercel.app' 
+             : 'http://localhost:3000')
   }
 
   if (loading) {

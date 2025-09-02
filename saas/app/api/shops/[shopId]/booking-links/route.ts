@@ -28,9 +28,16 @@ export async function POST(
     
     const link = await linkRepo.create(shopId, expiresInDays, maxUses)
     
+    // Generar URL con dominio correcto
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                   process.env.NEXT_PUBLIC_APP_URL || 
+                   (process.env.NODE_ENV === 'production' 
+                     ? 'https://tu-app.vercel.app' 
+                     : 'http://localhost:3000')
+    
     return NextResponse.json({ 
       link,
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/book/${link.token}`
+      url: `${baseUrl}/book/${link.token}`
     })
   } catch (error) {
     console.error('Error:', error)
