@@ -1,0 +1,130 @@
+{
+  "landing": {
+    "header": {
+      "login": "Sign In",
+      "signup": "Get Started Free"
+    },
+    "hero": {
+      "badge": "🚀 New: Smart Service Modifiers",
+      "title": "Manage Your Service Business",
+      "subtitle": "Without Complications",
+      "description": "The all-in-one platform for salons, clinics, spas and events. Online bookings, smart management and happy customers.",
+      "demo": "Watch Demo",
+      "benefits": {
+        "free": "Free for 30 days",
+        "noCard": "No credit card required",
+        "setup": "5-minute setup"
+      }
+    },
+    "features": {
+      "title": "Everything you need to grow",
+      "subtitle": "From bookings to reports, we have the tools your business needs",
+      "booking": {
+        "title": "24/7 Online Bookings",
+        "description": "Your customers can book anytime they want. Custom links and automatic confirmation."
+      },
+      "modifiers": {
+        "title": "Smart Modifiers",
+        "description": "Automatic time and price adjustments based on customer type. Perfect for specialized services."
+      },
+      "analytics": {
+        "title": "Reports & Analytics",
+        "description": "Know your business with detailed reports on revenue, frequent customers and trends."
+      }
+    },
+    "useCases": {
+      "title": "Perfect for your business type",
+      "salon": {
+        "title": "Hair Salons",
+        "description": "Cuts, dyes, special treatments"
+      },
+      "clinic": {
+        "title": "Clinics",
+        "description": "Medical appointments, therapies, follow-ups"
+      },
+      "spa": {
+        "title": "Spas & Wellness",
+        "description": "Massages, facials, relaxation"
+      },
+      "events": {
+        "title": "Events",
+        "description": "Children's parties, celebrations"
+      }
+    },
+    "pricing": {
+      "title": "Transparent and fair pricing",
+      "subtitle": "Start free and scale as you grow",
+      "starter": {
+        "name": "Starter",
+        "price": "Free",
+        "description": "To get started",
+        "features": {
+          "bookings": "Up to 50 bookings/month",
+          "shops": "1 shop",
+          "basic": "Basic online bookings"
+        },
+        "button": "Start Free"
+      },
+      "professional": {
+        "name": "Professional",
+        "price": "$29",
+        "period": "/month",
+        "description": "For growing businesses",
+        "badge": "Most Popular",
+        "features": {
+          "unlimited": "Unlimited bookings",
+          "shops": "Up to 3 shops",
+          "modifiers": "Smart modifiers",
+          "reports": "Advanced reports"
+        },
+        "button": "Try 30 days free"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "price": "$99",
+        "period": "/month",
+        "description": "For chains and franchises",
+        "features": {
+          "everything": "Everything in Professional",
+          "unlimited": "Unlimited shops",
+          "api": "Custom API",
+          "support": "Priority support"
+        },
+        "button": "Contact Sales"
+      }
+    },
+    "cta": {
+      "title": "Ready to transform your business?",
+      "subtitle": "Join hundreds of businesses that already trust ReservaFácil",
+      "sales": "Talk to Sales",
+      "security": "Secure and encrypted data",
+      "businesses": "+500 businesses trust us",
+      "rating": "4.9/5 satisfaction"
+    },
+    "footer": {
+      "description": "The easiest booking management platform to use in the market.",
+      "product": {
+        "title": "Product",
+        "features": "Features",
+        "pricing": "Pricing",
+        "integrations": "Integrations",
+        "api": "API"
+      },
+      "support": {
+        "title": "Support",
+        "help": "Help Center",
+        "contact": "Contact",
+        "status": "System Status",
+        "community": "Community"
+      },
+      "company": {
+        "title": "Company",
+        "about": "About",
+        "blog": "Blog",
+        "careers": "Careers",
+        "privacy": "Privacy"
+      },
+      "copyright": "© 2024 ReservaFácil. All rights reserved."
+    }
+  }
+}

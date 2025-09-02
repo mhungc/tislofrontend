@@ -1,40 +1,39 @@
-import { createClient } from "@/lib/supabase/server";
-import { type EmailOtpType } from "@supabase/supabase-js";
-import { redirect } from "next/navigation";
-import { type NextRequest } from "next/server";
+import { createClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const token_hash = searchParams.get("token_hash");
-  const type = searchParams.get("type") as EmailOtpType | null;
-  const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
+  const next = searchParams.get('next') ?? '/'
+  
+  // Detect locale from referrer or accept-language header
+  const referrer = request.headers.get('referer')
+  const acceptLanguage = request.headers.get('accept-language')
+  
+  let locale = 'es' // default
+  
+  if (referrer && referrer.includes('/en/')) {
+    locale = 'en'
+  } else if (acceptLanguage && acceptLanguage.includes('en')) {
+    locale = 'en'
+  }
 
-  const supabase = await createClient();
-
-  // Handle OAuth callback (Google, etc.)
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const supabase = await createClient()
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      redirect(next);
-    } else {
-      redirect(`/auth/error?error=${error?.message}`);
+      const forwardedHost = request.headers.get('x-forwarded-host')
+      const isLocalEnv = process.env.NODE_ENV === 'development'
+      if (isLocalEnv) {
+        return NextResponse.redirect(`${origin}/${locale}${next}`)
+      } else if (forwardedHost) {
+        return NextResponse.redirect(`https://${forwardedHost}/${locale}${next}`)
+      } else {
+        return NextResponse.redirect(`${origin}/${locale}${next}`)
+      }
     }
   }
 
-  // Handle email confirmation
-  if (token_hash && type) {
-    const { error } = await supabase.auth.verifyOtp({
-      type,
-      token_hash,
-    });
-    if (!error) {
-      redirect(next);
-    } else {
-      redirect(`/auth/error?error=${error?.message}`);
-    }
-  }
-
-  // If no valid parameters, redirect to error
-  redirect(`/auth/error?error=Invalid authentication parameters`);
+  // Return the user to an error page with instructions
+  return NextResponse.redirect(`${origin}/${locale}/auth/error`)
 }

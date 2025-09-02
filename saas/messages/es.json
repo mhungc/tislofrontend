@@ -1,0 +1,130 @@
+{
+  "landing": {
+    "header": {
+      "login": "Iniciar Sesión",
+      "signup": "Comenzar Gratis"
+    },
+    "hero": {
+      "badge": "🚀 Nuevo: Modificadores Inteligentes de Servicio",
+      "title": "Gestiona tu Negocio de Servicios",
+      "subtitle": "Sin Complicaciones",
+      "description": "La plataforma todo-en-uno para peluquerías, consultorios, spas y eventos. Reservas online, gestión inteligente y clientes felices.",
+      "demo": "Ver Demo",
+      "benefits": {
+        "free": "Gratis por 30 días",
+        "noCard": "Sin tarjeta de crédito",
+        "setup": "Configuración en 5 minutos"
+      }
+    },
+    "features": {
+      "title": "Todo lo que necesitas para crecer",
+      "subtitle": "Desde reservas hasta reportes, tenemos las herramientas que tu negocio necesita",
+      "booking": {
+        "title": "Reservas Online 24/7",
+        "description": "Tus clientes pueden reservar cuando quieran. Enlaces personalizados y confirmación automática."
+      },
+      "modifiers": {
+        "title": "Modificadores Inteligentes",
+        "description": "Ajustes automáticos de tiempo y precio según el tipo de cliente. Perfecto para servicios especializados."
+      },
+      "analytics": {
+        "title": "Reportes y Analytics",
+        "description": "Conoce tu negocio con reportes detallados de ingresos, clientes frecuentes y tendencias."
+      }
+    },
+    "useCases": {
+      "title": "Perfecto para tu tipo de negocio",
+      "salon": {
+        "title": "Peluquerías",
+        "description": "Cortes, tintes, tratamientos especiales"
+      },
+      "clinic": {
+        "title": "Consultorios",
+        "description": "Citas médicas, terapias, seguimientos"
+      },
+      "spa": {
+        "title": "Spas & Wellness",
+        "description": "Masajes, faciales, relajación"
+      },
+      "events": {
+        "title": "Eventos",
+        "description": "Fiestas infantiles, celebraciones"
+      }
+    },
+    "pricing": {
+      "title": "Precios transparentes y justos",
+      "subtitle": "Comienza gratis y escala según creces",
+      "starter": {
+        "name": "Starter",
+        "price": "Gratis",
+        "description": "Para empezar",
+        "features": {
+          "bookings": "Hasta 50 reservas/mes",
+          "shops": "1 tienda",
+          "basic": "Reservas online básicas"
+        },
+        "button": "Comenzar Gratis"
+      },
+      "professional": {
+        "name": "Professional",
+        "price": "$29",
+        "period": "/mes",
+        "description": "Para negocios en crecimiento",
+        "badge": "Más Popular",
+        "features": {
+          "unlimited": "Reservas ilimitadas",
+          "shops": "Hasta 3 tiendas",
+          "modifiers": "Modificadores inteligentes",
+          "reports": "Reportes avanzados"
+        },
+        "button": "Probar 30 días gratis"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "price": "$99",
+        "period": "/mes",
+        "description": "Para cadenas y franquicias",
+        "features": {
+          "everything": "Todo en Professional",
+          "unlimited": "Tiendas ilimitadas",
+          "api": "API personalizada",
+          "support": "Soporte prioritario"
+        },
+        "button": "Contactar Ventas"
+      }
+    },
+    "cta": {
+      "title": "¿Listo para transformar tu negocio?",
+      "subtitle": "Únete a cientos de negocios que ya confían en ReservaFácil",
+      "sales": "Hablar con Ventas",
+      "security": "Datos seguros y encriptados",
+      "businesses": "+500 negocios confían en nosotros",
+      "rating": "4.9/5 en satisfacción"
+    },
+    "footer": {
+      "description": "La plataforma de gestión de reservas más fácil de usar del mercado.",
+      "product": {
+        "title": "Producto",
+        "features": "Características",
+        "pricing": "Precios",
+        "integrations": "Integraciones",
+        "api": "API"
+      },
+      "support": {
+        "title": "Soporte",
+        "help": "Centro de Ayuda",
+        "contact": "Contacto",
+        "status": "Estado del Sistema",
+        "community": "Comunidad"
+      },
+      "company": {
+        "title": "Empresa",
+        "about": "Acerca de",
+        "blog": "Blog",
+        "careers": "Carreras",
+        "privacy": "Privacidad"
+      },
+      "copyright": "© 2024 ReservaFácil. Todos los derechos reservados."
+    }
+  }
+}
