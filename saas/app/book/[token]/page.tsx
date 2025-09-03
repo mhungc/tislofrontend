@@ -31,7 +31,9 @@ export default function BookingPage() {
     name: '',
     email: '',
     phone: '',
-    notes: ''
+    notes: '',
+    consent: false,
+    marketing: false
   })
   const [step, setStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
@@ -110,6 +112,11 @@ export default function BookingPage() {
       toast.error('Nombre y email son requeridos')
       return
     }
+    
+    if (!customerData.consent) {
+      toast.error('Debes aceptar el tratamiento de datos para continuar')
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -121,7 +128,9 @@ export default function BookingPage() {
         start_time: selectedTime,
         services: selectedServices,
         notes: customerData.notes,
-        modifiers: selectedModifiers
+        modifiers: selectedModifiers,
+        consent: customerData.consent,
+        marketing: customerData.marketing
       })
       
       setBookingComplete(true)
@@ -402,6 +411,37 @@ export default function BookingPage() {
                         rows={3}
                       />
                     </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-2">
+                        <input
+                          type="checkbox"
+                          id="consent"
+                          checked={customerData.consent || false}
+                          onChange={(e) => setCustomerData(prev => ({ ...prev, consent: e.target.checked }))}
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label htmlFor="consent" className="text-sm leading-5">
+                          Acepto que mis datos sean utilizados para gestionar mi reserva y recibir comunicaciones relacionadas con el servicio. 
+                          <span className="text-muted-foreground">
+                            Puedes solicitar la eliminación de tus datos en cualquier momento.
+                          </span>
+                        </Label>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <input
+                          type="checkbox"
+                          id="marketing"
+                          checked={customerData.marketing || false}
+                          onChange={(e) => setCustomerData(prev => ({ ...prev, marketing: e.target.checked }))}
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label htmlFor="marketing" className="text-sm leading-5">
+                          <span className="text-muted-foreground">(Opcional)</span> Quiero recibir ofertas especiales y promociones por email.
+                        </Label>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -491,7 +531,7 @@ export default function BookingPage() {
                   {step === 3 && (
                     <Button 
                       onClick={handleSubmit} 
-                      disabled={submitting || !customerData.name || !customerData.email}
+                      disabled={submitting || !customerData.name || !customerData.email || !customerData.consent}
                       className="w-full"
                     >
                       {submitting ? 'Creando reserva...' : 'Confirmar Reserva'}

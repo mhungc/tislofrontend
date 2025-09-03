@@ -370,15 +370,24 @@ model bookings {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model customers {
-  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email      String?
-  phone      String?
-  full_name  String
-  birth_date DateTime?      @db.Date
-  created_at DateTime?      @default(now()) @db.Timestamptz(6)
-  updated_at DateTime?      @default(now()) @db.Timestamptz(6)
-  bookings   bookings[]
-  tags       customer_tags[]
+  id                    String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                 String?
+  phone                 String?
+  full_name             String
+  birth_date            DateTime?      @db.Date
+  // Campos RGPD
+  consent_given         Boolean?       @default(false)  // Consentimiento básico
+  marketing_consent     Boolean?       @default(false)  // Consentimiento marketing
+  consent_date          DateTime?      @db.Timestamptz(6) // Cuándo dio consentimiento
+  data_retention_until  DateTime?      @db.Timestamptz(6) // Cuándo eliminar datos
+  // Estadísticas
+  total_visits          Int?           @default(0)
+  last_visit_date       DateTime?      @db.Timestamptz(6)
+  loyalty_points        Int?           @default(0)
+  created_at            DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?      @default(now()) @db.Timestamptz(6)
+  bookings              bookings[]
+  tags                  customer_tags[]
 
   @@schema("public")
 }
