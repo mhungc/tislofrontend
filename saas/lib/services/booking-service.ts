@@ -68,6 +68,8 @@ export class BookingService {
     services: string[]
     notes?: string
     modifiers?: string[]
+    consent?: boolean
+    marketing?: boolean
   }) {
     const response = await fetch(`/api/booking/${token}/create`, {
       method: 'POST',

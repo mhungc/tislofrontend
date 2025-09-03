@@ -32,12 +32,26 @@ export async function POST(
       start_time,
       services: serviceIds,
       notes,
-      modifiers: modifierIds = []
+      modifiers: modifierIds = [],
+      consent,
+      marketing
     } = await request.json()
+
+    console.log('Booking data received:', {
+      customer_name,
+      customer_email,
+      consent,
+      marketing
+    })
 
     // Validar datos requeridos
     if (!customer_name || !customer_email || !booking_date || !start_time || !serviceIds?.length) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 })
+    }
+
+    // Validar consentimiento RGPD
+    if (!consent) {
+      return NextResponse.json({ error: 'Consentimiento requerido para procesar datos' }, { status: 400 })
     }
 
     // Obtener servicios seleccionados
@@ -92,10 +106,82 @@ export async function POST(
     const endDate = new Date(startDate.getTime() + totalDuration * 60000)
     const end_time = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`
 
+    // Gestionar cliente (crear o actualizar)
+    const { createClient } = await import('@/lib/supabase/client')
+    const supabase = createClient()
+    
+    let customerId = null
+    
+    // Buscar cliente existente por email
+    const { data: existingCustomer, error: searchError } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('email', customer_email)
+      .single()
+    
+    console.log('Customer search result:', { existingCustomer, searchError })
+    
+    if (existingCustomer) {
+      // Actualizar cliente existente
+      customerId = existingCustomer.id
+      console.log('Updating existing customer:', customerId)
+      
+      const { error: updateError } = await supabase
+        .from('customers')
+        .update({
+          full_name: customer_name,
+          phone: customer_phone,
+          total_visits: (existingCustomer.total_visits || 0) + 1,
+          last_visit_date: new Date().toISOString(),
+          loyalty_points: (existingCustomer.loyalty_points || 0) + Math.floor(totalPrice / 10), // 1 punto por cada $10
+          marketing_consent: marketing || existingCustomer.marketing_consent,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customerId)
+      
+      if (updateError) console.warn('Error updating customer:', updateError)
+    } else {
+      // Crear nuevo cliente
+      console.log('Creating new customer with data:', {
+        full_name: customer_name,
+        email: customer_email,
+        phone: customer_phone,
+        consent_given: true,
+        marketing_consent: marketing || false
+      })
+      
+      const { data: newCustomer, error: createError } = await supabase
+        .from('customers')
+        .insert({
+          full_name: customer_name,
+          email: customer_email,
+          phone: customer_phone,
+          consent_given: true,
+          marketing_consent: marketing || false,
+          consent_date: new Date().toISOString(),
+          data_retention_until: new Date(Date.now() + 7 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 7 años
+          total_visits: 1,
+          last_visit_date: new Date().toISOString(),
+          loyalty_points: Math.floor(totalPrice / 10)
+        })
+        .select()
+        .single()
+      
+      console.log('Customer creation result:', { newCustomer, createError })
+      
+      if (createError) {
+        console.error('Error creating customer:', createError)
+      } else {
+        customerId = newCustomer?.id
+        console.log('New customer created with ID:', customerId)
+      }
+    }
+
     // Crear reserva
     const booking = await bookingRepo.create(
       {
         shop_id: bookingLink.shops.id,
+        customer_id: customerId,
         customer_name,
         customer_email,
         customer_phone,
