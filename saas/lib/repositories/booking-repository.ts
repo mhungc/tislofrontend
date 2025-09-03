@@ -4,6 +4,7 @@ import { AvailabilityCalculator } from '@/lib/services/availability-calculator'
 export interface BookingData {
   id?: string
   shop_id: string
+  customer_id?: string
   customer_name: string
   customer_email: string
   customer_phone?: string
@@ -36,6 +37,7 @@ export class BookingRepository {
       const booking = await tx.bookings.create({
         data: {
           shop_id: bookingData.shop_id,
+          customer_id: bookingData.customer_id,
           customer_name: bookingData.customer_name,
           customer_email: bookingData.customer_email,
           customer_phone: bookingData.customer_phone,
@@ -81,6 +83,7 @@ export class BookingRepository {
     return await prisma.bookings.findUnique({
       where: { id },
       include: {
+        customers: true,
         booking_services: {
           include: {
             services: true
@@ -94,6 +97,7 @@ export class BookingRepository {
     return await prisma.bookings.findMany({
       where: { shop_id: shopId },
       include: {
+        customers: true,
         booking_services: {
           include: {
             services: true
@@ -120,6 +124,7 @@ export class BookingRepository {
         }
       },
       include: {
+        customers: true,
         booking_services: {
           include: {
             services: true
