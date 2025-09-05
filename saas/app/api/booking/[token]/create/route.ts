@@ -3,6 +3,7 @@ import { BookingLinkRepository } from '@/lib/repositories/booking-link-repositor
 import { BookingRepository } from '@/lib/repositories/booking-repository'
 import { ServiceRepository } from '@/lib/repositories/service-repository'
 import { ModifierService } from '@/lib/services/modifier-service'
+import { VerificationService } from '@/lib/services/verification-service'
 
 export async function POST(
   request: NextRequest,
@@ -34,15 +35,9 @@ export async function POST(
       notes,
       modifiers: modifierIds = [],
       consent,
-      marketing
+      marketing,
+      verification_code
     } = await request.json()
-
-    console.log('Booking data received:', {
-      customer_name,
-      customer_email,
-      consent,
-      marketing
-    })
 
     // Validar datos requeridos
     if (!customer_name || !customer_email || !booking_date || !start_time || !serviceIds?.length) {
@@ -52,6 +47,18 @@ export async function POST(
     // Validar consentimiento RGPD
     if (!consent) {
       return NextResponse.json({ error: 'Consentimiento requerido para procesar datos' }, { status: 400 })
+    }
+
+    // Verificar código de verificación
+    if (!verification_code) {
+      return NextResponse.json({ error: 'Código de verificación requerido' }, { status: 400 })
+    }
+
+    const verificationService = new VerificationService()
+    const isValidCode = await verificationService.verifyCode(customer_email, verification_code)
+    
+    if (!isValidCode) {
+      return NextResponse.json({ error: 'Código de verificación inválido o expirado' }, { status: 400 })
     }
 
     // Obtener servicios seleccionados
