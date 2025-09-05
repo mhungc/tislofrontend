@@ -1,16 +1,24 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import { useShopStore } from '@/lib/stores/shop-store'
 import { FullBookingCalendar } from '@/components/booking/FullBookingCalendar'
+import { MobileBookingList } from '@/components/booking/MobileBookingList'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Calendar, Store, Plus } from 'lucide-react'
+import { Calendar, Store, Plus, Smartphone, Monitor } from 'lucide-react'
+import { useIsMobile } from '@/lib/hooks/use-mobile'
 
 export default function BookingsPage() {
+  const router = useRouter()
+  const params = useParams()
+  const locale = params.locale as string
   const { shops, loading, loadShops } = useShopStore()
   const [selectedShopId, setSelectedShopId] = useState<string>('')
+  const isMobile = useIsMobile()
+  const [forceMobileView, setForceMobileView] = useState(false)
 
   useEffect(() => {
     loadShops()
@@ -37,7 +45,7 @@ export default function BookingsPage() {
           <p className="text-muted-foreground mb-4">
             Crea una tienda para comenzar a recibir reservas
           </p>
-          <Button onClick={() => window.location.href = '/dashboard/shops'}>
+          <Button onClick={() => router.push(`/${locale}/dashboard/shops`)}>
             Crear Primera Tienda
           </Button>
         </CardContent>
@@ -48,25 +56,43 @@ export default function BookingsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reservas</h1>
-          <p className="text-muted-foreground">
-            Gestiona las reservas de tus tiendas
-          </p>
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Reservas</h1>
+            <p className="text-muted-foreground">
+              Gestiona las reservas de tus tiendas
+            </p>
+          </div>
+          
+          {/* Toggle de vista - solo en desktop */}
+          {!isMobile && selectedShopId && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant={forceMobileView ? "outline" : "default"}
+                size="sm"
+                onClick={() => setForceMobileView(false)}
+              >
+                <Monitor className="h-4 w-4 mr-1" />
+                Calendario
+              </Button>
+              <Button
+                variant={forceMobileView ? "default" : "outline"}
+                size="sm"
+                onClick={() => setForceMobileView(true)}
+              >
+                <Smartphone className="h-4 w-4 mr-1" />
+                Lista
+              </Button>
+            </div>
+          )}
         </div>
         
-        <div className="flex items-center gap-4">
-          {selectedShopId && (
-            <Button onClick={() => window.location.href = `/dashboard/bookings/new?shop=${selectedShopId}`}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Reserva
-            </Button>
-          )}
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex items-center gap-2 flex-1">
             <Store className="h-4 w-4 text-muted-foreground" />
             <Select value={selectedShopId} onValueChange={setSelectedShopId}>
-              <SelectTrigger className="w-64">
+              <SelectTrigger className="w-full sm:w-64">
                 <SelectValue placeholder="Selecciona una tienda" />
               </SelectTrigger>
               <SelectContent>
@@ -78,16 +104,34 @@ export default function BookingsPage() {
               </SelectContent>
             </Select>
           </div>
+          
+          {selectedShopId && (
+            <Button 
+              onClick={() => router.push(`/${locale}/dashboard/bookings/new?shop=${selectedShopId}`)}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva Reserva
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Calendar */}
+      {/* Vista de reservas */}
       {selectedShopId ? (
-        <FullBookingCalendar 
-          key={selectedShopId}
-          shopId={selectedShopId} 
-          shopName={selectedShop?.name || ''}
-        />
+        (isMobile || forceMobileView) ? (
+          <MobileBookingList 
+            key={selectedShopId}
+            shopId={selectedShopId} 
+            shopName={selectedShop?.name || ''}
+          />
+        ) : (
+          <FullBookingCalendar 
+            key={selectedShopId}
+            shopId={selectedShopId} 
+            shopName={selectedShop?.name || ''}
+          />
+        )
       ) : (
         <Card>
           <CardContent className="text-center py-12">

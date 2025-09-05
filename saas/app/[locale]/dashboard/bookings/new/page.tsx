@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams, useRouter, useParams } from 'next/navigation'
 import { ManualBookingForm } from '@/components/bookings/ManualBookingForm'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 function NewBookingContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const params = useParams()
+  const locale = params.locale as string
   const [shopId, setShopId] = useState<string>('')
 
   useEffect(() => {
@@ -16,12 +18,12 @@ function NewBookingContent() {
     if (shop) {
       setShopId(shop)
     } else {
-      router.push('/dashboard/bookings')
+      router.push(`/${locale}/dashboard/bookings`)
     }
-  }, [searchParams, router])
+  }, [searchParams, router, locale])
 
   const handleSuccess = () => {
-    router.push('/dashboard/bookings')
+    router.push(`/${locale}/dashboard/bookings`)
   }
 
   const handleCancel = () => {
