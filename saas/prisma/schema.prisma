@@ -589,6 +589,20 @@ model booking_links {
   @@schema("public")
 }
 
+/// Códigos de verificación para reservas
+model verification_codes {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email      String
+  code       String    @db.VarChar(6)
+  expires_at DateTime  @db.Timestamptz(6)
+  used       Boolean   @default(false)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([email, code])
+  @@index([expires_at])
+  @@schema("public")
+}
+
 enum aal_level {
   aal1
   aal2

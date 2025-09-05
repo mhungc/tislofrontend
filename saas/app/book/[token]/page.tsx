@@ -35,6 +35,10 @@ export default function BookingPage() {
     consent: false,
     marketing: false
   })
+  const [verificationStep, setVerificationStep] = useState(false)
+  const [verificationCode, setVerificationCode] = useState('')
+  const [sendingCode, setSendingCode] = useState(false)
+  const [verifyingCode, setVerifyingCode] = useState(false)
   const [step, setStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [bookingComplete, setBookingComplete] = useState(false)
@@ -107,6 +111,34 @@ export default function BookingPage() {
     setModifierAdjustments({ duration: totalDuration, price: totalPrice })
   }
 
+  const sendVerificationCode = async () => {
+    if (!customerData.email) {
+      toast.error('Email es requerido')
+      return
+    }
+
+    setSendingCode(true)
+    try {
+      const response = await fetch('/api/verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: customerData.email })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error)
+      }
+
+      setVerificationStep(true)
+      toast.success('Código enviado a tu email')
+    } catch (error: any) {
+      toast.error(error.message || 'Error al enviar código')
+    } finally {
+      setSendingCode(false)
+    }
+  }
+
   const handleSubmit = async () => {
     if (!customerData.name || !customerData.email) {
       toast.error('Nombre y email son requeridos')
@@ -115,6 +147,18 @@ export default function BookingPage() {
     
     if (!customerData.consent) {
       toast.error('Debes aceptar el tratamiento de datos para continuar')
+      return
+    }
+
+    // Si no está en paso de verificación, enviar código
+    if (!verificationStep) {
+      await sendVerificationCode()
+      return
+    }
+
+    // Si está en paso de verificación, verificar código y crear reserva
+    if (!verificationCode || verificationCode.length !== 6) {
+      toast.error('Ingresa el código de 6 dígitos')
       return
     }
 
@@ -130,13 +174,18 @@ export default function BookingPage() {
         notes: customerData.notes,
         modifiers: selectedModifiers,
         consent: customerData.consent,
-        marketing: customerData.marketing
+        marketing: customerData.marketing,
+        verification_code: verificationCode
       })
       
       setBookingComplete(true)
       toast.success('¡Reserva creada exitosamente!')
-    } catch (error) {
-      toast.error('Error al crear la reserva')
+    } catch (error: any) {
+      if (error.message.includes('código')) {
+        toast.error('Código inválido o expirado')
+      } else {
+        toast.error('Error al crear la reserva')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -412,6 +461,24 @@ export default function BookingPage() {
                       />
                     </div>
                     
+                    {verificationStep && (
+                      <div>
+                        <Label htmlFor="verification">Código de verificación</Label>
+                        <Input
+                          id="verification"
+                          type="text"
+                          maxLength={6}
+                          value={verificationCode}
+                          onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                          placeholder="123456"
+                          className="text-center text-lg tracking-widest"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Ingresa el código de 6 dígitos enviado a {customerData.email}
+                        </p>
+                      </div>
+                    )}
+                    
                     <div className="space-y-3">
                       <div className="flex items-start space-x-2">
                         <input
@@ -529,13 +596,30 @@ export default function BookingPage() {
                     </Button>
                   )}
                   {step === 3 && (
-                    <Button 
-                      onClick={handleSubmit} 
-                      disabled={submitting || !customerData.name || !customerData.email || !customerData.consent}
-                      className="w-full"
-                    >
-                      {submitting ? 'Creando reserva...' : 'Confirmar Reserva'}
-                    </Button>
+                    <div className="space-y-2">
+                      <Button 
+                        onClick={handleSubmit} 
+                        disabled={submitting || sendingCode || !customerData.name || !customerData.email || !customerData.consent}
+                        className="w-full"
+                      >
+                        {sendingCode ? 'Enviando código...' : 
+                         submitting ? 'Creando reserva...' : 
+                         verificationStep ? 'Verificar y Confirmar' : 'Enviar código de verificación'}
+                      </Button>
+                      
+                      {verificationStep && (
+                        <Button 
+                          variant="outline"
+                          onClick={() => {
+                            setVerificationStep(false)
+                            setVerificationCode('')
+                          }}
+                          className="w-full"
+                        >
+                          Cambiar email
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
               </CardContent>
