@@ -20,7 +20,7 @@ export function MobileBookingList({ shopId, shopName }: MobileBookingListProps) 
   const [loading, setLoading] = useState(true)
   const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null)
   const [showBookingDialog, setShowBookingDialog] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('week')
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
   const calendarService = new BookingCalendarService()
@@ -29,14 +29,34 @@ export function MobileBookingList({ shopId, shopName }: MobileBookingListProps) 
     if (shopId) {
       loadBookings()
     }
-  }, [shopId, selectedDate])
+  }, [shopId, dateRange])
+
+  const getDateRange = () => {
+    const today = new Date()
+    let startDate = new Date(today)
+    let endDate = new Date(today)
+
+    switch (dateRange) {
+      case 'today':
+        // Solo hoy
+        break
+      case 'week':
+        // Próximos 7 días
+        endDate.setDate(endDate.getDate() + 6)
+        break
+      case 'month':
+        // Próximos 30 días
+        endDate.setDate(endDate.getDate() + 29)
+        break
+    }
+
+    return { startDate, endDate }
+  }
 
   const loadBookings = async () => {
     setLoading(true)
     try {
-      const startDate = new Date(selectedDate)
-      const endDate = new Date(selectedDate)
-      endDate.setDate(endDate.getDate() + 7) // Cargar una semana
+      const { startDate, endDate } = getDateRange()
       
       const data = await calendarService.getBookings(
         shopId,
@@ -117,21 +137,35 @@ export function MobileBookingList({ shopId, shopName }: MobileBookingListProps) 
       {/* Filtros móviles */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Reservas - {shopName}
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Reservas - {shopName}
+            </CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadBookings}
+              disabled={loading}
+            >
+              {loading ? 'Cargando...' : 'Actualizar'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 gap-3">
             <div>
-              <label className="text-sm font-medium mb-1 block">Fecha</label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full p-2 border rounded-md"
-              />
+              <label className="text-sm font-medium mb-1 block">Período</label>
+              <Select value={dateRange} onValueChange={(value: 'today' | 'week' | 'month') => setDateRange(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Solo hoy</SelectItem>
+                  <SelectItem value="week">Próximos 7 días</SelectItem>
+                  <SelectItem value="month">Próximos 30 días</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Estado</label>
@@ -165,18 +199,36 @@ export function MobileBookingList({ shopId, shopName }: MobileBookingListProps) 
       ) : (
         Object.entries(groupedBookings)
           .sort(([a], [b]) => a.localeCompare(b))
-          .map(([date, dayBookings]) => (
-            <Card key={date}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">
-                  {new Date(date + 'T00:00:00').toLocaleDateString('es-ES', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </CardTitle>
-              </CardHeader>
+          .map(([date, dayBookings]) => {
+            const bookingDate = new Date(date + 'T00:00:00')
+            const today = new Date()
+            const tomorrow = new Date(today)
+            tomorrow.setDate(tomorrow.getDate() + 1)
+            
+            let dateLabel = bookingDate.toLocaleDateString('es-ES', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })
+            
+            // Agregar etiquetas relativas
+            if (bookingDate.toDateString() === today.toDateString()) {
+              dateLabel = `Hoy - ${bookingDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}`
+            } else if (bookingDate.toDateString() === tomorrow.toDateString()) {
+              dateLabel = `Mañana - ${bookingDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}`
+            }
+            
+            return (
+              <Card key={date}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center justify-between">
+                    <span>{dateLabel}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {dayBookings.length} reserva{dayBookings.length !== 1 ? 's' : ''}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
               <CardContent className="space-y-3">
                 {dayBookings
                   .sort((a, b) => a.start_time.localeCompare(b.start_time))
@@ -213,8 +265,9 @@ export function MobileBookingList({ shopId, shopName }: MobileBookingListProps) 
                     </div>
                   ))}
               </CardContent>
-            </Card>
-          ))
+              </Card>
+            )
+          })
       )}
 
       {/* Dialog de detalles */}
