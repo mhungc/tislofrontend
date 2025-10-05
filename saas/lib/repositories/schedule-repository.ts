@@ -38,6 +38,12 @@ export class ScheduleRepository {
     })
   }
 
+  async create(input: CreateScheduleInput) {
+    return prisma.shop_schedules.create({
+      data: input
+    })
+  }
+
   async createMany(schedules: CreateScheduleInput[]) {
     return prisma.shop_schedules.createMany({
       data: schedules,

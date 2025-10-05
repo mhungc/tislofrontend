@@ -63,7 +63,45 @@ export class ShopRepository {
   }
 
   async delete(shopId: string) {
-    await prisma.shops.delete({ where: { id: shopId } })
+    await prisma.$transaction(async (tx) => {
+      // Eliminar booking_services primero
+      const bookings = await tx.bookings.findMany({
+        where: { shop_id: shopId },
+        select: { id: true }
+      })
+      
+      if (bookings.length > 0) {
+        await tx.booking_services.deleteMany({
+          where: {
+            booking_id: { in: bookings.map(b => b.id) }
+          }
+        })
+      }
+
+      // Eliminar service_modifiers
+      const services = await tx.services.findMany({
+        where: { shop_id: shopId },
+        select: { id: true }
+      })
+      
+      if (services.length > 0) {
+        await tx.service_modifiers.deleteMany({
+          where: {
+            service_id: { in: services.map(s => s.id) }
+          }
+        })
+      }
+
+      // Eliminar el resto en orden
+      await tx.bookings.deleteMany({ where: { shop_id: shopId } })
+      await tx.booking_links.deleteMany({ where: { shop_id: shopId } })
+      await tx.services.deleteMany({ where: { shop_id: shopId } })
+      await tx.schedule_exceptions.deleteMany({ where: { shop_id: shopId } })
+      await tx.shop_schedules.deleteMany({ where: { shop_id: shopId } })
+      
+      // Finalmente eliminar la tienda
+      await tx.shops.delete({ where: { id: shopId } })
+    })
   }
 }
 

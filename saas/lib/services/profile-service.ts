@@ -20,7 +20,7 @@ export class ProfileService {
       throw new Error('Usuario no encontrado')
     }
 
-    // Crear el perfil automáticamente
+    // Crear el perfil automáticamente (sin datos demo automáticos)
     const profile = await prisma.profiles.create({
       data: {
         id: userId,
@@ -28,7 +28,8 @@ export class ProfileService {
         full_name: (user.raw_user_meta_data as any)?.full_name || 
                   (user.raw_user_meta_data as any)?.name || 
                   null,
-        avatar_url: (user.raw_user_meta_data as any)?.avatar_url || null
+        avatar_url: (user.raw_user_meta_data as any)?.avatar_url || null,
+        is_demo: false // Por defecto no es demo
       }
     })
 

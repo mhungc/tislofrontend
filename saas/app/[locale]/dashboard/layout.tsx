@@ -34,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { DemoBanner } from '@/components/demo-banner'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -281,6 +282,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Contenido de la página */}
         <main className="py-6">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <DemoBanner />
             {children}
           </div>
         </main>
