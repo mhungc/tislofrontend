@@ -27,7 +27,7 @@ export interface DemoBookingData {
   start_time: string
   end_time: string
   services: string[]
-  status: string
+  status: 'pending' | 'confirmed' | 'cancelled'
 }
 
 export class DemoSeedingService {
@@ -265,7 +265,7 @@ export class DemoSeedingService {
           end_time: bookingData.end_time,
           total_duration: totalDuration,
           total_price: totalPrice,
-          status: bookingData.status,
+          status: bookingData.status as 'pending' | 'confirmed' | 'cancelled',
           notes: 'Reserva de demostración'
         }, bookingServices, [])
       }
