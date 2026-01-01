@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select } from '@/components/ui/select'
 // import { Switch } from '@/components/ui/switch' // No usado
 import { Badge } from '@/components/ui/badge'
 import { Plus, Edit, Trash2, Clock, DollarSign } from 'lucide-react'
@@ -192,24 +192,22 @@ function ModifierForm({ serviceId, modifier, onSuccess, onCancel }: ModifierForm
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Ej: Niños con necesidades especiales"
-                required
+                isRequired
               />
             </div>
             <div>
               <Label>Tipo de Condición</Label>
               <Select
                 value={formData.condition_type}
-                onValueChange={(value: ConditionType) => setFormData(prev => ({ ...prev, condition_type: value }))}
+                onChange={(e) =>
+                  setFormData(prev => ({ ...prev, condition_type: e.target.value as ConditionType }))
+                }
+                placeholder="Selecciona una condición"
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="manual">Manual</SelectItem>
-                  <SelectItem value="customer_tag">Etiqueta de Cliente</SelectItem>
-                  <SelectItem value="age_range">Rango de Edad</SelectItem>
-                  <SelectItem value="first_visit">Primera Visita</SelectItem>
-                </SelectContent>
+                <option value="manual">Manual</option>
+                <option value="customer_tag">Etiqueta de Cliente</option>
+                <option value="age_range">Rango de Edad</option>
+                <option value="first_visit">Primera Visita</option>
               </Select>
             </div>
           </div>

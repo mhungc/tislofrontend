@@ -4,6 +4,7 @@ import { BookingRepository } from '@/lib/repositories/booking-repository'
 import { ServiceRepository } from '@/lib/repositories/service-repository'
 import { ModifierService } from '@/lib/services/modifier-service'
 import { VerificationService } from '@/lib/services/verification-service'
+import { BookingEmailService } from '@/lib/services/booking-email-service'
 
 export async function POST(
   request: NextRequest,
@@ -214,6 +215,41 @@ export async function POST(
 
     // Incrementar uso del enlace
     await linkRepo.incrementUse(token)
+
+    // Obtener booking completo con servicios para el email
+    const bookingWithDetails = await bookingRepo.getById(booking.id)
+    
+    // Enviar email de reserva creada
+    if (bookingWithDetails && bookingWithDetails.customer_email) {
+      const emailService = new BookingEmailService()
+      
+      const bookingDate = bookingWithDetails.booking_date instanceof Date 
+        ? bookingWithDetails.booking_date.toISOString().split('T')[0]
+        : bookingWithDetails.booking_date
+
+      const services = bookingWithDetails.booking_services?.map((bs: any) => ({
+        name: bs.services?.name || 'Servicio',
+        duration_minutes: bs.duration_minutes || 0,
+        price: parseFloat(bs.price?.toString() || '0')
+      })) || []
+
+      const emailData = {
+        customerName: bookingWithDetails.customer_name || customer_name,
+        customerEmail: bookingWithDetails.customer_email,
+        bookingDate,
+        startTime: bookingWithDetails.start_time,
+        endTime: bookingWithDetails.end_time,
+        totalDuration: bookingWithDetails.total_duration || totalDuration,
+        totalPrice: parseFloat(bookingWithDetails.total_price?.toString() || totalPrice.toString()),
+        services,
+        shopName: bookingLink.shops?.name || '',
+        shopAddress: bookingLink.shops?.address || null,
+        shopPhone: bookingLink.shops?.phone || null,
+        notes: bookingWithDetails.notes || notes || undefined
+      }
+
+      await emailService.sendBookingCreatedEmail(emailData)
+    }
 
     return NextResponse.json({ booking })
   } catch (error) {

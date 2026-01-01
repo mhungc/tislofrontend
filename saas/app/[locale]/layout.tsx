@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
-import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { ChakraUIProvider } from "@/components/providers/chakra-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -30,15 +31,12 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+        <ThemeProvider>
+          <ChakraUIProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </ChakraUIProvider>
         </ThemeProvider>
       </body>
     </html>

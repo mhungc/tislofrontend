@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
+import { Button as ChakraButton, ButtonProps as ChakraButtonProps } from '@chakra-ui/react';
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
@@ -35,20 +35,61 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends Omit<ChakraButtonProps, 'size' | 'variant'>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
+  ({ className, variant, size, asChild = false, children, ...props }, ref) => {
+    // Map custom variants to Chakra variants
+    const getChakraVariant = () => {
+      switch (variant) {
+        case 'destructive': return 'solid';
+        case 'outline': return 'outline';
+        case 'secondary': return 'solid';
+        case 'ghost': return 'ghost';
+        case 'link': return 'link';
+        default: return 'solid';
+      }
+    };
+
+    const getChakraColorScheme = () => {
+      switch (variant) {
+        case 'destructive': return 'red';
+        case 'secondary': return 'gray';
+        default: return 'blue';
+      }
+    };
+
+    const getChakraSize = () => {
+      switch (size) {
+        case 'sm': return 'sm';
+        case 'lg': return 'lg';
+        case 'icon': return 'sm';
+        default: return 'md';
+      }
+    };
+
+    if (asChild) {
+      return (
+        <span className={cn(buttonVariants({ variant, size, className }))}>
+          {children}
+        </span>
+      );
+    }
+
     return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+      <ChakraButton
         ref={ref}
+        variant={getChakraVariant()}
+        colorScheme={getChakraColorScheme()}
+        size={getChakraSize()}
+        className={className}
         {...props}
-      />
+      >
+        {children}
+      </ChakraButton>
     );
   },
 );

@@ -5,8 +5,8 @@ import { BookingCalendarService, CalendarBooking } from '@/lib/services/booking-
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from '@/components/ui/dialog'
+import { Select} from '@/components/ui/select'
 import { Calendar, User, Mail, Phone, Check, X, Clock, ChevronRight, Filter } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -156,29 +156,27 @@ export function MobileBookingList({ shopId, shopName }: MobileBookingListProps) 
           <div className="grid grid-cols-1 gap-3">
             <div>
               <label className="text-sm font-medium mb-1 block">Período</label>
-              <Select value={dateRange} onValueChange={(value: 'today' | 'week' | 'month') => setDateRange(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="today">Solo hoy</SelectItem>
-                  <SelectItem value="week">Próximos 7 días</SelectItem>
-                  <SelectItem value="month">Próximos 30 días</SelectItem>
-                </SelectContent>
+              <Select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value as 'today' | 'week' | 'month')}
+                className="w-full"
+              >
+                <option value="today">Solo hoy</option>
+                <option value="week">Próximos 7 días</option>
+                <option value="month">Próximos 30 días</option>
               </Select>
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Estado</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="pending">Pendientes</SelectItem>
-                  <SelectItem value="confirmed">Confirmadas</SelectItem>
-                  <SelectItem value="cancelled">Canceladas</SelectItem>
-                </SelectContent>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full"
+              >
+                <option value="all">Todas</option>
+                <option value="pending">Pendientes</option>
+                <option value="confirmed">Confirmadas</option>
+                <option value="cancelled">Canceladas</option>
               </Select>
             </div>
           </div>
@@ -271,91 +269,97 @@ export function MobileBookingList({ shopId, shopName }: MobileBookingListProps) 
       )}
 
       {/* Dialog de detalles */}
-      <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
-        <DialogContent className="max-w-sm mx-4">
-          <DialogHeader>
-            <DialogTitle className="text-lg">Detalles de la Reserva</DialogTitle>
-          </DialogHeader>
-          
+      <Dialog isOpen={showBookingDialog} onClose={() => setShowBookingDialog(false)}>
+        <DialogContent maxW={{ base: '90%', sm: '400px' }} mx="auto">
           {selectedBooking && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Badge className={getStatusBadgeColor(selectedBooking.status)}>
-                  {getStatusText(selectedBooking.status)}
-                </Badge>
-                <span className="text-sm text-gray-600">
-                  {new Date(selectedBooking.booking_date).toLocaleDateString('es-ES')}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                  <span className="font-medium">{selectedBooking.customer_name}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                  <span className="text-sm break-all">{selectedBooking.customer_email}</span>
-                </div>
-                
-                {selectedBooking.customer_phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                    <span className="text-sm">{selectedBooking.customer_phone}</span>
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-lg">Detalles de la Reserva</DialogTitle>
+              </DialogHeader>
+              
+              <DialogBody>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Badge className={getStatusBadgeColor(selectedBooking.status)}>
+                      {getStatusText(selectedBooking.status)}
+                    </Badge>
+                    <span className="text-sm text-gray-600">
+                      {new Date(selectedBooking.booking_date).toLocaleDateString('es-ES')}
+                    </span>
                   </div>
-                )}
 
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                  <span className="text-sm">{selectedBooking.start_time} - {selectedBooking.end_time}</span>
-                </div>
-
-                <div className="border-t pt-3">
-                  <div className="text-sm text-gray-600 mb-2">Servicios:</div>
-                  {selectedBooking.services.map((service, index) => (
-                    <div key={index} className="flex justify-between text-sm mb-1">
-                      <span className="flex-1">{service.name}</span>
-                      <span className="font-medium">${service.price}</span>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <span className="font-medium">{selectedBooking.customer_name}</span>
                     </div>
-                  ))}
-                </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <span className="text-sm break-all">{selectedBooking.customer_email}</span>
+                    </div>
+                    
+                    {selectedBooking.customer_phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <span className="text-sm">{selectedBooking.customer_phone}</span>
+                      </div>
+                    )}
 
-                <div className="flex justify-between text-base font-medium border-t pt-2">
-                  <span>Total:</span>
-                  <span className="text-green-600">${selectedBooking.total_price}</span>
-                </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <span className="text-sm">{selectedBooking.start_time} - {selectedBooking.end_time}</span>
+                    </div>
 
-                {selectedBooking.notes && (
-                  <div className="border-t pt-3">
-                    <div className="text-sm text-gray-600 mb-1">Notas:</div>
-                    <p className="text-sm bg-gray-50 p-2 rounded">{selectedBooking.notes}</p>
+                    <div className="border-t pt-3">
+                      <div className="text-sm text-gray-600 mb-2">Servicios:</div>
+                      {selectedBooking.services.map((service, index) => (
+                        <div key={index} className="flex justify-between text-sm mb-1">
+                          <span className="flex-1">{service.name}</span>
+                          <span className="font-medium">${service.price}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-between text-base font-medium border-t pt-2">
+                      <span>Total:</span>
+                      <span className="text-green-600">${selectedBooking.total_price}</span>
+                    </div>
+
+                    {selectedBooking.notes && (
+                      <div className="border-t pt-3">
+                        <div className="text-sm text-gray-600 mb-1">Notas:</div>
+                        <p className="text-sm bg-gray-50 p-2 rounded">{selectedBooking.notes}</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              </DialogBody>
 
               {selectedBooking.status === 'pending' && (
-                <div className="flex flex-col gap-2 pt-4">
-                  <Button
-                    onClick={() => handleStatusUpdate(selectedBooking.id, 'confirmed')}
-                    className="w-full"
-                    size="sm"
-                  >
-                    <Check className="h-4 w-4 mr-2" />
-                    Confirmar Reserva
-                  </Button>
-                  <Button
-                    onClick={() => handleStatusUpdate(selectedBooking.id, 'cancelled')}
-                    variant="destructive"
-                    className="w-full"
-                    size="sm"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancelar Reserva
-                  </Button>
-                </div>
+                <DialogFooter>
+                  <div className="flex flex-col gap-2 w-full">
+                    <Button
+                      onClick={() => handleStatusUpdate(selectedBooking.id, 'confirmed')}
+                      className="w-full"
+                      size="default"
+                    >
+                      <Check className="h-4 w-4 mr-2" />
+                      Confirmar Reserva
+                    </Button>
+                    <Button
+                      onClick={() => handleStatusUpdate(selectedBooking.id, 'cancelled')}
+                      variant="destructive"
+                      className="w-full"
+                      size="default"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancelar Reserva
+                    </Button>
+                  </div>
+                </DialogFooter>
               )}
-            </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

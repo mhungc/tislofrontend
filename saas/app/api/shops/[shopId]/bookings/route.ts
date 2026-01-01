@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { BookingService } from '@/lib/services/booking-service'
 import { ShopRepository } from '@/lib/repositories/shop-repository'
+import { BookingRepository } from '@/lib/repositories/booking-repository'
+import { BookingEmailService } from '@/lib/services/booking-email-service'
 
 export async function GET(
   request: NextRequest,
@@ -79,7 +81,6 @@ export async function POST(
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 })
     }
 
-    const { BookingRepository } = await import('@/lib/repositories/booking-repository')
     const bookingRepo = new BookingRepository()
 
     // Crear reserva
@@ -103,6 +104,41 @@ export async function POST(
         duration_minutes: total_duration
       }]
     )
+
+    // Obtener booking completo con servicios para el email
+    const bookingWithDetails = await bookingRepo.getById(booking.id)
+    
+    // Enviar email de confirmación (ya que se crea como confirmada)
+    if (bookingWithDetails && bookingWithDetails.customer_email) {
+      const emailService = new BookingEmailService()
+      
+      const bookingDate = bookingWithDetails.booking_date instanceof Date 
+        ? bookingWithDetails.booking_date.toISOString().split('T')[0]
+        : bookingWithDetails.booking_date
+
+      const services = bookingWithDetails.booking_services?.map((bs: any) => ({
+        name: bs.services?.name || 'Servicio',
+        duration_minutes: bs.duration_minutes || 0,
+        price: parseFloat(bs.price?.toString() || '0')
+      })) || []
+
+      const emailData = {
+        customerName: bookingWithDetails.customer_name || customer_name,
+        customerEmail: bookingWithDetails.customer_email,
+        bookingDate,
+        startTime: bookingWithDetails.start_time,
+        endTime: bookingWithDetails.end_time,
+        totalDuration: bookingWithDetails.total_duration || total_duration,
+        totalPrice: parseFloat(bookingWithDetails.total_price?.toString() || total_price.toString()),
+        services,
+        shopName: bookingWithDetails.shops?.name || shop.name,
+        shopAddress: bookingWithDetails.shops?.address || shop.address,
+        shopPhone: bookingWithDetails.shops?.phone || shop.phone,
+        notes: bookingWithDetails.notes || notes || undefined
+      }
+
+      await emailService.sendConfirmationEmail(emailData)
+    }
 
     return NextResponse.json({ booking })
   } catch (error) {

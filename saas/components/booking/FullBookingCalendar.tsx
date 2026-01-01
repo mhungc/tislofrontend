@@ -9,8 +9,34 @@ import { BookingCalendarService, CalendarBooking } from '@/lib/services/booking-
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Calendar, User, Mail, Phone, Check, X } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from '@/components/ui/dialog'
+import {
+  Box,
+  Flex,
+  VStack,
+  HStack,
+  Text,
+  Divider,
+  Icon,
+  useColorModeValue,
+  Avatar,
+  AvatarBadge,
+} from '@chakra-ui/react'
+import { 
+  Calendar, 
+  User, 
+  Mail, 
+  Phone, 
+  Check, 
+  X, 
+  Clock, 
+  DollarSign,
+  FileText,
+  MapPin,
+  Calendar as CalendarIcon,
+  Edit,
+  Trash2
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 interface BookingCalendarProps {
@@ -25,6 +51,15 @@ export function FullBookingCalendar({ shopId, shopName }: BookingCalendarProps) 
   const [showBookingDialog, setShowBookingDialog] = useState(false)
 
   const calendarService = new BookingCalendarService()
+
+  // Chakra UI color mode values - Todos los hooks deben estar al inicio
+  const bgColor = useColorModeValue('white', 'gray.800')
+  const borderColor = useColorModeValue('gray.200', 'gray.700')
+  const textColor = useColorModeValue('gray.700', 'gray.300')
+  const headingColor = useColorModeValue('gray.900', 'white')
+  const cardBgColor = useColorModeValue('gray.50', 'gray.700')
+  const blueBgColor = useColorModeValue('blue.50', 'blue.900')
+  const footerBgColor = useColorModeValue('gray.50', 'gray.800')
 
   useEffect(() => {
     if (shopId) {
@@ -96,6 +131,21 @@ export function FullBookingCalendar({ shopId, shopName }: BookingCalendarProps) 
     return `${year}-${month}-${day}`
   }
 
+  const formatDateTime = (date: string, time: string) => {
+    const dateObj = new Date(`${date}T${time}`)
+    return dateObj.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':')
+    return `${hours}:${minutes}`
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed': return '#22c55e'
@@ -107,10 +157,19 @@ export function FullBookingCalendar({ shopId, shopName }: BookingCalendarProps) 
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'confirmed': return 'bg-green-100 text-green-800 border-green-200'
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'confirmed': return 'green'
+      case 'pending': return 'yellow'
+      case 'cancelled': return 'red'
+      default: return 'gray'
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending': return 'Pendiente'
+      case 'confirmed': return 'Confirmada'
+      case 'cancelled': return 'Cancelada'
+      default: return status
     }
   }
 
@@ -206,87 +265,292 @@ export function FullBookingCalendar({ shopId, shopName }: BookingCalendarProps) 
         </CardContent>
       </Card>
 
-      <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Detalles de la Reserva</DialogTitle>
-          </DialogHeader>
-          
+      {/* Modal mejorado con Chakra UI */}
+      <Dialog 
+        isOpen={showBookingDialog} 
+        onClose={() => setShowBookingDialog(false)}
+        size={{ base: 'full', md: 'lg' }}
+        isCentered
+      >
+        <DialogContent maxW={{ base: '100%', md: '600px' }} p={0}>
           {selectedBooking && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Badge className={getStatusBadgeColor(selectedBooking.status)}>
-                  {selectedBooking.status === 'pending' ? 'Pendiente' : 
-                   selectedBooking.status === 'confirmed' ? 'Confirmada' : 'Cancelada'}
-                </Badge>
-                <span className="text-sm text-gray-600">
-                  {new Date(selectedBooking.booking_date).toLocaleDateString('es-ES')}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">{selectedBooking.customer_name}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">{selectedBooking.customer_email}</span>
-                </div>
-                
-                {selectedBooking.customer_phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">{selectedBooking.customer_phone}</span>
-                  </div>
-                )}
-
-                <div className="border-t pt-3">
-                  <div className="text-sm text-gray-600 mb-2">Servicios:</div>
-                  {selectedBooking.services.map((service, index) => (
-                    <div key={index} className="flex justify-between text-sm">
-                      <span>{service.name}</span>
-                      <span>${service.price}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex justify-between text-sm font-medium border-t pt-2">
-                  <span>Total:</span>
-                  <span>${selectedBooking.total_price}</span>
-                </div>
-
-                {selectedBooking.notes && (
-                  <div className="border-t pt-3">
-                    <div className="text-sm text-gray-600 mb-1">Notas:</div>
-                    <p className="text-sm">{selectedBooking.notes}</p>
-                  </div>
-                )}
-              </div>
-
-              {selectedBooking.status === 'pending' && (
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    onClick={() => handleStatusUpdate(selectedBooking.id, 'confirmed')}
-                    className="flex-1"
-                    size="sm"
+            <>
+              <DialogHeader 
+                bg={getStatusColor(selectedBooking.status)}
+                color="white"
+                p={6}
+                borderTopRadius="md"
+              >
+                <Flex align="center" justify="space-between">
+                  <VStack align="start" spacing={1}>
+                    <Box as={DialogTitle} color="white" fontSize="xl" fontWeight="bold">
+                      Detalles de la Reserva
+                    </Box>
+                    <Text fontSize="sm" opacity={0.9}>
+                      {formatDateTime(selectedBooking.booking_date, selectedBooking.start_time)}
+                    </Text>
+                  </VStack>
+                  <Badge 
+                    colorScheme={getStatusBadgeColor(selectedBooking.status)}
+                    fontSize="sm"
+                    px={3}
+                    py={1}
+                    borderRadius="full"
+                    bg="white"
+                    color={getStatusColor(selectedBooking.status)}
                   >
-                    <Check className="h-4 w-4 mr-1" />
-                    Confirmar
-                  </Button>
-                  <Button
-                    onClick={() => handleStatusUpdate(selectedBooking.id, 'cancelled')}
-                    variant="destructive"
-                    className="flex-1"
-                    size="sm"
+                    {getStatusLabel(selectedBooking.status)}
+                  </Badge>
+                </Flex>
+              </DialogHeader>
+
+              <DialogBody p={6} bg={bgColor}>
+                <VStack spacing={6} align="stretch">
+                  {/* Información del Cliente */}
+                  <Box>
+                    <HStack mb={4} align="center">
+                      <Icon as={User} boxSize={5} color="blue.500" />
+                      <Text fontWeight="semibold" fontSize="md" color={headingColor}>
+                        Información del Cliente
+                      </Text>
+                    </HStack>
+                    <Box 
+                      bg={cardBgColor}
+                      p={4}
+                      borderRadius="md"
+                      borderWidth="1px"
+                      borderColor={borderColor}
+                    >
+                      <VStack spacing={3} align="stretch">
+                        <HStack>
+                          <Avatar size="sm" name={selectedBooking.customer_name}>
+                            <AvatarBadge 
+                              boxSize="1em" 
+                              bg={getStatusColor(selectedBooking.status)}
+                              borderColor="white"
+                            />
+                          </Avatar>
+                          <VStack align="start" spacing={0} flex={1}>
+                            <Text fontWeight="semibold" color={headingColor}>
+                              {selectedBooking.customer_name}
+                            </Text>
+                            <Text fontSize="sm" color={textColor}>
+                              Cliente
+                            </Text>
+                          </VStack>
+                        </HStack>
+                        
+                        <Divider />
+                        
+                        <HStack spacing={3}>
+                          <Icon as={Mail} boxSize={4} color={textColor} />
+                          <Text fontSize="sm" color={textColor} flex={1}>
+                            {selectedBooking.customer_email}
+                          </Text>
+                        </HStack>
+                        
+                        {selectedBooking.customer_phone && (
+                          <HStack spacing={3}>
+                            <Icon as={Phone} boxSize={4} color={textColor} />
+                            <Text fontSize="sm" color={textColor} flex={1}>
+                              {selectedBooking.customer_phone}
+                            </Text>
+                          </HStack>
+                        )}
+                      </VStack>
+                    </Box>
+                  </Box>
+
+                  {/* Detalles de la Cita */}
+                  <Box>
+                    <HStack mb={4} align="center">
+                      <Icon as={CalendarIcon} boxSize={5} color="purple.500" />
+                      <Text fontWeight="semibold" fontSize="md" color={headingColor}>
+                        Detalles de la Cita
+                      </Text>
+                    </HStack>
+                    <Box 
+                      bg={cardBgColor}
+                      p={4}
+                      borderRadius="md"
+                      borderWidth="1px"
+                      borderColor={borderColor}
+                    >
+                      <VStack spacing={3} align="stretch">
+                        <HStack justify="space-between">
+                          <HStack spacing={2}>
+                            <Icon as={CalendarIcon} boxSize={4} color={textColor} />
+                            <Text fontSize="sm" color={textColor}>Fecha</Text>
+                          </HStack>
+                          <Text fontSize="sm" fontWeight="medium" color={headingColor}>
+                            {new Date(selectedBooking.booking_date).toLocaleDateString('es-ES', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </Text>
+                        </HStack>
+                        
+                        <Divider />
+                        
+                        <HStack justify="space-between">
+                          <HStack spacing={2}>
+                            <Icon as={Clock} boxSize={4} color={textColor} />
+                            <Text fontSize="sm" color={textColor}>Horario</Text>
+                          </HStack>
+                          <Text fontSize="sm" fontWeight="medium" color={headingColor}>
+                            {formatTime(selectedBooking.start_time)} - {formatTime(selectedBooking.end_time)}
+                          </Text>
+                        </HStack>
+                        
+                        <Divider />
+                        
+                        <HStack justify="space-between">
+                          <HStack spacing={2}>
+                            <Icon as={Clock} boxSize={4} color={textColor} />
+                            <Text fontSize="sm" color={textColor}>Duración</Text>
+                          </HStack>
+                          <Text fontSize="sm" fontWeight="medium" color={headingColor}>
+                            {selectedBooking.total_duration} minutos
+                          </Text>
+                        </HStack>
+                      </VStack>
+                    </Box>
+                  </Box>
+
+                  {/* Servicios */}
+                  <Box>
+                    <HStack mb={4} align="center">
+                      <Icon as={FileText} boxSize={5} color="orange.500" />
+                      <Text fontWeight="semibold" fontSize="md" color={headingColor}>
+                        Servicios ({selectedBooking.services.length})
+                      </Text>
+                    </HStack>
+                    <VStack spacing={2} align="stretch">
+                      {selectedBooking.services.map((service, index) => (
+                        <Box
+                          key={index}
+                          bg={cardBgColor}
+                          p={4}
+                          borderRadius="md"
+                          borderWidth="1px"
+                          borderColor={borderColor}
+                        >
+                          <Flex justify="space-between" align="center">
+                            <VStack align="start" spacing={1}>
+                              <Text fontWeight="medium" color={headingColor}>
+                                {service.name}
+                              </Text>
+                              <Text fontSize="xs" color={textColor}>
+                                {service.duration_minutes} minutos
+                              </Text>
+                            </VStack>
+                            <Text fontWeight="semibold" color="green.600">
+                              ${service.price.toFixed(2)}
+                            </Text>
+                          </Flex>
+                        </Box>
+                      ))}
+                    </VStack>
+                  </Box>
+
+                  {/* Total */}
+                  <Box
+                    bg={blueBgColor}
+                    p={4}
+                    borderRadius="md"
+                    borderWidth="2px"
+                    borderColor="blue.200"
                   >
-                    <X className="h-4 w-4 mr-1" />
-                    Cancelar
+                    <Flex justify="space-between" align="center">
+                      <HStack spacing={2}>
+                        <Icon as={DollarSign} boxSize={5} color="blue.600" />
+                        <Text fontWeight="bold" fontSize="lg" color="blue.700">
+                          Total
+                        </Text>
+                      </HStack>
+                      <Text fontWeight="bold" fontSize="xl" color="blue.700">
+                        ${selectedBooking.total_price.toFixed(2)}
+                      </Text>
+                    </Flex>
+                  </Box>
+
+                  {/* Notas */}
+                  {selectedBooking.notes && (
+                    <Box>
+                      <HStack mb={2} align="center">
+                        <Icon as={FileText} boxSize={4} color={textColor} />
+                        <Text fontWeight="semibold" fontSize="sm" color={headingColor}>
+                          Notas
+                        </Text>
+                      </HStack>
+                      <Box
+                        bg={cardBgColor}
+                        p={3}
+                        borderRadius="md"
+                        borderWidth="1px"
+                        borderColor={borderColor}
+                      >
+                        <Text fontSize="sm" color={textColor} fontStyle="italic">
+                          {selectedBooking.notes}
+                        </Text>
+                      </Box>
+                    </Box>
+                  )}
+                </VStack>
+              </DialogBody>
+
+              <Box
+                as={DialogFooter}
+                p={6}
+                bg={footerBgColor}
+                borderTopWidth="1px"
+                borderColor={borderColor}
+              >
+                <Flex gap={3} w="full" justify="flex-end">
+                  {selectedBooking.status === 'pending' && (
+                    <>
+                      <Button
+                        onClick={() => handleStatusUpdate(selectedBooking.id, 'confirmed')}
+                        colorScheme="green"
+                        leftIcon={<Check size={16} />}
+                        size="default"
+                      >
+                        Confirmar
+                      </Button>
+                      <Button
+                        onClick={() => handleStatusUpdate(selectedBooking.id, 'cancelled')}
+                        colorScheme="red"
+                        variant="outline"
+                        leftIcon={<X size={16} />}
+                        size="default"
+                      >
+                        Cancelar
+                      </Button>
+                    </>
+                  )}
+                  {selectedBooking.status === 'confirmed' && (
+                    <Button
+                      onClick={() => handleStatusUpdate(selectedBooking.id, 'cancelled')}
+                      colorScheme="red"
+                      variant="outline"
+                      leftIcon={<X size={16} />}
+                      size="default"
+                    >
+                      Cancelar Reserva
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => setShowBookingDialog(false)}
+                    variant="ghost"
+                    size="default"
+                  >
+                    Cerrar
                   </Button>
-                </div>
-              )}
-            </div>
+                </Flex>
+              </Box>
+            </>
           )}
         </DialogContent>
       </Dialog>

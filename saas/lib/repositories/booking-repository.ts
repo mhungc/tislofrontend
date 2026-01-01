@@ -84,6 +84,15 @@ export class BookingRepository {
       where: { id },
       include: {
         customers: true,
+        shops: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            phone: true,
+            email: true
+          }
+        },
         booking_services: {
           include: {
             services: true

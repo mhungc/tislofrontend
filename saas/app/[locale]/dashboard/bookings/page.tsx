@@ -7,9 +7,10 @@ import { FullBookingCalendar } from '@/components/booking/FullBookingCalendar'
 import { MobileBookingList } from '@/components/booking/MobileBookingList'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select} from '@/components/ui/select'
 import { Calendar, Store, Plus, Smartphone, Monitor } from 'lucide-react'
 import { useIsMobile } from '@/lib/hooks/use-mobile'
+
 
 export default function BookingsPage() {
   const router = useRouter()
@@ -64,7 +65,7 @@ export default function BookingsPage() {
               Gestiona las reservas de tus tiendas
             </p>
           </div>
-          
+
           {/* Toggle de vista - solo en desktop */}
           {!isMobile && selectedShopId && (
             <div className="flex items-center gap-2">
@@ -87,26 +88,27 @@ export default function BookingsPage() {
             </div>
           )}
         </div>
-        
+
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex items-center gap-2 flex-1">
             <Store className="h-4 w-4 text-muted-foreground" />
-            <Select value={selectedShopId} onValueChange={setSelectedShopId}>
-              <SelectTrigger className="w-full sm:w-64">
-                <SelectValue placeholder="Selecciona una tienda" />
-              </SelectTrigger>
-              <SelectContent>
-                {shops.map(shop => (
-                  <SelectItem key={shop.id} value={shop.id}>
-                    {shop.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+            <Select
+              value={selectedShopId}
+              onChange={(e) => setSelectedShopId(e.target.value)}
+              placeholder="Selecciona una tienda"
+              className="w-full sm:w-64"
+            >
+              {shops.map(shop => (
+                <option key={shop.id} value={shop.id}>
+                  {shop.name}
+                </option>
+              ))}
             </Select>
+
           </div>
-          
+
           {selectedShopId && (
-            <Button 
+            <Button
               onClick={() => router.push(`/${locale}/dashboard/bookings/new?shop=${selectedShopId}`)}
               className="w-full sm:w-auto"
             >
@@ -120,15 +122,15 @@ export default function BookingsPage() {
       {/* Vista de reservas */}
       {selectedShopId ? (
         (isMobile || forceMobileView) ? (
-          <MobileBookingList 
+          <MobileBookingList
             key={selectedShopId}
-            shopId={selectedShopId} 
+            shopId={selectedShopId}
             shopName={selectedShop?.name || ''}
           />
         ) : (
-          <FullBookingCalendar 
+          <FullBookingCalendar
             key={selectedShopId}
-            shopId={selectedShopId} 
+            shopId={selectedShopId}
             shopName={selectedShop?.name || ''}
           />
         )

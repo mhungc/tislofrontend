@@ -41,7 +41,7 @@ export class VerificationService {
         if (process.env.RESEND_API_KEY) {
           console.log('Sending email with Resend...')
           const result = await this.resend.emails.send({
-            from: 'Acme <onboarding@resend.dev>',
+            from: process.env.RESEND_FROM_EMAIL || 'ReservaFácil <onboarding@resend.dev>',
             to: email,
             subject: 'Código de verificación - ReservaFácil',
             html: `

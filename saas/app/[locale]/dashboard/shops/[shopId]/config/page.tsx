@@ -10,7 +10,7 @@ import { BookingLinks } from '@/components/booking/BookingLinks'
 import { ScheduleService } from '@/lib/services/schedule-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger,TabsPanels  } from '@/components/ui/tabs'
 import { ArrowLeft, Clock, Wrench, Store, Plus, Edit, Link } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -105,118 +105,121 @@ export default function ShopConfigPage() {
         </Card>
       )}
 
-      <Tabs defaultValue="schedule" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="schedule">
-            <Clock className="h-4 w-4 mr-2" />
-            Horarios
-          </TabsTrigger>
-          <TabsTrigger value="services">
-            <Wrench className="h-4 w-4 mr-2" />
-            Servicios
-          </TabsTrigger>
-          <TabsTrigger value="booking">
-            <Link className="h-4 w-4 mr-2" />
-            Reservas
-          </TabsTrigger>
-        </TabsList>
+     <Tabs defaultValue="schedule" className="space-y-6">
+  <TabsList className="grid w-full grid-cols-3">
+    <TabsTrigger value="schedule">
+      <Clock className="h-4 w-4 mr-2" />
+      Horarios
+    </TabsTrigger>
+    <TabsTrigger value="services">
+      <Wrench className="h-4 w-4 mr-2" />
+      Servicios
+    </TabsTrigger>
+    <TabsTrigger value="booking">
+      <Link className="h-4 w-4 mr-2" />
+      Reservas
+    </TabsTrigger>
+  </TabsList>
 
-        <TabsContent value="schedule" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Gestión de Horarios</h2>
-            {scheduleMode === 'view' && schedules.length > 0 && (
-              <Button onClick={() => setScheduleMode('edit')} variant="outline">
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
-              </Button>
-            )}
-          </div>
+  {/* AÑADE ESTE WRAPPER */}
+  <TabsPanels>
+    <TabsContent value="schedule" className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Gestión de Horarios</h2>
+        {scheduleMode === 'view' && schedules.length > 0 && (
+          <Button onClick={() => setScheduleMode('edit')} variant="outline">
+            <Edit className="h-4 w-4 mr-2" />
+            Editar
+          </Button>
+        )}
+      </div>
 
-          {scheduleMode === 'view' && schedules.length > 0 ? (
-            <ScheduleViewer
-              schedules={schedules}
-              shopName={shop?.name || 'Tienda'}
-              onEdit={() => setScheduleMode('edit')}
-              onDelete={async () => {
-                try {
-                  await fetch(`/api/shops/${shopId}/schedule`, { method: 'DELETE' })
-                  setSchedules([])
-                  setScheduleMode('create')
-                  toast.success('Horarios eliminados')
-                } catch (error) {
-                  toast.error('Error al eliminar horarios')
-                }
-              }}
-            />
-          ) : (
-            <div className="space-y-4">
-              <WeeklyScheduleEditor
-                shopId={shopId}
-                existingSchedules={scheduleMode === 'edit' ? schedules : []}
-                onScheduleUpdated={async () => {
-                  try {
-                    const updatedSchedules = await scheduleService.getShopSchedules(shopId)
-                    setSchedules(updatedSchedules)
-                    setScheduleMode('view')
-                  } catch (error) {
-                    console.error('Error al recargar horarios:', error)
-                  }
-                }}
-              />
-              {scheduleMode === 'edit' && (
-                <Button variant="outline" onClick={() => setScheduleMode('view')}>
-                  Cancelar
-                </Button>
-              )}
-            </div>
+      {scheduleMode === 'view' && schedules.length > 0 ? (
+        <ScheduleViewer
+          schedules={schedules}
+          shopName={shop?.name || 'Tienda'}
+          onEdit={() => setScheduleMode('edit')}
+          onDelete={async () => {
+            try {
+              await fetch(`/api/shops/${shopId}/schedule`, { method: 'DELETE' })
+              setSchedules([])
+              setScheduleMode('create')
+              toast.success('Horarios eliminados')
+            } catch (error) {
+              toast.error('Error al eliminar horarios')
+            }
+          }}
+        />
+      ) : (
+        <div className="space-y-4">
+          <WeeklyScheduleEditor
+            shopId={shopId}
+            existingSchedules={scheduleMode === 'edit' ? schedules : []}
+            onScheduleUpdated={async () => {
+              try {
+                const updatedSchedules = await scheduleService.getShopSchedules(shopId)
+                setSchedules(updatedSchedules)
+                setScheduleMode('view')
+              } catch (error) {
+                console.error('Error al recargar horarios:', error)
+              }
+            }}
+          />
+          {scheduleMode === 'edit' && (
+            <Button variant="outline" onClick={() => setScheduleMode('view')}>
+              Cancelar
+            </Button>
           )}
-        </TabsContent>
+        </div>
+      )}
+    </TabsContent>
 
-        <TabsContent value="services" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Gestión de Servicios</h2>
-            {serviceMode === 'list' && (
-              <Button onClick={() => setServiceMode('create')}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Servicio
-              </Button>
-            )}
-          </div>
+    <TabsContent value="services" className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Gestión de Servicios</h2>
+        {serviceMode === 'list' && (
+          <Button onClick={() => setServiceMode('create')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Servicio
+          </Button>
+        )}
+      </div>
 
-          {serviceMode === 'list' ? (
-            <ServicesList
-              shopId={shopId}
-              onServiceEdit={(serviceId) => {
-                setEditingServiceId(serviceId)
-                setServiceMode('edit')
-              }}
-              onCreateNew={() => setServiceMode('create')}
-            />
-          ) : (
-            <ServiceForm
-              shopId={shopId}
-              serviceId={editingServiceId}
-              onSuccess={() => {
-                setServiceMode('list')
-                setEditingServiceId(undefined)
-              }}
-              onCancel={() => {
-                setServiceMode('list')
-                setEditingServiceId(undefined)
-              }}
-            />
-          )}
-        </TabsContent>
+      {serviceMode === 'list' ? (
+        <ServicesList
+          shopId={shopId}
+          onServiceEdit={(serviceId) => {
+            setEditingServiceId(serviceId)
+            setServiceMode('edit')
+          }}
+          onCreateNew={() => setServiceMode('create')}
+        />
+      ) : (
+        <ServiceForm
+          shopId={shopId}
+          serviceId={editingServiceId}
+          onSuccess={() => {
+            setServiceMode('list')
+            setEditingServiceId(undefined)
+          }}
+          onCancel={() => {
+            setServiceMode('list')
+            setEditingServiceId(undefined)
+          }}
+        />
+      )}
+    </TabsContent>
 
-        {/* Tab de Reservas */}
-        <TabsContent value="booking" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Enlaces de Reserva</h2>
-          </div>
+    <TabsContent value="booking" className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Enlaces de Reserva</h2>
+      </div>
 
-          <BookingLinks shopId={shopId} shopName={shop?.name || 'Tienda'} />
-        </TabsContent>
-      </Tabs>
+      <BookingLinks shopId={shopId} shopName={shop?.name || 'Tienda'} />
+    </TabsContent>
+  </TabsPanels>
+  {/* FIN DEL WRAPPER */}
+</Tabs>
     </div>
   )
 }

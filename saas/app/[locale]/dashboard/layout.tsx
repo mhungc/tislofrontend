@@ -7,7 +7,23 @@ import { useUser } from '@/hooks/use-user'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-// import { Separator } from '@/components/ui/separator'
+import { UserMenu } from '@/components/ui/user-menu'
+import {
+  Box,
+  Flex,
+  Text,
+  IconButton,
+  useDisclosure,
+  Drawer,
+  DrawerBody,
+  DrawerHeader,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerCloseButton,
+  VStack,
+  HStack,
+  Spacer,
+} from '@chakra-ui/react'
 import {
   LayoutDashboard,
   Store,
@@ -92,201 +108,163 @@ const navigation = [
 ]
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { isOpen, onOpen, onClose } = useDisclosure()
   const pathname = usePathname()
   const router = useRouter()
   const { user, profile, loading, signOut } = useUser()
-  
+
   // Extract locale from pathname
   const locale = pathname.split('/')[1] || 'es'
-  
+
   const handleSignOut = async () => {
     await signOut()
     router.push(`/${locale}/auth/login`)
   }
-  
+
   // Función para obtener iniciales del nombre
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U'
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   }
-  
+
   // Create localized navigation
   const localizedNavigation = navigation.map(item => ({
     ...item,
     href: `/${locale}${item.href}`
   }))
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar para móviles */}
-      <div className={cn(
-        "fixed inset-0 z-50 lg:hidden",
-        sidebarOpen ? "block" : "hidden"
-      )}>
-        <div className="fixed inset-0 bg-black/20" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg">
-          <div className="flex h-16 items-center justify-between px-4 border-b">
-            <h2 className="text-lg font-semibold">Mi Negocio</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <ScrollArea className="h-[calc(100vh-4rem)]">
-            <nav className="p-4 space-y-2">
-              {localizedNavigation.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    pathname === item.href
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
+  const SidebarContent = () => (
+    <VStack spacing={0} align="stretch" h="full">
+      <Box p={6} borderBottomWidth="1px">
+        <Text fontSize="xl" fontWeight="bold" color="blue.600">
+          Mi Negocio
+        </Text>
+      </Box>
+      <ScrollArea flex={1}>
+        <VStack spacing={1} p={4} align="stretch">
+          {localizedNavigation.map((item) => {
+            const isActive = pathname === item.href
+            return (
+              <Link key={item.href} href={item.href}>
+                <HStack
+                  p={3}
+                  borderRadius="lg"
+                  bg={isActive ? 'blue.500' : 'transparent'}
+                  color={isActive ? 'white' : 'gray.600'}
+                  _hover={{ bg: isActive ? 'blue.600' : 'gray.100' }}
+                  cursor="pointer"
+                  transition="all 0.2s"
                 >
-                  <item.icon className="h-4 w-4" />
-                  {item.title}
-                </Link>
-              ))}
-            </nav>
-          </ScrollArea>
-        </div>
-      </div>
+                  <item.icon size={16} />
+                  <Text fontSize="sm" fontWeight="medium">
+                    {item.title}
+                  </Text>
+                </HStack>
+              </Link>
+            )
+          })}
+        </VStack>
+      </ScrollArea>
+    </VStack>
+  )
 
-      {/* Sidebar para desktop */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4 border-r">
-          {/* Logo */}
-          <div className="flex h-16 shrink-0 items-center">
-            <h1 className="text-xl font-bold text-primary">Mi Negocio</h1>
-          </div>
+  return (
+    <Box minH="100vh" bg="gray.50">
+      {/* Mobile Sidebar */}
+      <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
+        <DrawerOverlay />
+        <DrawerContent maxW="64">
+          <DrawerCloseButton />
+          <SidebarContent />
+        </DrawerContent>
+      </Drawer>
 
-          {/* Navegación */}
-          <nav className="flex flex-1 flex-col">
-            <ul role="list" className="flex flex-1 flex-col gap-y-7">
-              <li>
-                <ul role="list" className="-mx-2 space-y-1">
-                  {localizedNavigation.map((item) => (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className={cn(
-                          "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors",
-                          pathname === item.href
-                            ? "bg-primary text-primary-foreground"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                        )}
-                      >
-                        <item.icon className="h-5 w-5 shrink-0" />
-                        {item.title}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      </div>
+      {/* Desktop Sidebar */}
+      <Box
+        display={{ base: 'none', lg: 'block' }}
+        position="fixed"
+        left={0}
+        top={0}
+        w="64"
+        h="100vh"
+        bg="white"
+        borderRightWidth="1px"
+        borderColor="gray.200"
+        zIndex={10}
+      >
+        <SidebarContent />
+      </Box>
 
-      {/* Contenido principal */}
-      <div className="lg:pl-64">
+      {/* Main Content */}
+      <Box ml={{ base: 0, lg: '64' }}>
         {/* Header */}
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-          {/* Botón menú móvil */}
-          <Button
+        <Flex
+          position="sticky"
+          top={0}
+          zIndex={40}
+          h={16}
+          align="center"
+          gap={4}
+          borderBottomWidth="1px"
+          bg="white"
+          shadow="sm"
+          px={{ base: 4, sm: 6, lg: 8 }}
+        >
+          {/* Mobile menu button */}
+          <IconButton
+            display={{ base: 'flex', lg: 'none' }}
+            aria-label="Open menu"
+            icon={<Menu size={20} />}
             variant="ghost"
             size="sm"
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
+            onClick={onOpen}
+          />
 
-          {/* Separador */}
-          <div className="h-6 w-px bg-gray-200 lg:hidden" />
+          {/* Search */}
+          <Flex flex={1} align="center" gap={4}>
+            <Box position="relative" flex={1}>
+              <Search className="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400" style={{ left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+              <Input placeholder="Buscar..." pl={10} />
+            </Box>
+          </Flex>
 
-          {/* Buscador */}
-          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className="relative flex flex-1">
-              <Search className="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="Buscar..."
-                className="pl-8"
+          {/* Header actions */}
+          <HStack spacing={4}>
+            
+            {/* User menu */}
+
+            {/* Header actions */}
+            <HStack spacing={4}>
+              {/* Notifications */}
+              <IconButton
+                aria-label="Notifications"
+                icon={<Bell size={20} />}
+                variant="ghost"
+                size="sm"
               />
-            </div>
-          </div>
 
-          {/* Acciones del header */}
-          <div className="flex items-center gap-x-4 lg:gap-x-6">
-            {/* Notificaciones */}
-            <Button variant="ghost" size="sm">
-              <Bell className="h-5 w-5" />
-            </Button>
+              {/* User menu */}
+              <UserMenu
+                userName={profile?.full_name}
+                userEmail={profile?.email || user?.email}
+                avatarUrl={profile?.avatar_url}
+                loading={loading}
+                onSignOut={handleSignOut}
+                onProfileClick={() => router.push(`/${locale}/dashboard/profile`)}
+                onSettingsClick={() => router.push(`/${locale}/dashboard/settings`)}
+              />
+            </HStack>
+          </HStack>
+        </Flex>
 
-            {/* Separador */}
-            <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" />
-
-            {/* Perfil del usuario */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage 
-                      src={profile?.avatar_url || undefined} 
-                      alt={profile?.full_name || 'Usuario'} 
-                    />
-                    <AvatarFallback>
-                      {loading ? '...' : getInitials(profile?.full_name)}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {loading ? 'Cargando...' : (profile?.full_name || 'Usuario')}
-                    </p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {loading ? '' : (profile?.email || user?.email || '')}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Mi Perfil</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Configuración</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Cerrar Sesión</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        {/* Contenido de la página */}
-        <main className="py-6">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Page content */}
+        <Box as="main" py={6}>
+          <Box maxW="7xl" mx="auto" px={{ base: 4, sm: 6, lg: 8 }}>
             <DemoBanner />
             {children}
-          </div>
-        </main>
-      </div>
-    </div>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
   )
 }

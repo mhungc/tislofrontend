@@ -129,13 +129,13 @@ export function ShopsList({
               <Store className="h-5 w-5" />
               Mis Tiendas ({filteredShops.length})
             </CardTitle>
-            <Button
+            {/* <Button
               onClick={() => onShopEdit?.('new')}
               className="flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
               Nueva Tienda
-            </Button>
+            </Button> */}
           </div>
         </CardHeader>
         <CardContent>
