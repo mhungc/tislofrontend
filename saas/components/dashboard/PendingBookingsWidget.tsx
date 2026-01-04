@@ -47,9 +47,15 @@ export function PendingBookingsWidget() {
         formatDate(endDate)
       )
 
+      console.log('API Response:', data)
+      console.log('All bookings:', data.bookings)
+      
       // Filtrar solo pendientes y ordenar por fecha/hora
       const pending = data.bookings
-        .filter((b: CalendarBooking) => b.status === 'pending')
+        .filter((b: CalendarBooking) => {
+          console.log('Booking status:', b.status, 'for booking:', b.id)
+          return b.status === 'pending'
+        })
         .sort((a: CalendarBooking, b: CalendarBooking) => {
           const dateCompare = a.booking_date.localeCompare(b.booking_date)
           if (dateCompare !== 0) return dateCompare
@@ -57,6 +63,7 @@ export function PendingBookingsWidget() {
         })
         .slice(0, 5) // Máximo 5 para el widget
 
+      console.log('Filtered pending bookings:', pending)
       setPendingBookings(pending)
     } catch (error) {
       console.error('Error loading pending bookings:', error)

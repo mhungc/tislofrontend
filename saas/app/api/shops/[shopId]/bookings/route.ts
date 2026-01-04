@@ -105,40 +105,8 @@ export async function POST(
       }]
     )
 
-    // Obtener booking completo con servicios para el email
-    const bookingWithDetails = await bookingRepo.getById(booking.id)
-    
-    // Enviar email de confirmación (ya que se crea como confirmada)
-    if (bookingWithDetails && bookingWithDetails.customer_email) {
-      const emailService = new BookingEmailService()
-      
-      const bookingDate = bookingWithDetails.booking_date instanceof Date 
-        ? bookingWithDetails.booking_date.toISOString().split('T')[0]
-        : bookingWithDetails.booking_date
-
-      const services = bookingWithDetails.booking_services?.map((bs: any) => ({
-        name: bs.services?.name || 'Servicio',
-        duration_minutes: bs.duration_minutes || 0,
-        price: parseFloat(bs.price?.toString() || '0')
-      })) || []
-
-      const emailData = {
-        customerName: bookingWithDetails.customer_name || customer_name,
-        customerEmail: bookingWithDetails.customer_email,
-        bookingDate,
-        startTime: bookingWithDetails.start_time,
-        endTime: bookingWithDetails.end_time,
-        totalDuration: bookingWithDetails.total_duration || total_duration,
-        totalPrice: parseFloat(bookingWithDetails.total_price?.toString() || total_price.toString()),
-        services,
-        shopName: bookingWithDetails.shops?.name || shop.name,
-        shopAddress: bookingWithDetails.shops?.address || shop.address,
-        shopPhone: bookingWithDetails.shops?.phone || shop.phone,
-        notes: bookingWithDetails.notes || notes || undefined
-      }
-
-      await emailService.sendConfirmationEmail(emailData)
-    }
+    // NO enviar email automáticamente para bookings manuales
+    // El administrador debe confirmar la reserva primero
 
     return NextResponse.json({ booking })
   } catch (error) {

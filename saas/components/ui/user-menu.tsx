@@ -58,9 +58,7 @@ export function UserMenu({
           src={avatarUrl || undefined}
           bg="blue.500"
           color="white"
-        >
-          {!avatarUrl && !loading && getInitials(userName)}
-        </ChakraAvatar>
+        />
       </MenuButton>
       
       <MenuList

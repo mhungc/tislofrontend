@@ -235,9 +235,9 @@ export default function BookingPage() {
         <Card className="w-full max-w-md">
           <CardContent className="text-center py-8">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">¡Reserva Confirmada!</h2>
+            <h2 className="text-2xl font-bold mb-2">¡Reserva Creada!</h2>
             <p className="text-muted-foreground mb-4">
-              Hemos enviado los detalles a tu email
+              Tu reserva está pendiente de confirmación. Te enviaremos un email cuando sea confirmada.
             </p>
             <div className="bg-gray-50 p-4 rounded-lg">
               <p className="font-medium">{shop?.name}</p>
