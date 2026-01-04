@@ -70,7 +70,7 @@ export default function ShopsPage() {
             </div>
             <div>
               <Label>Zona horaria</Label>
-              <Select value={timezone} onValueChange={(value) => setTimezone(value)}>
+              <Select value={timezone} onChange={(e) => setTimezone(e.target.value)}>
                 {timezones.map((tz) => (
                   <option key={tz} value={tz}>{tz}</option>
                 ))}

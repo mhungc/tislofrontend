@@ -2,7 +2,10 @@ import { Inter } from 'next/font/google'
 import { Toaster } from 'sonner'
 import '../globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  fallback: ['system-ui', 'arial']
+})
 
 export const metadata = {
   title: 'Reservar Cita',
