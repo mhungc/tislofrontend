@@ -3,8 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { ShopRepository } from '@/lib/repositories/shop-repository'
 
 export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: NextRequest
 ) {
   try {
     const supabase = await createClient()
@@ -15,22 +14,17 @@ export async function GET(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const { id } = await params
-    const shop = await repo.getByIdForOwner(id, user.id)
-    if (!shop) {
-      return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
-    }
-
-    return NextResponse.json({ shop })
+    // Obtener todas las tiendas del usuario
+    const shops = await repo.getAllForOwner(user.id)
+    return NextResponse.json({ shops })
   } catch (error) {
-    console.error('Error en GET /api/shops/[id]:', error)
+    console.error('Error en GET /api/shops/temp:', error)
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }
 
 export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  request: NextRequest
 ) {
   try {
     const supabase = await createClient()
@@ -41,25 +35,28 @@ export async function PATCH(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const { id } = await params
+    const body = await request.json()
+    const { id, ...updateData } = body
+    
+    if (!id) {
+      return NextResponse.json({ error: 'ID requerido' }, { status: 400 })
+    }
+
     const existingShop = await repo.getByIdForOwner(id, user.id)
     if (!existingShop) {
       return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
     }
 
-    const body = await request.json()
-    const shop = await repo.update(id, body)
-
+    const shop = await repo.update(id, updateData)
     return NextResponse.json({ shop })
   } catch (error) {
-    console.error('Error en PATCH /api/shops/[id]:', error)
+    console.error('Error en PATCH /api/shops/temp:', error)
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }
 
 export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  request: NextRequest
 ) {
   try {
     const supabase = await createClient()
@@ -70,7 +67,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const { id } = await params
+    const { id } = await request.json()
+    
+    if (!id) {
+      return NextResponse.json({ error: 'ID requerido' }, { status: 400 })
+    }
+
     const existingShop = await repo.getByIdForOwner(id, user.id)
     if (!existingShop) {
       return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
@@ -79,7 +81,7 @@ export async function DELETE(
     await repo.delete(id)
     return NextResponse.json({ message: 'Tienda eliminada correctamente' })
   } catch (error) {
-    console.error('Error en DELETE /api/shops/[id]:', error)
+    console.error('Error en DELETE /api/shops/temp:', error)
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }
