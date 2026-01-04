@@ -77,7 +77,7 @@ export function ForgotPasswordForm({
                     id="email"
                     type="email"
                     placeholder="m@example.com"
-                    required
+                    isRequired
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />

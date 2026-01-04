@@ -85,9 +85,9 @@ export function ModifierSelector({
           {modifiers.map((modifier) => (
             <div key={modifier.id} className="flex items-start space-x-3">
               <Checkbox
-                checked={selectedModifiers.includes(modifier.id)}
-                onCheckedChange={() => toggleModifier(modifier.id)}
-                disabled={autoApplied.includes(modifier.id)}
+                isChecked={selectedModifiers.includes(modifier.id)}
+                onChange={() => toggleModifier(modifier.id)}
+                isDisabled={autoApplied.includes(modifier.id)}
               />
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">

@@ -60,7 +60,7 @@ export function UpdatePasswordForm({
                   id="password"
                   type="password"
                   placeholder="New password"
-                  required
+                  isRequired
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />

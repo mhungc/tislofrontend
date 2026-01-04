@@ -91,7 +91,7 @@ export function SignUpForm({
                   id="email"
                   type="email"
                   placeholder="m@example.com"
-                  required
+                  isRequired
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -103,7 +103,7 @@ export function SignUpForm({
                 <Input
                   id="password"
                   type="password"
-                  required
+                  isRequired
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -115,7 +115,7 @@ export function SignUpForm({
                 <Input
                   id="repeat-password"
                   type="password"
-                  required
+                  isRequired
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
                 />

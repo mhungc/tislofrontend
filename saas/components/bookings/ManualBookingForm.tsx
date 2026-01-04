@@ -173,7 +173,7 @@ export function ManualBookingForm({ shopId, onSuccess, onCancel }: ManualBooking
                   value={formData.customer_name}
                   onChange={(e) => handleInputChange('customer_name', e.target.value)}
                   placeholder="Nombre del cliente"
-                  required
+                  isRequired
                 />
               </div>
               
@@ -216,7 +216,7 @@ export function ManualBookingForm({ shopId, onSuccess, onCancel }: ManualBooking
                   value={formData.booking_date}
                   onChange={(e) => handleInputChange('booking_date', e.target.value)}
                   min={getMinDate()}
-                  required
+                  isRequired
                 />
               </div>
               
@@ -227,7 +227,7 @@ export function ManualBookingForm({ shopId, onSuccess, onCancel }: ManualBooking
                   type="time"
                   value={formData.start_time}
                   onChange={(e) => handleInputChange('start_time', e.target.value)}
-                  required
+                  isRequired
                 />
               </div>
 
@@ -242,7 +242,7 @@ export function ManualBookingForm({ shopId, onSuccess, onCancel }: ManualBooking
 
             <div>
               <Label htmlFor="service_id">Servicio *</Label>
-              <Select value={formData.service_id} onValueChange={(value) => handleInputChange('service_id', value)}>
+              <Select value={formData.service_id} onChange={(e) => handleInputChange('service_id', e.target.value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un servicio" />
                 </SelectTrigger>

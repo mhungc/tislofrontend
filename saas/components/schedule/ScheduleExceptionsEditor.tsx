@@ -224,8 +224,8 @@ export function ScheduleExceptionsEditor({
             {/* Tipo de excepción */}
             <div className="flex items-center gap-3">
               <Switch
-                checked={formData.is_closed}
-                onClick={() => updateForm('is_closed', !formData.is_closed)}
+                isChecked={formData.is_closed}
+                onChange={() => updateForm('is_closed', !formData.is_closed)}
               />
               <Label>
                 {formData.is_closed ? 'Cerrado' : 'Horario Especial'}

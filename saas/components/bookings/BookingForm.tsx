@@ -438,9 +438,9 @@ export function BookingForm({
                   className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50"
                 >
                   <Checkbox
-                    checked={formData.selectedServices.includes(service.id)}
-                    onCheckedChange={(checked) => 
-                      handleServiceSelection(service.id, checked as boolean)
+                    isChecked={formData.selectedServices.includes(service.id)}
+                    onChange={(e) => 
+                      handleServiceSelection(service.id, e.target.checked)
                     }
                   />
                   <div className="flex-1">
