@@ -160,7 +160,7 @@ export function ServiceForm({
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Ej: Corte de cabello"
-                  required
+                  isRequired
                 />
               </div>
 
@@ -209,7 +209,7 @@ export function ServiceForm({
                   value={formData.duration_minutes}
                   onChange={(e) => handleInputChange('duration_minutes', parseInt(e.target.value))}
                   className="w-32"
-                  required
+                  isRequired
                 />
                 <span className="text-sm text-muted-foreground">minutos</span>
               </div>
