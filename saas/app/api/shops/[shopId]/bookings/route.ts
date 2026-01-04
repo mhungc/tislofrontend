@@ -95,7 +95,7 @@ export async function POST(
         end_time,
         total_duration,
         total_price,
-        status: 'confirmed',
+        status: 'pending',
         notes
       },
       [{
