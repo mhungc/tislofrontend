@@ -7,6 +7,8 @@ import {
   MenuList,
   MenuItem,
   MenuDivider,
+  RadioGroup,
+  Radio,
   type MenuButtonProps,
   type MenuListProps,
   type MenuItemProps,
@@ -97,3 +99,32 @@ export const DropdownMenuLabel = React.forwardRef<HTMLDivElement, React.HTMLAttr
   }
 );
 DropdownMenuLabel.displayName = "DropdownMenuLabel";
+
+export const DropdownMenuRadioGroup = React.forwardRef<HTMLDivElement, { value?: string; onValueChange?: (value: string) => void; children: React.ReactNode }>(
+  function DropdownMenuRadioGroup({ value, onValueChange, children, ...props }, ref) {
+    return (
+      <RadioGroup value={value} onChange={onValueChange} {...props}>
+        {children}
+      </RadioGroup>
+    );
+  }
+);
+DropdownMenuRadioGroup.displayName = "DropdownMenuRadioGroup";
+
+export const DropdownMenuRadioItem = React.forwardRef<HTMLButtonElement, { value: string; className?: string; children: React.ReactNode }>(
+  function DropdownMenuRadioItem({ value, className, children, ...props }, ref) {
+    return (
+      <MenuItem
+        ref={ref as any}
+        className={className}
+        _hover={{ bg: "gray.100" }}
+        as={Radio}
+        value={value}
+        {...props}
+      >
+        {children}
+      </MenuItem>
+    );
+  }
+);
+DropdownMenuRadioItem.displayName = "DropdownMenuRadioItem";
