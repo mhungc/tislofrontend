@@ -72,7 +72,7 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
                 value={formData.name}
                 onChange={(e) => updateField('name', e.target.value)}
                 placeholder="Nombre de la tienda"
-                required
+                isRequired
               />
             </div>
             
@@ -112,7 +112,7 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
               value={formData.address}
               onChange={(e) => updateField('address', e.target.value)}
               placeholder="Dirección completa"
-              required
+              isRequired
             />
           </div>
 
