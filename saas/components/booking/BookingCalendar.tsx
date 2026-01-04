@@ -214,7 +214,7 @@ export function BookingCalendar({ shopId, shopName }: BookingCalendarProps) {
       </Card>
 
       {/* Booking Details Dialog */}
-      <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
+      <Dialog isOpen={showBookingDialog} onClose={() => setShowBookingDialog(false)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Detalles de la Reserva</DialogTitle>
