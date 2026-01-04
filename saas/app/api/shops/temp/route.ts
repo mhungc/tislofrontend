@@ -15,7 +15,7 @@ export async function GET(
     }
 
     // Obtener todas las tiendas del usuario
-    const shops = await repo.getAllForOwner(user.id)
+    const shops = await repo.listByOwner(user.id)
     return NextResponse.json({ shops })
   } catch (error) {
     console.error('Error en GET /api/shops/temp:', error)
