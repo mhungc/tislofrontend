@@ -30,15 +30,33 @@ export class ScheduleService {
 
   // 📅 Obtener horarios semanales de una tienda
   async getShopSchedules(shopId: string): Promise<ShopSchedule[]> {
-    const response = await fetch(`/api/shops/${shopId}/schedule`)
-    
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Error al obtener horarios')
+    try {
+      const response = await fetch(`/api/shops/${shopId}/schedule`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      if (!response.ok) {
+        // Si no hay horarios, devolver array vacío en lugar de error
+        if (response.status === 404) {
+          return []
+        }
+        throw new Error('Error al obtener horarios')
+      }
+      
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        return []
+      }
+      
+      const data = await response.json()
+      return data.schedules || []
+    } catch (error) {
+      console.error('Error en getShopSchedules:', error)
+      return []
     }
-    
-    const data = await response.json()
-    return data.schedules || []
   }
 
   // 📅 Obtener un horario específico
@@ -98,17 +116,35 @@ export class ScheduleService {
     startDate: string,
     endDate: string
   ): Promise<ScheduleException[]> {
-    const response = await fetch(
-      `/api/shops/${shopId}/schedule/exceptions?start=${startDate}&end=${endDate}`
-    )
+    try {
+      const response = await fetch(
+        `/api/shops/${shopId}/schedule/exceptions?start=${startDate}&end=${endDate}`,
+        {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Error al obtener excepciones')
+      if (!response.ok) {
+        if (response.status === 404) {
+          return []
+        }
+        throw new Error('Error al obtener excepciones')
+      }
+
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        return []
+      }
+
+      const data = await response.json()
+      return data.exceptions || []
+    } catch (error) {
+      console.error('Error en getScheduleExceptions:', error)
+      return []
     }
-
-    const data = await response.json()
-    return data.exceptions || []
   }
 
   // ➕ Crear excepción de horario

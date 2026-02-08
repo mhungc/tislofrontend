@@ -8,7 +8,7 @@ import { ScheduleViewer } from '@/components/schedule/ScheduleViewer'
 import { ScheduleService } from '@/lib/services/schedule-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger, TabsPanels } from '@/components/ui/tabs'
 import { ArrowLeft, Clock, AlertTriangle, Store, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -49,8 +49,11 @@ export default function ShopSchedulePage() {
           })
           
           if (response.ok) {
-            const data = await response.json()
-            setShop(data.shop || data)
+            const contentType = response.headers.get('content-type')
+            if (contentType && contentType.includes('application/json')) {
+              const data = await response.json()
+              setShop(data.shop || data)
+            }
           } else if (response.status === 401) {
             router.push('/auth/login')
             return
@@ -133,93 +136,97 @@ export default function ShopSchedulePage() {
 
       {/* Contenido según el modo */}
       {mode === 'view' && schedules.length > 0 ? (
-        <Tabs defaultValue="weekly" className="space-y-6">
+        <Tabs defaultValue="0" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="weekly" className="flex items-center gap-2">
+            <TabsTrigger className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Horarios Semanales
             </TabsTrigger>
-            <TabsTrigger value="exceptions" className="flex items-center gap-2">
+            <TabsTrigger className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               Excepciones
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="weekly">
-            <ScheduleViewer
-              schedules={schedules}
-              shopName={shop?.name || 'Tienda'}
-              onEdit={() => setMode('edit')}
-              onDelete={async () => {
-                try {
-                  // Eliminar todos los horarios
-                  await fetch(`/api/shops/${shopId}/schedule`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                  })
-                  setSchedules([])
-                  setMode('create')
-                  toast.success('Horarios eliminados correctamente')
-                } catch (error) {
-                  toast.error('Error al eliminar horarios')
-                }
-              }}
-            />
-          </TabsContent>
+          <TabsPanels>
+            <TabsContent>
+              <ScheduleViewer
+                schedules={schedules}
+                shopName={shop?.name || 'Tienda'}
+                onEdit={() => setMode('edit')}
+                onDelete={async () => {
+                  try {
+                    // Eliminar todos los horarios
+                    await fetch(`/api/shops/${shopId}/schedule`, {
+                      method: 'DELETE',
+                      credentials: 'include'
+                    })
+                    setSchedules([])
+                    setMode('create')
+                    toast.success('Horarios eliminados correctamente')
+                  } catch (error) {
+                    toast.error('Error al eliminar horarios')
+                  }
+                }}
+              />
+            </TabsContent>
 
-          <TabsContent value="exceptions">
-            <ScheduleExceptionsEditor
-              shopId={shopId}
-              onExceptionUpdated={() => {}}
-            />
-          </TabsContent>
+            <TabsContent>
+              <ScheduleExceptionsEditor
+                shopId={shopId}
+                onExceptionUpdated={() => {}}
+              />
+            </TabsContent>
+          </TabsPanels>
         </Tabs>
       ) : (
-        <Tabs defaultValue="weekly" className="space-y-6">
+        <Tabs defaultValue="0" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="weekly" className="flex items-center gap-2">
+            <TabsTrigger className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
               {mode === 'create' ? 'Crear Horarios' : 'Editar Horarios'}
             </TabsTrigger>
-            <TabsTrigger value="exceptions" className="flex items-center gap-2">
+            <TabsTrigger className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               Excepciones
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="weekly">
-            <WeeklyScheduleEditor
-              shopId={shopId}
-              existingSchedules={mode === 'edit' ? schedules : []}
-              onScheduleUpdated={async () => {
-                // Recargar horarios después de guardar
-                try {
-                  const updatedSchedules = await scheduleService.getShopSchedules(shopId)
-                  setSchedules(updatedSchedules)
-                  setMode('view')
-                } catch (error) {
-                  console.error('Error al recargar horarios:', error)
-                }
-              }}
-            />
-            {mode === 'edit' && (
-              <div className="mt-4 flex justify-start">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setMode('view')}
-                >
-                  Cancelar edición
-                </Button>
-              </div>
-            )}
-          </TabsContent>
+          <TabsPanels>
+            <TabsContent>
+              <WeeklyScheduleEditor
+                shopId={shopId}
+                existingSchedules={mode === 'edit' ? schedules : []}
+                onScheduleUpdated={async () => {
+                  // Recargar horarios después de guardar
+                  try {
+                    const updatedSchedules = await scheduleService.getShopSchedules(shopId)
+                    setSchedules(updatedSchedules)
+                    setMode('view')
+                  } catch (error) {
+                    console.error('Error al recargar horarios:', error)
+                  }
+                }}
+              />
+              {mode === 'edit' && (
+                <div className="mt-4 flex justify-start">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setMode('view')}
+                  >
+                    Cancelar edición
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
 
-          <TabsContent value="exceptions">
-            <ScheduleExceptionsEditor
-              shopId={shopId}
-              onExceptionUpdated={() => {}}
-            />
-          </TabsContent>
+            <TabsContent>
+              <ScheduleExceptionsEditor
+                shopId={shopId}
+                onExceptionUpdated={() => {}}
+              />
+            </TabsContent>
+          </TabsPanels>
         </Tabs>
       )}
     </div>

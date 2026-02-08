@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -35,18 +35,21 @@ import { CreateShopForm } from '@/components/shops/CreateShopForm'
 
 export default function ShopsPage() {
   const router = useRouter()
+  const pathname = usePathname()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterByStatus, setFilterByStatus] = useState<'all' | 'active' | 'inactive'>('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const handleCreateSuccess = (shopId?: string) => {
+  const handleCreateSuccess = (shopId?: string, shopData?: any) => {
     setShowCreateForm(false)
     setRefreshKey(prev => prev + 1)
-    if (shopId) {
-      // Get current locale from pathname
-      const locale = window.location.pathname.split('/')[1] || 'es'
-      router.push(`/${locale}/dashboard/shops/${shopId}/schedule`)
+    if (shopId && shopData) {
+      // Obtener el locale de la ruta actual usando usePathname
+      const locale = pathname.split('/')[1] || 'es'
+      // Pasar los datos de la tienda en la URL para evitar fetch inicial
+      const shopParam = encodeURIComponent(JSON.stringify(shopData))
+      router.push(`/${locale}/dashboard/shops/${shopId}/schedule?shop=${shopParam}`)
     }
   }
 
