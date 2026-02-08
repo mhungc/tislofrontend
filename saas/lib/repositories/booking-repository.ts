@@ -121,17 +121,12 @@ export class BookingRepository {
   }
 
   async getByDateRange(shopId: string, startDate: string, endDate: string) {
-       
-    const start = new Date(`${startDate}T00:00:00Z`);
-    const end = new Date(`${endDate}T23:59:59Z`);
-console.log("start",start);
-console.log("end",end);
     return await prisma.bookings.findMany({
       where: {
         shop_id: shopId,
-        created_at: {
-          gte: new Date(start),
-          lte: new Date(end)
+        booking_date: {
+          gte: new Date(startDate),
+          lte: new Date(endDate)
         },
         status: {
           in: ['pending', 'confirmed']

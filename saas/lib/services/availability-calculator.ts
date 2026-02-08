@@ -28,18 +28,34 @@ export class AvailabilityCalculator {
     existingBookings: Booking[],
     serviceDurationMinutes: number = 60
   ): TimeSlot[] {
+    console.log('=== CALCULATE AVAILABLE SLOTS ===')
+    console.log('Date:', date)
+    console.log('Schedules count:', schedules.length)
+    console.log('Existing bookings:', existingBookings.length)
+    console.log('Service duration:', serviceDurationMinutes, 'minutes')
+    
     // Crear fecha sin problemas de zona horaria
     const [year, month, day] = date.split('-').map(Number)
     const dateObj = new Date(year, month - 1, day)
     const dayOfWeek = dateObj.getDay()
+    console.log('Day of week:', dayOfWeek, ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][dayOfWeek])
+    
     const daySchedules = this.getDaySchedules(dayOfWeek, schedules)
+    console.log('Day schedules found:', daySchedules.length)
     
     if (daySchedules.length === 0) {
+      console.log('❌ No schedules for this day')
+      console.log('=================================')
       return []
     }
 
     const allSlots = this.generateTimeSlots(daySchedules)
+    console.log('Total slots generated:', allSlots.length)
+    
     const availableSlots = this.filterAvailableSlots(allSlots, existingBookings, serviceDurationMinutes)
+    const availableCount = availableSlots.filter(s => s.available).length
+    console.log('Available slots:', availableCount, '/', allSlots.length)
+    console.log('=================================')
     
     return availableSlots
   }
@@ -59,9 +75,29 @@ export class AvailabilityCalculator {
   private generateTimeSlots(schedules: Schedule[]): TimeSlot[] {
     const slots: TimeSlot[] = []
 
+    console.log('--- Generate Time Slots ---')
     for (const schedule of schedules) {
+      console.log('Schedule:', {
+        day: schedule.day_of_week,
+        open: schedule.open_time,
+        close: schedule.close_time,
+        open_type: typeof schedule.open_time,
+        close_type: typeof schedule.close_time
+      })
+      
       const openTime = this.parseTime(schedule.open_time)
-      const closeTime = this.parseTime(schedule.close_time)
+      let closeTime = this.parseTime(schedule.close_time)
+      
+      // Si el cierre es antes o igual a la apertura, asumimos que es al día siguiente (ej: 22:00-00:00)
+      if (closeTime <= openTime) {
+        closeTime = new Date(closeTime)
+        closeTime.setDate(closeTime.getDate() + 1)
+      }
+      
+      console.log('Parsed:', {
+        open: this.formatTime(openTime),
+        close: this.formatTime(closeTime)
+      })
       
       let currentTime = new Date(openTime)
       
@@ -79,6 +115,12 @@ export class AvailabilityCalculator {
         currentTime.setMinutes(currentTime.getMinutes() + this.SLOT_DURATION_MINUTES)
       }
     }
+
+    console.log('Slots generated:', slots.length)
+    if (slots.length > 0) {
+      console.log('First slot:', slots[0].time, 'Last slot:', slots[slots.length - 1].time)
+    }
+    console.log('---------------------------')
 
     return slots.sort((a, b) => a.time.localeCompare(b.time))
   }
@@ -111,29 +153,69 @@ export class AvailabilityCalculator {
     
     // Encontrar el índice del slot actual
     const startIndex = allSlots.findIndex(slot => slot.time === startTime)
-    if (startIndex === -1) return false
+    if (startIndex === -1) {
+      console.log(`⚠️ Slot ${startTime} not found in allSlots`)
+      return false
+    }
 
-    // Verificar que hay suficientes slots consecutivos disponibles
+    // Verificar que hay suficientes slots consecutivos EN TIEMPO REAL
+    const endTime = this.addMinutesToTime(startTime, serviceDurationMinutes)
+    
     for (let i = 0; i < slotsNeeded; i++) {
       const slotIndex = startIndex + i
       
       // Verificar que el slot existe
-      if (slotIndex >= allSlots.length) return false
+      if (slotIndex >= allSlots.length) {
+        console.log(`⚠️ ${startTime}: Not enough slots in array (need ${slotsNeeded}, missing ${i})`)
+        return false
+      }
       
-      const currentSlotTime = allSlots[slotIndex].time
+      const currentSlot = allSlots[slotIndex]
+      const currentSlotTime = currentSlot.time
+      
+      // Verificar que los slots son consecutivos en tiempo (no hay gaps)
+      if (i > 0) {
+        const expectedTime = this.addMinutesToTime(allSlots[startIndex + i - 1].time, this.SLOT_DURATION_MINUTES)
+        if (currentSlotTime !== expectedTime) {
+          console.log(`⚠️ ${startTime}: Gap detected between slots (${allSlots[startIndex + i - 1].time} → ${currentSlotTime}, expected ${expectedTime})`)
+          return false
+        }
+      }
       
       // Verificar que no hay conflicto con reservas existentes
       if (this.hasBookingConflict(currentSlotTime, existingBookings)) {
+        console.log(`⚠️ ${startTime}: Conflict at ${currentSlotTime}`)
         return false
       }
     }
 
-    // Verificar que el servicio completo cabe en el horario de trabajo
-    const endTime = this.addMinutesToTime(startTime, serviceDurationMinutes)
-    const lastSlotTime = allSlots[allSlots.length - 1].time
-    const lastSlotEndTime = this.addMinutesToTime(lastSlotTime, this.SLOT_DURATION_MINUTES)
+    // Verificar que el tiempo de fin del servicio no excede el último slot que necesitamos
+    const lastNeededSlot = allSlots[startIndex + slotsNeeded - 1]
+    const lastNeededSlotEnd = this.addMinutesToTime(lastNeededSlot.time, this.SLOT_DURATION_MINUTES)
     
-    return endTime <= lastSlotEndTime
+    // Comparar como minutos desde medianoche para manejar el cruce de medianoche
+    const fits = this.timeToMinutes(endTime) <= this.timeToMinutes(lastNeededSlotEnd)
+    if (!fits) {
+      console.log(`⚠️ ${startTime}: Service ends at ${endTime} but last needed slot ends at ${lastNeededSlotEnd}`)
+    }
+    
+    return fits
+  }
+
+  /**
+   * Convierte tiempo HH:MM a minutos desde medianoche
+   * Maneja el cruce de medianoche (00:00-05:59 se considera como 1440+ minutos)
+   */
+  private timeToMinutes(timeStr: string): number {
+    const [hours, minutes] = timeStr.split(':').map(Number)
+    const totalMinutes = hours * 60 + minutes
+    
+    // Si es entre 00:00 y 05:59, asumimos que es después de medianoche
+    if (hours >= 0 && hours < 6) {
+      return totalMinutes + 1440 // +24 horas
+    }
+    
+    return totalMinutes
   }
 
   /**
@@ -169,7 +251,9 @@ export class AvailabilityCalculator {
    * Formatea tiempo a string HH:MM
    */
   private formatTime(date: Date): string {
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+    const hours = date.getHours()
+    const minutes = date.getMinutes()
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
   }
 
   /**
