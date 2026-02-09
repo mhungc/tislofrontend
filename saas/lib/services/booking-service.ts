@@ -157,10 +157,9 @@ export class BookingService {
     return `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`
   }
 
-  validateTimeSlot(startTime: string, duration: number, availableSlots: any[]): boolean {
-    const endTime = this.calculateEndTime(startTime, duration)
-    
-    const slotsNeeded = Math.ceil(duration / 30)
+  validateTimeSlot(startTime: string, duration: number, availableSlots: any[], baseSlotMinutes: number = 15): boolean {
+    const blockedMinutes = Math.ceil(duration / baseSlotMinutes) * baseSlotMinutes
+    const slotsNeeded = blockedMinutes / baseSlotMinutes
     const startIndex = availableSlots.findIndex(slot => slot.time === startTime)
     
     if (startIndex === -1) return false

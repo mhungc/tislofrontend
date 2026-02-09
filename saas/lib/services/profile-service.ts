@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { createClient } from '@/lib/supabase/server'
 
 export class ProfileService {
   async ensureProfileExists(userId: string) {
@@ -11,25 +12,24 @@ export class ProfileService {
       return existingProfile
     }
 
-    // Obtener datos del usuario de auth.users
-    const user = await prisma.users.findUnique({
-      where: { id: userId }
-    })
+    // Obtener datos del usuario de Supabase Auth
+    const supabase = await createClient()
+    const { data: { user }, error } = await supabase.auth.getUser()
 
-    if (!user) {
-      throw new Error('Usuario no encontrado')
+    if (error || !user || user.id !== userId) {
+      throw new Error('Usuario no encontrado en Supabase Auth')
     }
 
-    // Crear el perfil automáticamente (sin datos demo automáticos)
+    // Crear el perfil automáticamente usando los metadatos de Supabase
     const profile = await prisma.profiles.create({
       data: {
         id: userId,
         email: user.email || '',
-        full_name: (user.raw_user_meta_data as any)?.full_name || 
-                  (user.raw_user_meta_data as any)?.name || 
+        full_name: user.user_metadata?.full_name || 
+                  user.user_metadata?.name || 
                   null,
-        avatar_url: (user.raw_user_meta_data as any)?.avatar_url || null,
-        is_demo: false // Por defecto no es demo
+        avatar_url: user.user_metadata?.avatar_url || null,
+        is_demo: false
       }
     })
 

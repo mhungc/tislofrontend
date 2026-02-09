@@ -17,7 +17,11 @@ export interface Booking {
 }
 
 export class AvailabilityCalculator {
-  private readonly SLOT_DURATION_MINUTES = 30
+  private readonly baseSlotMinutes: number
+
+  constructor(baseSlotMinutes: number = 15) {
+    this.baseSlotMinutes = baseSlotMinutes
+  }
 
   /**
    * Calcula los slots disponibles para una fecha específica
@@ -112,7 +116,7 @@ export class AvailabilityCalculator {
           })
         }
         
-        currentTime.setMinutes(currentTime.getMinutes() + this.SLOT_DURATION_MINUTES)
+        currentTime.setMinutes(currentTime.getMinutes() + this.baseSlotMinutes)
       }
     }
 
@@ -148,23 +152,20 @@ export class AvailabilityCalculator {
     existingBookings: Booking[],
     serviceDurationMinutes: number
   ): boolean {
-    // Calcular cuántos slots consecutivos necesitamos
-    const slotsNeeded = Math.ceil(serviceDurationMinutes / this.SLOT_DURATION_MINUTES)
+    const blockedMinutes = Math.ceil(serviceDurationMinutes / this.baseSlotMinutes) * this.baseSlotMinutes
+    const slotsNeeded = blockedMinutes / this.baseSlotMinutes
     
-    // Encontrar el índice del slot actual
     const startIndex = allSlots.findIndex(slot => slot.time === startTime)
     if (startIndex === -1) {
       console.log(`⚠️ Slot ${startTime} not found in allSlots`)
       return false
     }
 
-    // Verificar que hay suficientes slots consecutivos EN TIEMPO REAL
     const endTime = this.addMinutesToTime(startTime, serviceDurationMinutes)
     
     for (let i = 0; i < slotsNeeded; i++) {
       const slotIndex = startIndex + i
       
-      // Verificar que el slot existe
       if (slotIndex >= allSlots.length) {
         console.log(`⚠️ ${startTime}: Not enough slots in array (need ${slotsNeeded}, missing ${i})`)
         return false
@@ -173,27 +174,23 @@ export class AvailabilityCalculator {
       const currentSlot = allSlots[slotIndex]
       const currentSlotTime = currentSlot.time
       
-      // Verificar que los slots son consecutivos en tiempo (no hay gaps)
       if (i > 0) {
-        const expectedTime = this.addMinutesToTime(allSlots[startIndex + i - 1].time, this.SLOT_DURATION_MINUTES)
+        const expectedTime = this.addMinutesToTime(allSlots[startIndex + i - 1].time, this.baseSlotMinutes)
         if (currentSlotTime !== expectedTime) {
           console.log(`⚠️ ${startTime}: Gap detected between slots (${allSlots[startIndex + i - 1].time} → ${currentSlotTime}, expected ${expectedTime})`)
           return false
         }
       }
       
-      // Verificar que no hay conflicto con reservas existentes
       if (this.hasBookingConflict(currentSlotTime, existingBookings)) {
         console.log(`⚠️ ${startTime}: Conflict at ${currentSlotTime}`)
         return false
       }
     }
 
-    // Verificar que el tiempo de fin del servicio no excede el último slot que necesitamos
     const lastNeededSlot = allSlots[startIndex + slotsNeeded - 1]
-    const lastNeededSlotEnd = this.addMinutesToTime(lastNeededSlot.time, this.SLOT_DURATION_MINUTES)
+    const lastNeededSlotEnd = this.addMinutesToTime(lastNeededSlot.time, this.baseSlotMinutes)
     
-    // Comparar como minutos desde medianoche para manejar el cruce de medianoche
     const fits = this.timeToMinutes(endTime) <= this.timeToMinutes(lastNeededSlotEnd)
     if (!fits) {
       console.log(`⚠️ ${startTime}: Service ends at ${endTime} but last needed slot ends at ${lastNeededSlotEnd}`)

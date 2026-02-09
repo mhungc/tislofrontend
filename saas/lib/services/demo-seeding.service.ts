@@ -3,6 +3,7 @@ import { ShopRepository } from '@/lib/repositories/shop-repository'
 import { ServiceRepository } from '@/lib/repositories/service-repository'
 import { BookingRepository } from '@/lib/repositories/booking-repository'
 import { ScheduleRepository } from '@/lib/repositories/schedule-repository'
+import { calculateBookingTotals } from '@/lib/utils/booking-totals'
 
 export interface DemoServiceData {
   name: string
@@ -251,8 +252,7 @@ export class DemoSeedingService {
           duration_minutes: this.demoServices.find(s => s.name === serviceName)?.duration_minutes || 60
         }))
 
-        const totalDuration = bookingServices.reduce((sum, service) => sum + service.duration_minutes, 0)
-        const totalPrice = bookingServices.reduce((sum, service) => sum + service.price, 0)
+        const totals = calculateBookingTotals(bookingServices)
 
         await this.bookingRepository.create({
           shop_id: demoShop.id,
@@ -263,8 +263,8 @@ export class DemoSeedingService {
           booking_date: bookingData.booking_date,
           start_time: bookingData.start_time,
           end_time: bookingData.end_time,
-          total_duration: totalDuration,
-          total_price: totalPrice,
+          total_duration: totals.totalDuration,
+          total_price: totals.totalPrice,
           status: bookingData.status as 'pending' | 'confirmed' | 'cancelled',
           notes: 'Reserva de demostración'
         }, bookingServices, [])

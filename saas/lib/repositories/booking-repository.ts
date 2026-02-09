@@ -97,7 +97,8 @@ export class BookingRepository {
           include: {
             services: true
           }
-        }
+        },
+        booking_modifiers: true
       }
     })
   }
@@ -168,9 +169,9 @@ export class BookingRepository {
     })
   }
 
-  async getAvailableSlots(shopId: string, date: string, schedules: any[], serviceDurationMinutes: number = 60) {
+  async getAvailableSlots(shopId: string, date: string, schedules: any[], serviceDurationMinutes: number = 60, baseSlotMinutes: number = 15) {
     const bookings = await this.getByDateRange(shopId, date, date)
-    const calculator = new AvailabilityCalculator()
+    const calculator = new AvailabilityCalculator(baseSlotMinutes)
     
     return calculator.calculateAvailableSlots(
       date,

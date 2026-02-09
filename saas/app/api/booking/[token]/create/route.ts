@@ -5,6 +5,7 @@ import { ServiceRepository } from '@/lib/repositories/service-repository'
 import { ModifierService } from '@/lib/services/modifier-service'
 import { VerificationService } from '@/lib/services/verification-service'
 import { BookingEmailService } from '@/lib/services/booking-email-service'
+import { calculateBookingTotals } from '@/lib/utils/booking-totals'
 
 export async function POST(
   request: NextRequest,
@@ -102,10 +103,18 @@ export async function POST(
     }
 
     // Calcular duración y precio total (incluyendo modificadores)
-    const baseDuration = validServices.reduce((sum, service) => sum + service.duration_minutes, 0)
-    const basePrice = validServices.reduce((sum, service) => sum + (service.price || 0), 0)
-    const totalDuration = baseDuration + modifierDurationAdjustment
-    const totalPrice = basePrice + modifierPriceAdjustment
+    const { totalDuration, totalPrice } = calculateBookingTotals(
+      validServices.map(service => ({
+        duration_minutes: service.duration_minutes,
+        price: service.price
+      })),
+      [
+        {
+          applied_duration: modifierDurationAdjustment,
+          applied_price: modifierPriceAdjustment
+        }
+      ]
+    )
 
     // Calcular hora de fin
     const [hours, minutes] = start_time.split(':').map(Number)
@@ -233,14 +242,21 @@ export async function POST(
         price: parseFloat(bs.price?.toString() || '0')
       })) || []
 
+      const modifiers = bookingWithDetails.booking_modifiers?.map((mod: any) => ({
+        applied_duration: mod.applied_duration || 0,
+        applied_price: mod.applied_price || 0
+      })) || []
+
+      const emailTotals = calculateBookingTotals(services, modifiers)
+
       const emailData = {
         customerName: bookingWithDetails.customer_name || customer_name,
         customerEmail: bookingWithDetails.customer_email,
         bookingDate,
         startTime: bookingWithDetails.start_time,
         endTime: bookingWithDetails.end_time,
-        totalDuration: bookingWithDetails.total_duration || totalDuration,
-        totalPrice: parseFloat(bookingWithDetails.total_price?.toString() || totalPrice.toString()),
+        totalDuration: emailTotals.totalDuration,
+        totalPrice: emailTotals.totalPrice,
         services,
         shopName: bookingLink.shops?.name || '',
         shopAddress: bookingLink.shops?.address || null,

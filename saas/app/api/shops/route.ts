@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, address, phone, email, website } = body
+    const { name, description, address, phone, email, website, timezone } = body
 
     // Validar campos requeridos
     if (!name || !address) {
@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
       phone,
       email,
       website,
+      timezone,
     })
 
     return NextResponse.json({ shop }, { status: 201 })

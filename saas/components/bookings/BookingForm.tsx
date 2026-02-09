@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ModifierSelector } from '../booking/ModifierSelector'
+import { calculateBookingTotals } from '@/lib/utils/booking-totals'
 
 interface BookingFormProps {
   shopId: string
@@ -147,15 +148,22 @@ export function BookingForm({
 
   const calculateTotals = () => {
     const selectedServiceObjects = services.filter(s => formData.selectedServices.includes(s.id))
-    const baseTotal = selectedServiceObjects.reduce((sum, service) => sum + (service.price || 0), 0)
-    const baseDuration = selectedServiceObjects.reduce((sum, service) => sum + service.duration_minutes, 0)
-    
-    // Aplicar ajustes de modificadores
-    const finalTotal = baseTotal + modifierAdjustments.price
-    const finalDuration = baseDuration + modifierAdjustments.duration
-    
-    setTotalAmount(finalTotal)
-    setTotalDuration(finalDuration)
+
+    const totals = calculateBookingTotals(
+      selectedServiceObjects.map(service => ({
+        duration_minutes: service.duration_minutes,
+        price: service.price
+      })),
+      [
+        {
+          applied_duration: modifierAdjustments.duration,
+          applied_price: modifierAdjustments.price
+        }
+      ]
+    )
+
+    setTotalAmount(totals.totalPrice)
+    setTotalDuration(totals.totalDuration)
   }
 
   // Actualizar campo del formulario

@@ -61,10 +61,10 @@ export async function POST(
     
     // Preparar horarios para insertar
     const schedulesToInsert = schedules.map((schedule: any) => {
-      // Convertir tiempo a DateTime para Prisma
+      // Convertir tiempo a DateTime para Prisma (sin zona horaria para evitar conversiones)
       const baseDate = '1970-01-01T'
-      const openTime = schedule.open_time.includes('T') ? schedule.open_time : `${baseDate}${schedule.open_time}:00.000Z`
-      const closeTime = schedule.close_time.includes('T') ? schedule.close_time : `${baseDate}${schedule.close_time}:00.000Z`
+      const openTime = schedule.open_time.includes('T') ? schedule.open_time : `${baseDate}${schedule.open_time}:00.000`
+      const closeTime = schedule.close_time.includes('T') ? schedule.close_time : `${baseDate}${schedule.close_time}:00.000`
       
       return {
         shop_id: shopId,

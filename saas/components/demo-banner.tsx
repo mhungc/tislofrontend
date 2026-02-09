@@ -21,6 +21,7 @@ export function DemoBanner({ onToggleDemo }: DemoBannerProps) {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
+        setIsVisible(true)
         try {
           const response = await fetch('/api/auth/profile', {
             method: 'POST'
@@ -29,7 +30,6 @@ export function DemoBanner({ onToggleDemo }: DemoBannerProps) {
             const data = await response.json()
             const demoStatus = data.profile?.is_demo || false
             setIsDemo(demoStatus)
-            setIsVisible(true) // Siempre mostrar el banner
           }
         } catch (error) {
           console.error('Error verificando estado demo:', error)

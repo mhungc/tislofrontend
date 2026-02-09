@@ -135,7 +135,7 @@ export class BookingCalendarService {
     if (schedules.length === 0) return []
 
     const slots: CalendarSlot[] = []
-    const SLOT_DURATION = 30 // minutos
+    const BASE_SLOT_MINUTES = 15
     const allTimes = new Set<string>()
 
     // Generar todos los slots posibles de todos los bloques horarios
@@ -148,7 +148,7 @@ export class BookingCalendarService {
       while (currentTime < closeTime) {
         const timeStr = this.formatTime(currentTime)
         allTimes.add(timeStr)
-        currentTime.setMinutes(currentTime.getMinutes() + SLOT_DURATION)
+        currentTime.setMinutes(currentTime.getMinutes() + BASE_SLOT_MINUTES)
       }
     }
 

@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, Clock, User, Save, Plus } from 'lucide-react'
 import { toast } from 'sonner'
+import { calculateBookingTotals } from '@/lib/utils/booking-totals'
 
 interface ManualBookingFormProps {
   shopId: string
@@ -109,6 +110,13 @@ export function ManualBookingForm({ shopId, onSuccess, onCancel }: ManualBooking
       const service = getSelectedService()
       const endTime = calculateEndTime()
 
+      const totals = calculateBookingTotals([
+        {
+          duration_minutes: service?.duration_minutes || 0,
+          price: service?.price || 0
+        }
+      ])
+
       await bookingService.createManualBooking(shopId, {
         customer_name: formData.customer_name,
         customer_email: formData.customer_email,
@@ -118,8 +126,8 @@ export function ManualBookingForm({ shopId, onSuccess, onCancel }: ManualBooking
         end_time: endTime,
         service_id: formData.service_id,
         notes: formData.notes,
-        total_duration: service?.duration_minutes || 0,
-        total_price: service?.price || 0
+        total_duration: totals.totalDuration,
+        total_price: totals.totalPrice
       })
 
       toast.success('Reserva creada exitosamente')

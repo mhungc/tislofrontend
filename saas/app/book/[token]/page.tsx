@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator'
 import { MapPin, Clock, CheckCircle, ArrowLeft, User, Mail, Phone } from 'lucide-react'
 import { toast } from 'sonner'
 import { ModifierSelector } from '@/components/booking/ModifierSelector'
+import { calculateBookingTotals } from '@/lib/utils/booking-totals'
 
 export default function BookingPage() {
   const params = useParams()
@@ -82,20 +83,23 @@ export default function BookingPage() {
     }
   }
 
-  const getTotalDuration = () => {
-    const baseDuration = selectedServices.reduce((total, serviceId) => {
-      const service = services.find(s => s.id === serviceId)
-      return total + (service?.duration_minutes || 0)
-    }, 0)
-    return baseDuration + modifierAdjustments.duration
-  }
+  const getTotals = () => {
+    const selectedServiceObjects = selectedServices
+      .map(serviceId => services.find(s => s.id === serviceId))
+      .filter(Boolean)
 
-  const getTotalPrice = () => {
-    const basePrice = selectedServices.reduce((total, serviceId) => {
-      const service = services.find(s => s.id === serviceId)
-      return total + Number(service?.price || 0)
-    }, 0)
-    return basePrice + Number(modifierAdjustments.price || 0)
+    return calculateBookingTotals(
+      selectedServiceObjects.map(service => ({
+        duration_minutes: service.duration_minutes,
+        price: service.price
+      })),
+      [
+        {
+          applied_duration: modifierAdjustments.duration,
+          applied_price: modifierAdjustments.price
+        }
+      ]
+    )
   }
 
   const handleServiceToggle = (serviceId: string) => {
@@ -249,6 +253,8 @@ export default function BookingPage() {
       </div>
     )
   }
+
+  const totals = getTotals()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -558,8 +564,8 @@ export default function BookingPage() {
                       </>
                     )}
                     <div className="flex justify-between font-medium">
-                      <span>Total: {formatDuration(getTotalDuration())}</span>
-                      <span>${getTotalPrice().toFixed(2)}</span>
+                      <span>Total: {formatDuration(totals.totalDuration)}</span>
+                      <span>${totals.totalPrice.toFixed(2)}</span>
                     </div>
                   </div>
                 )}

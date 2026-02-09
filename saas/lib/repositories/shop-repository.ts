@@ -9,6 +9,7 @@ export interface CreateShopInput {
   phone?: string | null
   email?: string | null
   website?: string | null
+  timezone?: string | null
 }
 
 export interface UpdateShopInput {
@@ -18,6 +19,7 @@ export interface UpdateShopInput {
   phone?: string | null
   email?: string | null
   website?: string | null
+  timezone?: string | null
   is_active?: boolean
 }
 
@@ -34,19 +36,19 @@ export class ShopRepository {
   }
 
   async create(input: CreateShopInput) {
-    const data: Prisma.shopsCreateInput = {
-      name: input.name,
-      description: input.description ?? undefined,
-      address: input.address ?? undefined,
-      phone: input.phone ?? undefined,
-      email: input.email ?? undefined,
-      website: input.website ?? undefined,
-      is_active: true,
-      profiles: {
-        connect: { id: input.owner_id }
+    return prisma.shops.create({
+      data: {
+        owner_id: input.owner_id,
+        name: input.name,
+        description: input.description ?? undefined,
+        address: input.address ?? undefined,
+        phone: input.phone ?? undefined,
+        email: input.email ?? undefined,
+        website: input.website ?? undefined,
+        timezone: input.timezone ?? 'America/New_York',
+        is_active: true,
       }
-    }
-    return prisma.shops.create({ data })
+    })
   }
 
   async update(shopId: string, input: UpdateShopInput) {
@@ -57,6 +59,7 @@ export class ShopRepository {
       phone: input.phone ?? undefined,
       email: input.email ?? undefined,
       website: input.website ?? undefined,
+      timezone: input.timezone ?? undefined,
       is_active: input.is_active ?? undefined,
     }
     return prisma.shops.update({ where: { id: shopId }, data })
