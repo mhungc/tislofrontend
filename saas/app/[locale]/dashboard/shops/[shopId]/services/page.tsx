@@ -150,6 +150,7 @@ export default function ShopServicesPage() {
           shopId={shopId}
           onServiceEdit={handleEdit}
           onCreateNew={handleCreateNew}
+          showCreateButton={false}
         />
       ) : (
         <ServiceForm

@@ -129,13 +129,6 @@ export function ShopsList({
               <Store className="h-5 w-5" />
               Mis Tiendas ({filteredShops.length})
             </CardTitle>
-            {/* <Button
-              onClick={() => onShopEdit?.('new')}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Nueva Tienda
-            </Button> */}
           </div>
         </CardHeader>
         <CardContent>
@@ -183,13 +176,9 @@ export function ShopsList({
               }
             </p>
             {!searchTerm && (
-              <Button
-                onClick={() => onShopEdit?.('new')}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Crear Primera Tienda
-              </Button>
+              <p className="text-xs text-muted-foreground">
+                Usa el boton "Nueva Tienda" para empezar.
+              </p>
             )}
           </CardContent>
         </Card>

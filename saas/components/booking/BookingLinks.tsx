@@ -168,10 +168,9 @@ export function BookingLinks({ shopId, shopName }: BookingLinksProps) {
             <p className="text-muted-foreground mb-4">
               Crea tu primer enlace para que los clientes puedan reservar
             </p>
-            <Button onClick={() => setShowCreateForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Crear Primer Enlace
-            </Button>
+            <p className="text-xs text-muted-foreground">
+              Usa el boton "Nuevo Enlace" para empezar.
+            </p>
           </CardContent>
         </Card>
       ) : (

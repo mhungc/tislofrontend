@@ -24,6 +24,7 @@ interface ServicesListProps {
   onServiceSelect?: (serviceId: string) => void
   onServiceEdit?: (serviceId: string) => void
   onCreateNew?: () => void
+  showCreateButton?: boolean
   className?: string
 }
 
@@ -32,6 +33,7 @@ export function ServicesList({
   onServiceSelect,
   onServiceEdit,
   onCreateNew,
+  showCreateButton = true,
   className = ''
 }: ServicesListProps) {
   const [services, setServices] = useState<any[]>([])
@@ -134,10 +136,12 @@ export function ServicesList({
             <CardTitle className="flex items-center gap-2">
               🛍️ Servicios ({filteredServices.length})
             </CardTitle>
-            <Button onClick={onCreateNew}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Servicio
-            </Button>
+            {showCreateButton && (
+              <Button onClick={onCreateNew}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Servicio
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -185,10 +189,9 @@ export function ServicesList({
               }
             </p>
             {!searchTerm && (
-              <Button onClick={onCreateNew}>
-                <Plus className="h-4 w-4 mr-2" />
-                Crear Primer Servicio
-              </Button>
+              <p className="text-xs text-muted-foreground">
+                Usa el boton "Nuevo Servicio" para empezar.
+              </p>
             )}
           </CardContent>
         </Card>

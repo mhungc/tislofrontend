@@ -193,6 +193,7 @@ export default function ShopConfigPage() {
             setServiceMode('edit')
           }}
           onCreateNew={() => setServiceMode('create')}
+          showCreateButton={false}
         />
       ) : (
         <ServiceForm
