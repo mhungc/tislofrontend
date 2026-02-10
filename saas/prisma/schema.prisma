@@ -234,7 +234,7 @@ model shops {
   description         String?
   address             String?
   phone               String?
-  email               String?
+  email               String
   website             String?
   logo_url            String?
   timezone            String?               @default("America/New_York")

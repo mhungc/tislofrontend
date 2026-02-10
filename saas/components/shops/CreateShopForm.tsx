@@ -7,12 +7,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Store, Save, X } from 'lucide-react'
+import { Store, Save, X, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface CreateShopFormProps {
   onSuccess?: (shopId?: string, shopData?: any) => void
   onCancel?: () => void
+}
+
+interface FormErrors {
+  name?: string
+  address?: string
+  email?: string
+  phone?: string
+  website?: string
 }
 
 export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
@@ -25,19 +33,73 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
     website: '',
     timezone: 'America/New_York'
   })
+  const [errors, setErrors] = useState<FormErrors>({})
   const [saving, setSaving] = useState(false)
 
   const shopService = new ShopService()
 
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+    // Limpiar error del campo cuando el usuario empiece a escribir
+    if (errors[field as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }))
+    }
+  }
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {}
+
+    // Validar nombre (obligatorio)
+    if (!formData.name.trim()) {
+      newErrors.name = 'El nombre de la tienda es obligatorio'
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'El nombre debe tener al menos 2 caracteres'
+    }
+
+    // Validar dirección (obligatorio)
+    if (!formData.address.trim()) {
+      newErrors.address = 'La dirección es obligatoria'
+    }
+
+    // Validar email (obligatorio)
+    if (!formData.email.trim()) {
+      newErrors.email = 'El email es obligatorio'
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = 'Ingresa un email válido (ejemplo@dominio.com)'
+      }
+    }
+
+    // Validar teléfono (opcional pero debe ser válido si se proporciona)
+    if (formData.phone.trim()) {
+      const phoneRegex = /^[\d\s\-\+\(\)]+$/
+      if (!phoneRegex.test(formData.phone) || formData.phone.replace(/\D/g, '').length < 10) {
+        newErrors.phone = 'Ingresa un teléfono válido (mínimo 10 dígitos)'
+      }
+    }
+
+    // Validar website (opcional pero debe ser válida si se proporciona)
+    if (formData.website.trim()) {
+      try {
+        const url = new URL(formData.website)
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          newErrors.website = 'La URL debe comenzar con http:// o https://'
+        }
+      } catch {
+        newErrors.website = 'Ingresa una URL válida (https://ejemplo.com)'
+      }
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.name.trim() || !formData.address.trim()) {
-      toast.error('Nombre y dirección son requeridos')
+    if (!validateForm()) {
+      toast.error('Por favor corrige los errores del formulario')
       return
     }
 
@@ -63,7 +125,7 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="name">Nombre *</Label>
@@ -72,8 +134,14 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
                 value={formData.name}
                 onChange={(e) => updateField('name', e.target.value)}
                 placeholder="Nombre de la tienda"
-                isRequired
+                className={errors.name ? 'border-red-500 focus-visible:ring-red-500' : ''}
               />
+              {errors.name && (
+                <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.name}
+                </p>
+              )}
             </div>
             
             <div>
@@ -112,8 +180,14 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
               value={formData.address}
               onChange={(e) => updateField('address', e.target.value)}
               placeholder="Dirección completa"
-              isRequired
+              className={errors.address ? 'border-red-500 focus-visible:ring-red-500' : ''}
             />
+            {errors.address && (
+              <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.address}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -125,18 +199,32 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
                 value={formData.phone}
                 onChange={(e) => updateField('phone', e.target.value)}
                 placeholder="+1 (555) 123-4567"
+                className={errors.phone ? 'border-red-500 focus-visible:ring-red-500' : ''}
               />
+              {errors.phone && (
+                <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.phone}
+                </p>
+              )}
             </div>
             
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
                 placeholder="contacto@tutienda.com"
+                className={errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}
               />
+              {errors.email && (
+                <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.email}
+                </p>
+              )}
             </div>
           </div>
 
@@ -148,7 +236,14 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
               value={formData.website}
               onChange={(e) => updateField('website', e.target.value)}
               placeholder="https://www.tutienda.com"
+              className={errors.website ? 'border-red-500 focus-visible:ring-red-500' : ''}
             />
+            {errors.website && (
+              <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.website}
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2 pt-4">

@@ -28,7 +28,7 @@ CREATE TABLE shops (
   description TEXT,
   address TEXT,
   phone TEXT,
-  email TEXT,
+  email TEXT NOT NULL,
   website TEXT,
   logo_url TEXT,
   timezone TEXT,

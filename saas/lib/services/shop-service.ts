@@ -3,7 +3,7 @@ export interface CreateShopData {
   description?: string
   address: string
   phone?: string
-  email?: string
+  email: string
   website?: string
   timezone?: string
 }

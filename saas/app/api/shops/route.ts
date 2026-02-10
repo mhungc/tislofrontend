@@ -39,9 +39,17 @@ export async function POST(request: NextRequest) {
     const { name, description, address, phone, email, website, timezone } = body
 
     // Validar campos requeridos
-    if (!name || !address) {
+    if (!name || !address || !email) {
       return NextResponse.json({ 
-        error: 'Nombre y dirección son requeridos' 
+        error: 'Nombre, dirección y email son requeridos' 
+      }, { status: 400 })
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ 
+        error: 'Email inválido' 
       }, { status: 400 })
     }
 
