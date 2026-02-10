@@ -7,7 +7,7 @@ export interface CreateShopInput {
   description?: string | null
   address?: string | null
   phone?: string | null
-  email?: string | null
+  email: string
   website?: string | null
   timezone?: string | null
 }
@@ -43,7 +43,7 @@ export class ShopRepository {
         description: input.description ?? undefined,
         address: input.address ?? undefined,
         phone: input.phone ?? undefined,
-        email: input.email ?? undefined,
+        email: input.email,
         website: input.website ?? undefined,
         timezone: input.timezone ?? 'America/New_York',
         is_active: true,
