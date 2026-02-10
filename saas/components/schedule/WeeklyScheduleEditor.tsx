@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react'
 import { ScheduleService } from '@/lib/services/schedule-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
-import { Clock, Save, Calendar, Check, X } from 'lucide-react'
+import { TimePicker } from '@/components/schedule/TimePicker'
+import { Clock, Save, Calendar, Check, X, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface WeeklyScheduleEditorProps {
@@ -304,12 +304,12 @@ export function WeeklyScheduleEditor({
         </CardContent>
       </Card>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {schedules.map((schedule) => (
-          <Card key={schedule.dayOfWeek} className={schedule.isWorkingDay ? 'border-green-200' : 'border-gray-200'}>
-            <CardContent className="pt-4">
+          <Card key={schedule.dayOfWeek} className={`transition-all ${schedule.isWorkingDay ? 'border-green-200 bg-green-50/30' : 'border-gray-200'}`}>
+            <CardContent className="pt-4 md:pt-6">
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Switch
                       isChecked={schedule.isWorkingDay}
@@ -338,35 +338,32 @@ export function WeeklyScheduleEditor({
                       variant="outline"
                       size="sm"
                       onClick={() => addTimeBlock(schedule.dayOfWeek)}
-                      className="text-xs"
+                      className="text-sm h-9 md:h-8 touch-manipulation"
                     >
-                      + Agregar Bloque
+                      <Plus className="h-4 w-4 mr-1" />
+                      Bloque
                     </Button>
                   )}
                 </div>
 
                 {schedule.isWorkingDay && (
-                  <div className="space-y-2 ml-8">
+                  <div className="space-y-3 ml-0 md:ml-8 mt-3">
                     {schedule.timeBlocks.map((block, blockIndex) => (
-                      <div key={blockIndex} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                        <Label className="text-xs text-muted-foreground w-16">
-                          Bloque {blockIndex + 1}:
+                      <div key={blockIndex} className="flex flex-col md:flex-row items-start md:items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <Label className="text-sm font-medium text-gray-700 md:w-20">
+                          Bloque {blockIndex + 1}
                         </Label>
-                        <div className="flex items-center gap-1">
-                          <Input
-                            type="time"
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                          <TimePicker
                             value={block.openTime}
-                            onChange={(e) => updateTimeBlock(schedule.dayOfWeek, blockIndex, 'openTime', e.target.value)}
-                            className="w-20 h-8 text-sm"
+                            onChange={(value) => updateTimeBlock(schedule.dayOfWeek, blockIndex, 'openTime', value)}
+                            className="flex-1 md:flex-none"
                           />
-                        </div>
-                        <span className="text-muted-foreground">-</span>
-                        <div className="flex items-center gap-1">
-                          <Input
-                            type="time"
+                          <span className="text-gray-400 font-medium">—</span>
+                          <TimePicker
                             value={block.closeTime}
-                            onChange={(e) => updateTimeBlock(schedule.dayOfWeek, blockIndex, 'closeTime', e.target.value)}
-                            className="w-20 h-8 text-sm"
+                            onChange={(value) => updateTimeBlock(schedule.dayOfWeek, blockIndex, 'closeTime', value)}
+                            className="flex-1 md:flex-none"
                           />
                         </div>
                         {schedule.timeBlocks.length > 1 && (
@@ -374,9 +371,10 @@ export function WeeklyScheduleEditor({
                             variant="ghost"
                             size="sm"
                             onClick={() => removeTimeBlock(schedule.dayOfWeek, blockIndex)}
-                            className="text-red-500 hover:text-red-700 p-1 h-8 w-8"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-10 md:h-8 w-full md:w-auto touch-manipulation"
                           >
-                            <X className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar
                           </Button>
                         )}
                       </div>
@@ -409,11 +407,12 @@ export function WeeklyScheduleEditor({
           <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => applyToAllWorkingDays('09:00', '18:00')}
+              className="h-10 md:h-9 touch-manipulation"
             >
               Aplicar 9-18h
             </Button>
@@ -421,6 +420,7 @@ export function WeeklyScheduleEditor({
               variant="outline"
               size="sm"
               onClick={() => setAllDaysWorking(true)}
+              className="h-10 md:h-9 touch-manipulation"
             >
               Todos Abiertos
             </Button>
@@ -428,6 +428,7 @@ export function WeeklyScheduleEditor({
               variant="outline"
               size="sm"
               onClick={() => setAllDaysWorking(false)}
+              className="h-10 md:h-9 touch-manipulation"
             >
               Todos Cerrados
             </Button>
@@ -435,6 +436,7 @@ export function WeeklyScheduleEditor({
               variant="outline"
               size="sm"
               onClick={resetToDefaults}
+              className="h-10 md:h-9 touch-manipulation"
             >
               Restablecer
             </Button>
@@ -493,7 +495,7 @@ export function WeeklyScheduleEditor({
         <Button
           onClick={saveSchedules}
           disabled={saving || validationErrors.length > 0}
-          className={`min-w-32 ${justSaved ? 'bg-green-600 hover:bg-green-700' : ''}`}
+          className={`min-w-32 h-11 md:h-10 text-base md:text-sm touch-manipulation ${justSaved ? 'bg-green-600 hover:bg-green-700' : ''}`}
         >
           {saving ? (
             <div className="flex items-center gap-2">
