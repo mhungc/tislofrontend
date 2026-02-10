@@ -45,10 +45,25 @@ export function ScheduleViewer({
   }, {} as Record<number, any[]>)
 
   const workingDays = Object.keys(schedulesByDay).length
+  
+  // Parsear tiempo correctamente independiente del formato
+  const parseTime = (timeString: string) => {
+    if (timeString.includes('T')) {
+      return new Date(timeString)
+    }
+    // Formato HH:MM
+    return new Date(`1970-01-01T${timeString}`)
+  }
+  
   const totalHours = schedules.reduce((total, schedule) => {
-    const start = new Date(`1970-01-01T${schedule.open_time}`)
-    const end = new Date(`1970-01-01T${schedule.close_time}`)
-    return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+    try {
+      const start = parseTime(schedule.open_time)
+      const end = parseTime(schedule.close_time)
+      const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+      return total + (isNaN(hours) ? 0 : hours)
+    } catch {
+      return total
+    }
   }, 0)
 
   const formatTime = (timeString: string) => {
