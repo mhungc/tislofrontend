@@ -51,7 +51,7 @@ export function TimePicker({ value, onChange, className = '' }: TimePickerProps)
         <Input
           type="text"
           value={value}
-          readOnly
+          readOnly={true}
           onClick={() => setIsOpen(!isOpen)}
           className="cursor-pointer text-center font-medium text-base pr-8 h-10 md:h-12 touch-manipulation"
           placeholder="--:--"
