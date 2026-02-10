@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { ArrowLeft, Save, Clock, DollarSign } from 'lucide-react'
+import { ArrowLeft, Save, Clock, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { ServiceModifiers } from './ServiceModifiers'
 
@@ -18,6 +18,12 @@ interface ServiceFormProps {
   onSuccess?: (serviceId?: string) => void
   onCancel?: () => void
   className?: string
+}
+
+interface FormErrors {
+  name?: string
+  duration_minutes?: string
+  price?: string
 }
 
 export function ServiceForm({
@@ -34,6 +40,7 @@ export function ServiceForm({
     price: null,
     is_active: true
   })
+  const [errors, setErrors] = useState<FormErrors>({})
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -70,17 +77,57 @@ export function ServiceForm({
     }
   }
 
+  const handleInputChange = (field: keyof ServiceData, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+    // Limpiar error del campo cuando el usuario empiece a escribir
+    if (errors[field as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }))
+    }
+  }
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {}
+
+    // Validar nombre (obligatorio)
+    if (!formData.name.trim()) {
+      newErrors.name = 'El nombre del servicio es obligatorio'
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'El nombre debe tener al menos 2 caracteres'
+    }
+
+    // Validar duración (obligatorio y mayor a 0)
+    if (!formData.duration_minutes) {
+      newErrors.duration_minutes = 'La duración es obligatoria'
+    } else if (formData.duration_minutes <= 0) {
+      newErrors.duration_minutes = 'La duración debe ser mayor a 0 minutos'
+    } else if (formData.duration_minutes > 1440) {
+      newErrors.duration_minutes = 'La duración no puede superar 24 horas (1440 minutos)'
+    }
+
+    // Validar precio (opcional pero debe ser válido si se proporciona)
+    if (formData.price !== null && formData.price !== undefined && formData.price !== '') {
+      const priceNum = typeof formData.price === 'string' ? parseFloat(formData.price) : formData.price
+      if (isNaN(priceNum)) {
+        newErrors.price = 'Ingresa un precio válido'
+      } else if (priceNum < 0) {
+        newErrors.price = 'El precio no puede ser negativo'
+      } else if (priceNum > 999999.99) {
+        newErrors.price = 'El precio no puede superar $999,999.99'
+      }
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validaciones
-    if (!formData.name.trim()) {
-      toast.error('El nombre del servicio es requerido')
-      return
-    }
-    
-    if (!formData.duration_minutes || formData.duration_minutes <= 0) {
-      toast.error('La duración debe ser mayor a 0 minutos')
+    if (!validateForm()) {
+      toast.error('Por favor corrige los errores del formulario')
       return
     }
 
@@ -103,13 +150,6 @@ export function ServiceForm({
     } finally {
       setSaving(false)
     }
-  }
-
-  const handleInputChange = (field: keyof ServiceData, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
   }
 
   // Sugerencias de duración
@@ -150,7 +190,7 @@ export function ServiceForm({
       {/* Formulario */}
       <Card>
         <CardContent className="pt-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             {/* Información básica */}
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -160,25 +200,34 @@ export function ServiceForm({
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Ej: Corte de cabello"
-                  isRequired
+                  className={errors.name ? 'border-red-500 focus-visible:ring-red-500' : ''}
                 />
+                {errors.name && (
+                  <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.name}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="price">Precio</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price || ''}
-                    onChange={(e) => handleInputChange('price', e.target.value ? parseFloat(e.target.value) : null)}
-                    placeholder="0.00"
-                    className="pl-10"
-                  />
-                </div>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.price || ''}
+                  onChange={(e) => handleInputChange('price', e.target.value ? parseFloat(e.target.value) : null)}
+                  placeholder="0.00"
+                  className={errors.price ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                />
+                {errors.price && (
+                  <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.price}
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Deja vacío si el servicio es gratuito
                 </p>
@@ -201,18 +250,23 @@ export function ServiceForm({
             <div className="space-y-2">
               <Label htmlFor="duration">Duración (minutos) *</Label>
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
+                <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <Input
                   id="duration"
                   type="number"
                   min="1"
                   value={formData.duration_minutes}
-                  onChange={(e) => handleInputChange('duration_minutes', parseInt(e.target.value))}
-                  className="w-32"
-                  isRequired
+                  onChange={(e) => handleInputChange('duration_minutes', parseInt(e.target.value) || 0)}
+                  className={`w-32 ${errors.duration_minutes ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                 />
                 <span className="text-sm text-muted-foreground">minutos</span>
               </div>
+              {errors.duration_minutes && (
+                <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.duration_minutes}
+                </p>
+              )}
               
               {/* Sugerencias de duración */}
               <div className="flex flex-wrap gap-2 mt-2">
@@ -224,7 +278,7 @@ export function ServiceForm({
                     variant="outline"
                     size="sm"
                     onClick={() => handleInputChange('duration_minutes', duration)}
-                    className="text-xs h-6"
+                    className="text-xs h-8 md:h-7 touch-manipulation"
                   >
                     {duration}min
                   </Button>
@@ -250,13 +304,14 @@ export function ServiceForm({
                 type="button"
                 variant="outline"
                 onClick={onCancel}
+                className="h-10 md:h-9 touch-manipulation"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={saving}
-                className="min-w-32"
+                className="min-w-32 h-10 md:h-9 touch-manipulation"
               >
                 {saving ? (
                   <div className="flex items-center gap-2">

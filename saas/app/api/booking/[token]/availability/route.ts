@@ -11,6 +11,7 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const date = searchParams.get('date')
     const serviceIds = searchParams.get('services')?.split(',').filter(Boolean) || []
+    const additionalDuration = parseInt(searchParams.get('additionalDuration') || '0', 10)
 
     if (!date) {
       return NextResponse.json({ error: 'Fecha requerida' }, { status: 400 })
@@ -29,7 +30,7 @@ export async function GET(
       return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
     }
 
-    // Calcular duración total de servicios seleccionados
+    // Calcular duración total de servicios seleccionados + modificadores
     let totalDuration = 60 // Default 1 hora
     if (serviceIds.length > 0) {
       const serviceLookup = new Map(
@@ -40,6 +41,9 @@ export async function GET(
         const service = serviceLookup.get(serviceId)
         return sum + (service?.duration_minutes || 0)
       }, 0)
+      
+      // Agregar duración adicional de modificadores
+      totalDuration += additionalDuration
     }
     
     const slots = await bookingRepo.getAvailableSlots(

@@ -78,16 +78,21 @@ export function ModifierSelector({
   if (modifiers.length === 0) return null
 
   return (
-    <Card>
-      <CardContent className="pt-4">
-        <h4 className="font-medium mb-3">Modificadores Disponibles</h4>
-        <div className="space-y-3">
-          {modifiers.map((modifier) => (
-            <div key={modifier.id} className="flex items-start space-x-3">
-              <Checkbox
+    <div>
+      <h4 className="font-medium mb-3 text-sm text-gray-700">Personaliza tu servicio</h4>
+      <div className="space-y-2">{modifiers.map((modifier) => (
+            <div 
+              key={modifier.id} 
+              className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer bg-white" 
+              onClick={() => !autoApplied.includes(modifier.id) && toggleModifier(modifier.id)}
+            >              <Checkbox
                 isChecked={selectedModifiers.includes(modifier.id)}
-                onChange={() => toggleModifier(modifier.id)}
+                onChange={(e) => {
+                  e.stopPropagation()
+                  toggleModifier(modifier.id)
+                }}
                 isDisabled={autoApplied.includes(modifier.id)}
+                className="mt-0.5 cursor-pointer"
               />
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
@@ -117,7 +122,6 @@ export function ModifierSelector({
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+    </div>
   )
 }

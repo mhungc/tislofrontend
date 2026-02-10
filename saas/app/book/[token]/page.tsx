@@ -43,8 +43,9 @@ export default function BookingPage() {
   const [step, setStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [bookingComplete, setBookingComplete] = useState(false)
-  const [selectedModifiers, setSelectedModifiers] = useState<string[]>([])
-  const [modifierAdjustments, setModifierAdjustments] = useState({ duration: 0, price: 0 })
+  const [modifierSelections, setModifierSelections] = useState<
+    Record<string, { ids: string[]; duration: number; price: number }>
+  >({})
 
   const bookingService = new BookingService()
 
@@ -58,11 +59,34 @@ export default function BookingPage() {
   )
   const selectedServiceKey = selectedServiceIdsExpanded.join(',')
 
+  const modifierTotals = selectedServiceIds.reduce(
+    (acc, serviceId) => {
+      const count = serviceCounts[serviceId] || 0
+      const selection = modifierSelections[serviceId]
+      if (!selection || count === 0) return acc
+
+      return {
+        duration: acc.duration + selection.duration * count,
+        price: acc.price + selection.price * count
+      }
+    },
+    { duration: 0, price: 0 }
+  )
+
+  const selectedModifierIdsExpanded = selectedServiceIds.flatMap(serviceId => {
+    const count = serviceCounts[serviceId] || 0
+    const selection = modifierSelections[serviceId]
+    if (!selection || selection.ids.length === 0 || count === 0) return []
+
+    return Array.from({ length: count }).flatMap(() => selection.ids)
+  })
+
   useEffect(() => {
     if (selectedDate) {
       loadAvailableSlots()
     }
-  }, [selectedDate, selectedServiceKey])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, selectedServiceKey, modifierTotals.duration])
 
   const loadBookingData = async () => {
     try {
@@ -79,7 +103,13 @@ export default function BookingPage() {
   const loadAvailableSlots = async () => {
     setSlotsLoading(true)
     try {
-      const slots = await bookingService.getAvailableSlots(token, selectedDate, selectedServiceIdsExpanded)
+      // Incluir la duración adicional de los modificadores en el cálculo de slots
+      const slots = await bookingService.getAvailableSlots(
+        token, 
+        selectedDate, 
+        selectedServiceIdsExpanded,
+        modifierTotals.duration
+      )
       setAvailableSlots(slots)
       setSelectedTime('') // Reset selected time when date changes
     } catch (error) {
@@ -101,8 +131,8 @@ export default function BookingPage() {
       })),
       [
         {
-          applied_duration: modifierAdjustments.duration,
-          applied_price: modifierAdjustments.price
+          applied_duration: modifierTotals.duration,
+          applied_price: modifierTotals.price
         }
       ]
     )
@@ -126,9 +156,27 @@ export default function BookingPage() {
     })
   }
 
-  const handleModifiersChange = (modifierIds: string[], totalDuration: number, totalPrice: number) => {
-    setSelectedModifiers(modifierIds)
-    setModifierAdjustments({ duration: totalDuration, price: totalPrice })
+  const handleModifiersChange = (
+    serviceId: string,
+    modifierIds: string[],
+    totalDuration: number,
+    totalPrice: number
+  ) => {
+    setModifierSelections(prev => {
+      if (modifierIds.length === 0) {
+        const { [serviceId]: _removed, ...rest } = prev
+        return rest
+      }
+
+      return {
+        ...prev,
+        [serviceId]: {
+          ids: modifierIds,
+          duration: totalDuration,
+          price: totalPrice
+        }
+      }
+    })
   }
 
   const sendVerificationCode = async () => {
@@ -192,7 +240,7 @@ export default function BookingPage() {
         start_time: selectedTime,
         services: selectedServiceIdsExpanded,
         notes: customerData.notes,
-        modifiers: selectedModifiers,
+        modifiers: selectedModifierIdsExpanded,
         consent: customerData.consent,
         marketing: customerData.marketing,
         verification_code: verificationCode
@@ -317,6 +365,9 @@ export default function BookingPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Selecciona tus servicios</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Elige los servicios que deseas reservar. Los modificadores aparecerán automáticamente debajo de cada servicio.
+                  </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {services.map(service => {
@@ -326,74 +377,78 @@ export default function BookingPage() {
                     return (
                     <div
                       key={service.id}
-                      className={`p-4 border rounded-lg transition-all hover:shadow-sm ${
+                      className={`border rounded-lg transition-all ${
                         isSelected
-                          ? 'border-primary bg-primary/5 shadow-sm'
+                          ? 'border-primary bg-primary/5 shadow-md'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="font-medium">{service.name}</h3>
-                          {service.description && (
-                            <p className="text-sm text-gray-600 mt-1">
-                              {service.description}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-4 mt-3">
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
-                              <Clock className="h-4 w-4" />
-                              <span>{formatDuration(service.duration_minutes)}</span>
+                      {/* Encabezado del servicio */}
+                      <div className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-medium text-lg">{service.name}</h3>
+                            {service.description && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                {service.description}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-4 mt-3">
+                              <div className="flex items-center gap-1 text-sm text-gray-600">
+                                <Clock className="h-4 w-4" />
+                                <span>{formatDuration(service.duration_minutes)}</span>
+                              </div>
+                              <Badge variant="outline" className="text-base">
+                                ${service.price || 'Gratis'}
+                              </Badge>
                             </div>
-                            <Badge variant="outline">
-                              ${service.price || 'Gratis'}
-                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleServiceDecrement(service.id)}
+                              disabled={quantity === 0}
+                              className="h-10 w-10 p-0 touch-manipulation"
+                            >
+                              -
+                            </Button>
+                            <span className="w-8 text-center text-base font-semibold">{quantity}</span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleServiceIncrement(service.id)}
+                              className="h-10 w-10 p-0 touch-manipulation"
+                            >
+                              +
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleServiceDecrement(service.id)}
-                            disabled={quantity === 0}
-                          >
-                            -
-                          </Button>
-                          <span className="w-6 text-center text-sm font-medium">{quantity}</span>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleServiceIncrement(service.id)}
-                          >
-                            +
-                          </Button>
-                        </div>
                       </div>
+
+                      {/* Modificadores integrados - Solo si el servicio está seleccionado */}
+                      {isSelected && (
+                        <div className="border-t bg-gray-50/50 p-4">
+                          <ModifierSelector
+                            serviceId={service.id}
+                            customerData={{
+                              customer_name: customerData.name,
+                              customer_email: customerData.email,
+                              customer_phone: customerData.phone
+                            }}
+                            selectedModifiers={modifierSelections[service.id]?.ids || []}
+                            onModifiersChange={(modifierIds, totalDuration, totalPrice) =>
+                              handleModifiersChange(service.id, modifierIds, totalDuration, totalPrice)
+                            }
+                          />
+                        </div>
+                      )}
                     </div>
                   )})}
                 </CardContent>
               </Card>
-            )}
-
-            {/* Modificadores - Solo mostrar si hay servicios seleccionados */}
-            {step === 1 && selectedServiceIds.length > 0 && (
-              <div className="space-y-4">
-                {selectedServiceIds.map(serviceId => (
-                  <ModifierSelector
-                    key={serviceId}
-                    serviceId={serviceId}
-                    customerData={{
-                      customer_name: customerData.name,
-                      customer_email: customerData.email,
-                      customer_phone: customerData.phone
-                    }}
-                    selectedModifiers={selectedModifiers}
-                    onModifiersChange={handleModifiersChange}
-                  />
-                ))}
-              </div>
             )}
 
             {/* Step 2: Date & Time */}
@@ -581,19 +636,19 @@ export default function BookingPage() {
                       })}
                     </div>
                     <Separator className="my-3" />
-                    {(modifierAdjustments.duration !== 0 || modifierAdjustments.price !== 0) && (
+                    {(modifierTotals.duration !== 0 || modifierTotals.price !== 0) && (
                       <>
                         <div className="text-xs text-gray-600 mb-1">Ajustes:</div>
-                        {modifierAdjustments.duration !== 0 && (
+                        {modifierTotals.duration !== 0 && (
                           <div className="flex justify-between text-xs text-gray-600">
                             <span>Tiempo adicional:</span>
-                            <span>+{modifierAdjustments.duration} min</span>
+                            <span>+{modifierTotals.duration} min</span>
                           </div>
                         )}
-                        {modifierAdjustments.price !== 0 && (
+                        {modifierTotals.price !== 0 && (
                           <div className="flex justify-between text-xs text-gray-600">
                             <span>Costo adicional:</span>
-                            <span>+${Number(modifierAdjustments.price).toFixed(2)}</span>
+                            <span>+${Number(modifierTotals.price).toFixed(2)}</span>
                           </div>
                         )}
                         <Separator className="my-2" />

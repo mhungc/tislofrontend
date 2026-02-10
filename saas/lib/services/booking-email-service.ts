@@ -13,6 +13,11 @@ interface BookingEmailData {
     duration_minutes: number
     price: number
   }>
+  modifiers?: Array<{
+    name: string
+    duration_modifier: number
+    price_modifier: number
+  }>
   shopName: string
   shopAddress?: string | null
   shopPhone?: string | null
@@ -70,6 +75,18 @@ export class BookingEmailService {
       `
         )
         .join('')
+
+      const modifiersList = (data.modifiers && data.modifiers.length > 0) ? data.modifiers
+        .map(
+          (modifier) => `
+        <tr>
+          <td style="padding: 8px 8px 8px 24px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">↳ ${modifier.name}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 14px;">${modifier.duration_modifier > 0 ? '+' : ''}${modifier.duration_modifier} min</td>
+          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right; color: #6b7280; font-size: 14px;">${modifier.price_modifier > 0 ? '+' : ''}${this.formatCurrency(modifier.price_modifier)}</td>
+        </tr>
+      `
+        )
+        .join('') : ''
 
       const html = `
         <!DOCTYPE html>
@@ -162,6 +179,7 @@ export class BookingEmailService {
                   </thead>
                   <tbody>
                     ${servicesList}
+                    ${modifiersList}
                   </tbody>
                   <tfoot>
                     <tr>
@@ -244,6 +262,18 @@ export class BookingEmailService {
       `
         )
         .join('')
+
+      const modifiersList = (data.modifiers && data.modifiers.length > 0) ? data.modifiers
+        .map(
+          (modifier) => `
+        <tr>
+          <td style="padding: 8px 8px 8px 24px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">↳ ${modifier.name}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 14px;">${modifier.duration_modifier > 0 ? '+' : ''}${modifier.duration_modifier} min</td>
+          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right; color: #6b7280; font-size: 14px;">${modifier.price_modifier > 0 ? '+' : ''}${this.formatCurrency(modifier.price_modifier)}</td>
+        </tr>
+      `
+        )
+        .join('') : ''
 
       const html = `
         <!DOCTYPE html>
@@ -329,6 +359,7 @@ export class BookingEmailService {
                   </thead>
                   <tbody>
                     ${servicesList}
+                    ${modifiersList}
                   </tbody>
                   <tfoot>
                     <tr>

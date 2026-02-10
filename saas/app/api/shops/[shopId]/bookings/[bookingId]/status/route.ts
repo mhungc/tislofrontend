@@ -53,6 +53,12 @@ export async function PATCH(
         price: parseFloat(bs.price?.toString() || '0')
       })) || []
 
+      const modifiers = booking.booking_modifiers?.map((mod: any) => ({
+        name: mod.service_modifiers?.name || 'Modificador',
+        duration_modifier: mod.applied_duration || 0,
+        price_modifier: parseFloat(mod.applied_price?.toString() || '0')
+      })) || []
+
       const emailData = {
         customerName: booking.customer_name || 'Cliente',
         customerEmail: booking.customer_email || '',
@@ -62,6 +68,7 @@ export async function PATCH(
         totalDuration: booking.total_duration || 0,
         totalPrice: parseFloat(booking.total_price?.toString() || '0'),
         services,
+        modifiers,
         shopName: booking.shops?.name || shop.name,
         shopAddress: booking.shops?.address || shop.address,
         shopPhone: booking.shops?.phone || shop.phone,

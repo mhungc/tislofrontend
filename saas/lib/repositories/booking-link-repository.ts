@@ -56,7 +56,13 @@ export class BookingLinkRepository {
               orderBy: [{ day_of_week: 'asc' }, { block_order: 'asc' }]
             },
             services: {
-              where: { is_active: true }
+              where: { is_active: true },
+              include: {
+                service_modifiers: {
+                  where: { is_active: true },
+                  orderBy: { name: 'asc' }
+                }
+              }
             }
           }
         }
@@ -90,7 +96,16 @@ export class BookingLinkRepository {
   }
 
   async isValidToken(token: string): Promise<boolean> {
-    const link = await this.getByToken(token)
+    // Lightweight validation without heavy includes
+    const link = await prisma.booking_links.findUnique({
+      where: { token },
+      select: {
+        is_active: true,
+        expires_at: true,
+        max_uses: true,
+        current_uses: true
+      }
+    })
     
     if (!link || !link.is_active) return false
     if (link.expires_at < new Date()) return false

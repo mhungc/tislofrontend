@@ -46,9 +46,10 @@ export class BookingService {
     return await response.json()
   }
 
-  async getAvailableSlots(token: string, date: string, serviceIds: string[] = []) {
+  async getAvailableSlots(token: string, date: string, serviceIds: string[] = [], additionalDuration: number = 0) {
     const servicesParam = serviceIds.length > 0 ? `&services=${serviceIds.join(',')}` : ''
-    const response = await fetch(`/api/booking/${token}/availability?date=${date}${servicesParam}`)
+    const durationParam = additionalDuration > 0 ? `&additionalDuration=${additionalDuration}` : ''
+    const response = await fetch(`/api/booking/${token}/availability?date=${date}${servicesParam}${durationParam}`)
 
     if (!response.ok) {
       const error = await response.json()

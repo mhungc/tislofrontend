@@ -243,8 +243,11 @@ export async function POST(
       })) || []
 
       const modifiers = bookingWithDetails.booking_modifiers?.map((mod: any) => ({
+        name: mod.service_modifiers?.name || 'Modificador',
         applied_duration: mod.applied_duration || 0,
-        applied_price: mod.applied_price || 0
+        applied_price: parseFloat(mod.applied_price?.toString() || '0'),
+        duration_modifier: mod.applied_duration || 0,
+        price_modifier: parseFloat(mod.applied_price?.toString() || '0')
       })) || []
 
       const emailTotals = calculateBookingTotals(services, modifiers)
@@ -258,6 +261,7 @@ export async function POST(
         totalDuration: emailTotals.totalDuration,
         totalPrice: emailTotals.totalPrice,
         services,
+        modifiers,
         shopName: bookingLink.shops?.name || '',
         shopAddress: bookingLink.shops?.address || null,
         shopPhone: bookingLink.shops?.phone || null,

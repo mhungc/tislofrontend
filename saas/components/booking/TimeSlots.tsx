@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Button } from '@/components/ui/button'
-import { Clock } from 'lucide-react'
+import { Check, Clock } from 'lucide-react'
 
 interface TimeSlot {
   time: string
@@ -92,9 +92,17 @@ export function TimeSlots({ slots, selectedTime, onTimeSelect, loading }: TimeSl
               variant={selectedTime === slot.time ? "default" : "outline"}
               size="sm"
               onClick={() => onTimeSelect(slot.time)}
-              className="justify-center text-sm"
+              aria-pressed={selectedTime === slot.time}
+              className={`justify-center text-sm h-11 touch-manipulation ${
+                selectedTime === slot.time
+                  ? 'shadow-sm ring-2 ring-primary/40 bg-primary text-primary-foreground'
+                  : 'bg-white hover:bg-gray-50'
+              } focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2`}
             >
-              {formatTime(slot.time)}
+              <span className="inline-flex items-center gap-2">
+                {selectedTime === slot.time && <Check className="h-4 w-4" />}
+                {formatTime(slot.time)}
+              </span>
             </Button>
           ))}
         </div>

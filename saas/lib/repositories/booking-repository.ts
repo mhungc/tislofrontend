@@ -98,7 +98,11 @@ export class BookingRepository {
             services: true
           }
         },
-        booking_modifiers: true
+        booking_modifiers: {
+          include: {
+            service_modifiers: true
+          }
+        }
       }
     })
   }
