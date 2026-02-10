@@ -24,11 +24,21 @@ export function useUser() {
         setUser(user)
 
         if (user) {
+          // Debug: Log user metadata to see what's available
+          console.log('🔍 User metadata:', {
+            email: user.email,
+            metadata: user.user_metadata,
+            avatar: user.user_metadata?.avatar_url,
+            picture: user.user_metadata?.picture
+          })
+
           const { data: profile } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', user.id)
             .single()
+
+          console.log('🔍 Profile from DB:', profile)
 
           if (profile) {
             setProfile(profile)
@@ -37,8 +47,10 @@ export function useUser() {
               id: user.id,
               email: user.email || '',
               full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
-              avatar_url: user.user_metadata?.avatar_url || null
+              avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null
             }
+
+            console.log('🔍 Creating new profile:', newProfile)
 
             const { data: createdProfile } = await supabase
               .from('profiles')
