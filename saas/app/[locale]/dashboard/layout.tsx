@@ -85,25 +85,29 @@ const navigation = [
     title: 'Clientes',
     href: '/dashboard/customers',
     icon: Users,
-    description: 'Base de datos de clientes'
+    description: 'Base de datos de clientes',
+    comingSoon: true
   },
   {
     title: 'Horarios',
     href: '/dashboard/schedule',
     icon: Clock,
-    description: 'Configura disponibilidad'
+    description: 'Configura disponibilidad',
+    comingSoon: true
   },
   {
     title: 'Reportes',
     href: '/dashboard/reports',
     icon: BarChart3,
-    description: 'Analytics y métricas'
+    description: 'Analytics y metricas',
+    comingSoon: true
   },
   {
     title: 'Configuración',
     href: '/dashboard/settings',
     icon: Settings,
-    description: 'Ajustes del sistema'
+    description: 'Ajustes del sistema',
+    comingSoon: true
   }
 ]
 
@@ -115,6 +119,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Extract locale from pathname
   const locale = pathname.split('/')[1] || 'es'
+
+  const isComingSoonPath = [
+    '/dashboard/customers',
+    '/dashboard/schedule',
+    '/dashboard/reports',
+    '/dashboard/settings'
+  ].some(route => pathname.startsWith(`/${locale}${route}`))
 
   const handleSignOut = async () => {
     await signOut()
@@ -144,22 +155,36 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <VStack spacing={1} p={4} align="stretch">
           {localizedNavigation.map((item) => {
             const isActive = pathname === item.href
-            return (
-              <Link key={item.href} href={item.href}>
-                <HStack
-                  p={3}
-                  borderRadius="lg"
-                  bg={isActive ? 'blue.500' : 'transparent'}
-                  color={isActive ? 'white' : 'gray.600'}
-                  _hover={{ bg: isActive ? 'blue.600' : 'gray.100' }}
-                  cursor="pointer"
-                  transition="all 0.2s"
-                >
-                  <item.icon size={16} />
-                  <Text fontSize="sm" fontWeight="medium">
-                    {item.title}
+            const isComingSoon = Boolean(item.comingSoon)
+
+            const content = (
+              <HStack
+                p={3}
+                borderRadius="lg"
+                bg={isActive ? 'blue.500' : 'transparent'}
+                color={isActive ? 'white' : 'gray.600'}
+                _hover={isComingSoon ? {} : { bg: isActive ? 'blue.600' : 'gray.100' }}
+                cursor={isComingSoon ? 'not-allowed' : 'pointer'}
+                opacity={isComingSoon ? 0.6 : 1}
+                transition="all 0.2s"
+              >
+                <item.icon size={16} />
+                <Text fontSize="sm" fontWeight="medium">
+                  {item.title}
+                </Text>
+                {isComingSoon && (
+                  <Text fontSize="xs" color={isActive ? 'white' : 'gray.500'}>
+                    Proximamente
                   </Text>
-                </HStack>
+                )}
+              </HStack>
+            )
+
+            return isComingSoon ? (
+              <Box key={item.href}>{content}</Box>
+            ) : (
+              <Link key={item.href} href={item.href}>
+                {content}
               </Link>
             )
           })}
@@ -261,7 +286,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <Box as="main" py={6}>
           <Box maxW="7xl" mx="auto" px={{ base: 4, sm: 6, lg: 8 }}>
             <DemoBanner />
-            {children}
+            {isComingSoonPath ? (
+              <Box
+                p={10}
+                borderWidth="1px"
+                borderRadius="lg"
+                bg="white"
+                textAlign="center"
+              >
+                <Text fontSize="lg" fontWeight="semibold" mb={2}>
+                  Modulo disponible pronto
+                </Text>
+                <Text color="gray.600">
+                  Estamos trabajando en esta seccion. Pronto podras usarla.
+                </Text>
+              </Box>
+            ) : (
+              children
+            )}
           </Box>
         </Box>
       </Box>
