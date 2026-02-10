@@ -108,7 +108,7 @@ export function ServiceForm({
     }
 
     // Validar precio (opcional pero debe ser válido si se proporciona)
-    if (formData.price !== null && formData.price !== undefined && formData.price !== '') {
+    if (formData.price !== null && formData.price !== undefined) {
       const priceNum = typeof formData.price === 'string' ? parseFloat(formData.price) : formData.price
       if (isNaN(priceNum)) {
         newErrors.price = 'Ingresa un precio válido'
