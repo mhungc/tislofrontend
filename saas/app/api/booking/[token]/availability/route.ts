@@ -10,7 +10,7 @@ export async function GET(
     const { token } = await params
     const { searchParams } = new URL(request.url)
     const date = searchParams.get('date')
-    const serviceIds = searchParams.get('services')?.split(',') || []
+    const serviceIds = searchParams.get('services')?.split(',').filter(Boolean) || []
 
     if (!date) {
       return NextResponse.json({ error: 'Fecha requerida' }, { status: 400 })
@@ -32,8 +32,14 @@ export async function GET(
     // Calcular duración total de servicios seleccionados
     let totalDuration = 60 // Default 1 hora
     if (serviceIds.length > 0) {
-      const selectedServices = bookingLink.shops.services.filter(s => serviceIds.includes(s.id))
-      totalDuration = selectedServices.reduce((sum, service) => sum + service.duration_minutes, 0)
+      const serviceLookup = new Map(
+        bookingLink.shops.services.map(service => [service.id, service])
+      )
+
+      totalDuration = serviceIds.reduce((sum, serviceId) => {
+        const service = serviceLookup.get(serviceId)
+        return sum + (service?.duration_minutes || 0)
+      }, 0)
     }
     
     const slots = await bookingRepo.getAvailableSlots(

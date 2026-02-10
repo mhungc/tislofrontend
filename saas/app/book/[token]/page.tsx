@@ -23,7 +23,7 @@ export default function BookingPage() {
   const [loading, setLoading] = useState(true)
   const [shop, setShop] = useState<any>(null)
   const [services, setServices] = useState<any[]>([])
-  const [selectedServices, setSelectedServices] = useState<string[]>([])
+  const [serviceCounts, setServiceCounts] = useState<Record<string, number>>({})
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
   const [availableSlots, setAvailableSlots] = useState<any[]>([])
@@ -52,11 +52,17 @@ export default function BookingPage() {
     loadBookingData()
   }, [token])
 
+  const selectedServiceIds = Object.keys(serviceCounts).filter(serviceId => serviceCounts[serviceId] > 0)
+  const selectedServiceIdsExpanded = selectedServiceIds.flatMap(serviceId =>
+    Array(serviceCounts[serviceId]).fill(serviceId)
+  )
+  const selectedServiceKey = selectedServiceIdsExpanded.join(',')
+
   useEffect(() => {
     if (selectedDate) {
       loadAvailableSlots()
     }
-  }, [selectedDate, selectedServices])
+  }, [selectedDate, selectedServiceKey])
 
   const loadBookingData = async () => {
     try {
@@ -73,7 +79,7 @@ export default function BookingPage() {
   const loadAvailableSlots = async () => {
     setSlotsLoading(true)
     try {
-      const slots = await bookingService.getAvailableSlots(token, selectedDate, selectedServices)
+      const slots = await bookingService.getAvailableSlots(token, selectedDate, selectedServiceIdsExpanded)
       setAvailableSlots(slots)
       setSelectedTime('') // Reset selected time when date changes
     } catch (error) {
@@ -84,7 +90,7 @@ export default function BookingPage() {
   }
 
   const getTotals = () => {
-    const selectedServiceObjects = selectedServices
+    const selectedServiceObjects = selectedServiceIdsExpanded
       .map(serviceId => services.find(s => s.id === serviceId))
       .filter(Boolean)
 
@@ -102,12 +108,22 @@ export default function BookingPage() {
     )
   }
 
-  const handleServiceToggle = (serviceId: string) => {
-    setSelectedServices(prev => 
-      prev.includes(serviceId) 
-        ? prev.filter(id => id !== serviceId)
-        : [...prev, serviceId]
-    )
+  const handleServiceIncrement = (serviceId: string) => {
+    setServiceCounts(prev => ({
+      ...prev,
+      [serviceId]: (prev[serviceId] || 0) + 1
+    }))
+  }
+
+  const handleServiceDecrement = (serviceId: string) => {
+    setServiceCounts(prev => {
+      const current = prev[serviceId] || 0
+      if (current <= 1) {
+        const { [serviceId]: _removed, ...rest } = prev
+        return rest
+      }
+      return { ...prev, [serviceId]: current - 1 }
+    })
   }
 
   const handleModifiersChange = (modifierIds: string[], totalDuration: number, totalPrice: number) => {
@@ -174,7 +190,7 @@ export default function BookingPage() {
         customer_phone: customerData.phone,
         booking_date: selectedDate,
         start_time: selectedTime,
-        services: selectedServices,
+        services: selectedServiceIdsExpanded,
         notes: customerData.notes,
         modifiers: selectedModifiers,
         consent: customerData.consent,
@@ -303,15 +319,18 @@ export default function BookingPage() {
                   <CardTitle>Selecciona tus servicios</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {services.map(service => (
+                  {services.map(service => {
+                    const quantity = serviceCounts[service.id] || 0
+                    const isSelected = quantity > 0
+
+                    return (
                     <div
                       key={service.id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all hover:shadow-sm ${
-                        selectedServices.includes(service.id)
+                      className={`p-4 border rounded-lg transition-all hover:shadow-sm ${
+                        isSelected
                           ? 'border-primary bg-primary/5 shadow-sm'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
-                      onClick={() => handleServiceToggle(service.id)}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
@@ -331,26 +350,37 @@ export default function BookingPage() {
                             </Badge>
                           </div>
                         </div>
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          selectedServices.includes(service.id)
-                            ? 'border-primary bg-primary'
-                            : 'border-gray-300'
-                        }`}>
-                          {selectedServices.includes(service.id) && (
-                            <div className="w-2 h-2 bg-white rounded-full" />
-                          )}
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleServiceDecrement(service.id)}
+                            disabled={quantity === 0}
+                          >
+                            -
+                          </Button>
+                          <span className="w-6 text-center text-sm font-medium">{quantity}</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleServiceIncrement(service.id)}
+                          >
+                            +
+                          </Button>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </CardContent>
               </Card>
             )}
 
             {/* Modificadores - Solo mostrar si hay servicios seleccionados */}
-            {step === 1 && selectedServices.length > 0 && (
+            {step === 1 && selectedServiceIds.length > 0 && (
               <div className="space-y-4">
-                {selectedServices.map(serviceId => (
+                {selectedServiceIds.map(serviceId => (
                   <ModifierSelector
                     key={serviceId}
                     serviceId={serviceId}
@@ -530,16 +560,22 @@ export default function BookingPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Selected Services */}
-                {selectedServices.length > 0 && (
+                {selectedServiceIds.length > 0 && (
                   <div>
                     <h4 className="font-medium mb-2">Servicios seleccionados</h4>
                     <div className="space-y-2">
-                      {selectedServices.map(serviceId => {
+                      {selectedServiceIds.map(serviceId => {
                         const service = services.find(s => s.id === serviceId)
+                        const quantity = serviceCounts[serviceId] || 0
+                        const lineTotal = Number(service?.price || 0) * quantity
+
                         return service ? (
                           <div key={serviceId} className="flex justify-between text-sm">
-                            <span>{service.name}</span>
-                            <span>${Number(service.price || 0).toFixed(2)}</span>
+                            <span>
+                              {service.name}
+                              {quantity > 1 ? ` x${quantity}` : ''}
+                            </span>
+                            <span>${lineTotal.toFixed(2)}</span>
                           </div>
                         ) : null
                       })}
@@ -586,7 +622,7 @@ export default function BookingPage() {
                   {step === 1 && (
                     <Button 
                       onClick={() => setStep(2)} 
-                      disabled={selectedServices.length === 0}
+                      disabled={selectedServiceIdsExpanded.length === 0}
                       className="w-full"
                     >
                       Continuar
