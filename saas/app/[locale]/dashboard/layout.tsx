@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { UserMenu } from '@/components/ui/user-menu'
+import { ChakraUIProvider } from '@/components/providers/chakra-provider'
+import { CacheProvider } from '@chakra-ui/next-js'
 import {
   Box,
   Flex,
@@ -194,8 +196,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   )
 
   return (
-    <Box minH="100vh" bg="gray.50">
-      {/* Mobile Sidebar */}
+    <CacheProvider>
+      <ChakraUIProvider>
+        <Box minH="100vh" bg="gray.50">
+          {/* Mobile Sidebar */}
       <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
         <DrawerOverlay />
         <DrawerContent maxW="64">
@@ -307,6 +311,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </Box>
         </Box>
       </Box>
-    </Box>
+        </Box>
+      </ChakraUIProvider>
+    </CacheProvider>
   )
 }

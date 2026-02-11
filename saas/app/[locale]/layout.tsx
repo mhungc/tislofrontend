@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { AuthProvider } from "@/components/providers/auth-provider";
-import { ChakraUIProvider } from "@/components/providers/chakra-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import "../globals.css";
 
@@ -33,11 +32,9 @@ export default async function LocaleLayout({
     <html lang={locale} suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
         <ThemeProvider>
-          <ChakraUIProvider>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
-          </ChakraUIProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
