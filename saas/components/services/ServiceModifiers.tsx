@@ -154,6 +154,13 @@ function ModifierForm({ serviceId, modifier, onSuccess, onCancel }: ModifierForm
     is_active: modifier?.is_active ?? true,
     auto_apply: modifier?.auto_apply ?? false
   })
+  // Estados separados para los inputs numéricos como strings
+  const [durationInput, setDurationInput] = useState<string>(
+    modifier?.duration_modifier?.toString() || ''
+  )
+  const [priceInput, setPriceInput] = useState<string>(
+    modifier?.price_modifier?.toString() || ''
+  )
   const [saving, setSaving] = useState(false)
 
   const modifierService = new ModifierService()
@@ -163,11 +170,34 @@ function ModifierForm({ serviceId, modifier, onSuccess, onCancel }: ModifierForm
     setSaving(true)
 
     try {
+      // Convertir los valores de string a números
+      const duration = parseInt(durationInput) || 0
+      const price = parseFloat(priceInput) || 0
+
+      // Validar que sean números válidos
+      if (isNaN(duration)) {
+        toast.error('El tiempo adicional debe ser un número válido')
+        setSaving(false)
+        return
+      }
+
+      if (isNaN(price)) {
+        toast.error('El precio adicional debe ser un número válido')
+        setSaving(false)
+        return
+      }
+
+      const dataToSave = {
+        ...formData,
+        duration_modifier: duration,
+        price_modifier: price
+      }
+
       if (modifier) {
-        await modifierService.updateModifier(modifier.id, formData)
+        await modifierService.updateModifier(modifier.id, dataToSave)
         toast.success('Modificador actualizado')
       } else {
-        await modifierService.createModifier(serviceId, formData)
+        await modifierService.createModifier(serviceId, dataToSave)
         toast.success('Modificador creado')
       }
       onSuccess()
@@ -217,18 +247,38 @@ function ModifierForm({ serviceId, modifier, onSuccess, onCancel }: ModifierForm
               <Label>Tiempo Adicional (minutos)</Label>
               <Input
                 type="number"
-                value={formData.duration_modifier}
-                onChange={(e) => setFormData(prev => ({ ...prev, duration_modifier: parseInt(e.target.value) || 0 }))}
+                value={durationInput}
+                onChange={(e) => {
+                  const value = e.target.value
+                  // Permitir valores vacíos y números (incluyendo negativos)
+                  if (value === '' || value === '-' || !isNaN(Number(value))) {
+                    setDurationInput(value)
+                  }
+                }}
+                placeholder="0"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Minutos a agregar (+) o reducir (-)
+              </p>
             </div>
             <div>
               <Label>Precio Adicional</Label>
               <Input
                 type="number"
                 step="0.01"
-                value={formData.price_modifier}
-                onChange={(e) => setFormData(prev => ({ ...prev, price_modifier: parseFloat(e.target.value) || 0 }))}
+                value={priceInput}
+                onChange={(e) => {
+                  const value = e.target.value
+                  // Permitir valores vacíos, números con decimales (incluyendo negativos)
+                  if (value === '' || value === '-' || !isNaN(Number(value))) {
+                    setPriceInput(value)
+                  }
+                }}
+                placeholder="0.00"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Monto a agregar (+) o descontar (-)
+              </p>
             </div>
           </div>
 
