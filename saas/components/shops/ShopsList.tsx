@@ -189,9 +189,17 @@ export function ShopsList({
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <h3 className="font-medium text-lg mb-1">{shop.name}</h3>
-                    <Badge variant={shop.is_active ? "default" : "secondary"}>
-                      {shop.is_active ? 'Activa' : 'Inactiva'}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={shop.is_active ? "default" : "secondary"}>
+                        {shop.is_active ? 'Activa' : 'Inactiva'}
+                      </Badge>
+                      <Badge 
+                        variant="outline" 
+                        className={shop.bookingConfirmationMode === 'automatic' ? 'bg-green-50 text-green-700 border-green-300' : 'bg-yellow-50 text-yellow-700 border-yellow-300'}
+                      >
+                        {shop.bookingConfirmationMode === 'automatic' ? '⚡ Auto' : '✋ Manual'}
+                      </Badge>
+                    </div>
                   </div>
                   <div className="flex items-center gap-1">
                     <Button

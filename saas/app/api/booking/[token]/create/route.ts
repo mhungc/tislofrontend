@@ -273,7 +273,11 @@ export async function POST(
         notes: bookingWithDetails.notes || notes || undefined
       }
 
-      await emailService.sendBookingCreatedEmail(emailData)
+      if (bookingStatus === 'confirmed') {
+        await emailService.sendConfirmationEmail(emailData)
+      } else {
+        await emailService.sendBookingCreatedEmail(emailData)
+      }
     }
 
     return NextResponse.json({ booking })

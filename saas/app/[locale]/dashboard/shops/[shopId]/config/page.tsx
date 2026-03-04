@@ -105,8 +105,12 @@ export default function ShopConfigPage() {
         </Card>
       )}
 
-     <Tabs defaultValue="schedule" className="space-y-6">
-  <TabsList className="grid w-full grid-cols-3">
+     <Tabs defaultValue="general" className="space-y-6">
+  <TabsList className="grid w-full grid-cols-4">
+    <TabsTrigger value="general">
+      <Store className="h-4 w-4 mr-2" />
+      General
+    </TabsTrigger>
     <TabsTrigger value="schedule">
       <Clock className="h-4 w-4 mr-2" />
       Horarios
@@ -123,6 +127,108 @@ export default function ShopConfigPage() {
 
   {/* AÑADE ESTE WRAPPER */}
   <TabsPanels>
+    <TabsContent value="general" className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Configuración General</h2>
+      </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-base font-medium mb-4">Modo de Confirmación de Reservas</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Elige cómo se gestionarán las nuevas reservas de clientes.
+              </p>
+              
+              <div className="space-y-4">
+                <label className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-accent transition-colors">
+                  <input
+                    type="radio"
+                    name="confirmationMode"
+                    value="manual"
+                    checked={shop?.bookingConfirmationMode === 'manual'}
+                    onChange={async (e) => {
+                      try {
+                        const response = await fetch(`/api/shops/${shopId}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ bookingConfirmationMode: 'manual' })
+                        })
+                        if (response.ok) {
+                          const updated = await response.json()
+                          setShop({ ...shop, bookingConfirmationMode: 'manual' })
+                          toast.success('Modo de confirmación actualizado a Manual')
+                        }
+                      } catch (error) {
+                        toast.error('Error al actualizar configuración')
+                      }
+                    }}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-medium">✋ Manual</span>
+                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Pendiente</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Las reservas quedan con estado <strong>"pendiente"</strong>. Debes confirmarlas manualmente desde el dashboard. Los clientes reciben un email de "Reserva Recibida" y luego otro de "Confirmación" cuando la apruebes.
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-accent transition-colors">
+                  <input
+                    type="radio"
+                    name="confirmationMode"
+                    value="automatic"
+                    checked={shop?.bookingConfirmationMode === 'automatic'}
+                    onChange={async (e) => {
+                      try {
+                        const response = await fetch(`/api/shops/${shopId}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ bookingConfirmationMode: 'automatic' })
+                        })
+                        if (response.ok) {
+                          const updated = await response.json()
+                          setShop({ ...shop, bookingConfirmationMode: 'automatic' })
+                          toast.success('Modo de confirmación actualizado a Automático')
+                        }
+                      } catch (error) {
+                        toast.error('Error al actualizar configuración')
+                      }
+                    }}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-medium">⚡ Automática</span>
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Confirmado</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Las reservas se crean directamente con estado <strong>"confirmado"</strong>. Los clientes reciben un email de "Reserva Confirmada" inmediatamente. Ideal para agilizar el proceso.
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t">
+              <div className="flex items-start space-x-3 p-4 bg-blue-50 rounded-lg">
+                <div className="text-blue-600 mt-0.5">ℹ️</div>
+                <div className="flex-1">
+                  <p className="text-sm text-blue-900">
+                    <strong>Consejo:</strong> Usa el modo <strong>Manual</strong> si necesitas revisar disponibilidad o coordinar con tu equipo antes de confirmar. Usa <strong>Automático</strong> si confías en tu sistema de horarios y quieres confirmaciones instantáneas.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </TabsContent>
+
     <TabsContent value="schedule" className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Gestión de Horarios</h2>
