@@ -31,6 +31,7 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
     phone: '',
     email: '',
     website: '',
+    bookingConfirmationMode: 'manual' as 'manual' | 'automatic',
     timezone: 'America/New_York'
   })
   const [errors, setErrors] = useState<FormErrors>({})
@@ -142,6 +143,19 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
                   {errors.name}
                 </p>
               )}
+            </div>
+
+            <div>
+              <Label htmlFor="booking-confirmation-mode">Confirmación de Reservas</Label>
+              <select
+                id="booking-confirmation-mode"
+                value={formData.bookingConfirmationMode}
+                onChange={(e) => updateField('bookingConfirmationMode', e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="manual">Manual (queda pendiente)</option>
+                <option value="automatic">Automática (confirmada al crear)</option>
+              </select>
             </div>
             
             <div>

@@ -27,6 +27,7 @@ interface ShopFormData {
   phone: string
   email: string
   website: string
+  bookingConfirmationMode: 'manual' | 'automatic'
   timezone: string
   is_active: boolean
   business_hours: {
@@ -53,6 +54,7 @@ export function ShopForm({
     phone: '',
     email: '',
     website: '',
+    bookingConfirmationMode: 'manual',
     timezone: 'America/New_York',
     is_active: true,
     business_hours: {
@@ -92,6 +94,7 @@ export function ShopForm({
           phone: shop.phone || '',
           email: shop.email || '',
           website: shop.website || '',
+          bookingConfirmationMode: shop.bookingConfirmationMode || 'manual',
           timezone: shop.timezone || 'America/New_York',
           is_active: shop.is_active,
           business_hours: (shop.business_hours as ShopFormData['business_hours']) || {
@@ -248,6 +251,19 @@ export function ShopForm({
                 onChange={(e) => updateField('name', e.target.value)}
                 className="mt-1"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="shop-confirmation-mode">Confirmación de Reservas</Label>
+              <select
+                id="shop-confirmation-mode"
+                value={formData.bookingConfirmationMode}
+                onChange={(e) => updateField('bookingConfirmationMode', e.target.value)}
+                className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="manual">Manual (estado pendiente)</option>
+                <option value="automatic">Automática (confirmada al crear)</option>
+              </select>
             </div>
             
             <div>

@@ -36,7 +36,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, address, phone, email, website, timezone } = body
+    const {
+      name,
+      description,
+      address,
+      phone,
+      email,
+      website,
+      timezone,
+      bookingConfirmationMode
+    } = body
 
     // Validar campos requeridos
     if (!name || !address || !email) {
@@ -53,6 +62,15 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    if (
+      bookingConfirmationMode &&
+      !['manual', 'automatic'].includes(bookingConfirmationMode)
+    ) {
+      return NextResponse.json({
+        error: 'Modo de confirmación inválido'
+      }, { status: 400 })
+    }
+
     const shop = await repo.create({
       owner_id: user.id,
       name,
@@ -62,6 +80,7 @@ export async function POST(request: NextRequest) {
       email,
       website,
       timezone,
+      bookingConfirmationMode,
     })
 
     return NextResponse.json({ shop }, { status: 201 })

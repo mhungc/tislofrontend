@@ -8,6 +8,7 @@ interface Shop {
   phone?: string
   email?: string
   website?: string
+  bookingConfirmationMode?: 'manual' | 'automatic'
   is_active: boolean
   business_hours?: any
   created_at: string

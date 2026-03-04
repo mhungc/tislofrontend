@@ -3,6 +3,7 @@ import { BookingLinkRepository } from '@/lib/repositories/booking-link-repositor
 import { BookingRepository } from '@/lib/repositories/booking-repository'
 import { ServiceRepository } from '@/lib/repositories/service-repository'
 import { ModifierService } from '@/lib/services/modifier-service'
+import { resolveBookingStatusByMode } from '@/lib/services/booking-service'
 import { VerificationService } from '@/lib/services/verification-service'
 import { BookingEmailService } from '@/lib/services/booking-email-service'
 import { calculateBookingTotals } from '@/lib/utils/booking-totals'
@@ -195,6 +196,10 @@ export async function POST(
     }
 
     // Crear reserva
+    const bookingStatus = resolveBookingStatusByMode(
+      bookingLink.shops.bookingConfirmationMode
+    )
+
     const booking = await bookingRepo.create(
       {
         shop_id: bookingLink.shops.id,
@@ -207,7 +212,7 @@ export async function POST(
         end_time,
         total_duration: totalDuration,
         total_price: totalPrice,
-        status: 'pending',
+        status: bookingStatus,
         notes
       },
       validServices.map(service => ({

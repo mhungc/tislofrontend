@@ -1,6 +1,12 @@
 import { BookingRepository, BookingData, BookingServiceData } from '@/lib/repositories/booking-repository'
 import { BookingLinkRepository } from '@/lib/repositories/booking-link-repository'
 
+export function resolveBookingStatusByMode(
+  bookingConfirmationMode?: string | null
+): 'pending' | 'confirmed' {
+  return bookingConfirmationMode === 'automatic' ? 'confirmed' : 'pending'
+}
+
 export class BookingService {
   private bookingRepo = new BookingRepository()
   private linkRepo = new BookingLinkRepository()

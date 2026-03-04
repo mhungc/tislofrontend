@@ -61,3 +61,61 @@ export async function DELETE(
     return NextResponse.json({ error: 'Error al eliminar la tienda' }, { status: 500 })
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ shopId: string }> }
+) {
+  try {
+    const resolvedParams = await params
+    const { shopId } = resolvedParams
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
+    const existingShop = await shopRepository.getByIdForOwner(shopId, user.id)
+    if (!existingShop) {
+      return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
+    }
+
+    const body = await request.json()
+    const {
+      name,
+      description,
+      address,
+      phone,
+      email,
+      website,
+      timezone,
+      is_active,
+      bookingConfirmationMode
+    } = body
+
+    if (
+      bookingConfirmationMode !== undefined &&
+      !['manual', 'automatic'].includes(bookingConfirmationMode)
+    ) {
+      return NextResponse.json({ error: 'Modo de confirmación inválido' }, { status: 400 })
+    }
+
+    const shop = await shopRepository.update(shopId, {
+      name,
+      description,
+      address,
+      phone,
+      email,
+      website,
+      timezone,
+      is_active,
+      bookingConfirmationMode
+    })
+
+    return NextResponse.json({ shop })
+  } catch (error) {
+    console.error('Error al actualizar tienda:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
+}

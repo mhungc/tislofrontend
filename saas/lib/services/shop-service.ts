@@ -5,6 +5,7 @@ export interface CreateShopData {
   phone?: string
   email: string
   website?: string
+  bookingConfirmationMode?: 'manual' | 'automatic'
   timezone?: string
 }
 

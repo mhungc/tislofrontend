@@ -9,6 +9,7 @@ export interface CreateShopInput {
   phone?: string | null
   email: string
   website?: string | null
+  bookingConfirmationMode?: 'manual' | 'automatic'
   timezone?: string | null
 }
 
@@ -19,6 +20,7 @@ export interface UpdateShopInput {
   phone?: string | null
   email?: string | null
   website?: string | null
+  bookingConfirmationMode?: 'manual' | 'automatic'
   timezone?: string | null
   is_active?: boolean
 }
@@ -45,6 +47,7 @@ export class ShopRepository {
         phone: input.phone ?? undefined,
         email: input.email,
         website: input.website ?? undefined,
+        bookingConfirmationMode: input.bookingConfirmationMode ?? 'manual',
         timezone: input.timezone ?? 'America/New_York',
         is_active: true,
       }
@@ -59,6 +62,7 @@ export class ShopRepository {
       phone: input.phone ?? undefined,
       email: input.email ?? undefined,
       website: input.website ?? undefined,
+      bookingConfirmationMode: input.bookingConfirmationMode ?? undefined,
       timezone: input.timezone ?? undefined,
       is_active: input.is_active ?? undefined,
     }
