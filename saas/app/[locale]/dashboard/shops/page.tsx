@@ -1,100 +1,16 @@
-'use client'
+import { getDictionary, isValidLocale } from '@/lib/dictionaries'
+import { ShopsPageClient } from '@/components/shops/ShopsPageClient'
+import type { Locale } from '@/lib/types/dictionary'
 
-import React, { useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import {
-  Store,
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  Eye,
-  EyeOff,
-  MapPin,
-  Phone,
-  Mail,
-  Globe,
-  Clock,
-  Filter,
-  MoreHorizontal
-} from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { ShopsList } from '@/components/shops/ShopsList'
-import { CreateShopForm } from '@/components/shops/CreateShopForm'
+export default async function ShopsPage({
+  params
+}: {
+  params: Promise<{ locale: string }>
+}) {
+  const { locale } = await params
+  const safeLocale: Locale = isValidLocale(locale) ? locale : 'es'
+  const dict = await getDictionary(safeLocale)
 
-export default function ShopsPage() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const locale = pathname.split('/')[1] || 'es'
-  const isEnglish = locale === 'en'
-  const t = {
-    title: isEnglish ? 'My Shops' : 'Mis Tiendas',
-    description: isEnglish
-      ? 'Manage all your shops and locations from one place.'
-      : 'Gestiona todas tus tiendas y locales desde un solo lugar.',
-    newShop: isEnglish ? 'New Shop' : 'Nueva Tienda'
-  }
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filterByStatus, setFilterByStatus] = useState<'all' | 'active' | 'inactive'>('all')
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [refreshKey, setRefreshKey] = useState(0)
-
-  const handleCreateSuccess = (shopId?: string, shopData?: any) => {
-    setShowCreateForm(false)
-    setRefreshKey(prev => prev + 1)
-    if (shopId && shopData) {
-      // Obtener el locale de la ruta actual usando usePathname
-      // Pasar los datos de la tienda en la URL para evitar fetch inicial
-      const shopParam = encodeURIComponent(JSON.stringify(shopData))
-      router.push(`/${locale}/dashboard/shops/${shopId}/schedule?shop=${shopParam}`)
-    }
-  }
-
-  if (showCreateForm) {
-    return (
-      <div className="space-y-6">
-        <CreateShopForm 
-          onSuccess={handleCreateSuccess}
-          onCancel={() => setShowCreateForm(false)}
-        />
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t.title}</h1>
-          <p className="text-muted-foreground">
-            {t.description}
-          </p>
-        </div>
-        <Button onClick={() => setShowCreateForm(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t.newShop}
-        </Button>
-      </div>
-
-      {/* Contenido principal */}
-      <ShopsList 
-        key={refreshKey}
-        onShopSelect={(shopId) => console.log('Seleccionar tienda:', shopId)}
-        onShopEdit={(shopId) => console.log('Editar tienda:', shopId)}
-      />
-    </div>
-  )
+  return <ShopsPageClient locale={safeLocale} dict={dict} />
 }
 

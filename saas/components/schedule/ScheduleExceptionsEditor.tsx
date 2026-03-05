@@ -10,11 +10,14 @@ import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, Plus, Trash2, Clock, AlertTriangle, Save } from 'lucide-react'
 import { toast } from 'sonner'
+import type { Dictionary, Locale } from '@/lib/types/dictionary'
 
 interface ScheduleExceptionsEditorProps {
   shopId: string
   onExceptionUpdated?: () => void
   className?: string
+  locale: Locale
+  scheduleDict: Dictionary['schedule']
 }
 
 interface ExceptionForm {
@@ -28,7 +31,9 @@ interface ExceptionForm {
 export function ScheduleExceptionsEditor({
   shopId,
   onExceptionUpdated,
-  className = ''
+  className = '',
+  locale,
+  scheduleDict
 }: ScheduleExceptionsEditorProps) {
   const [exceptions, setExceptions] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -43,8 +48,8 @@ export function ScheduleExceptionsEditor({
   })
 
   const scheduleService = new ScheduleService()
+  const exceptionsDict = scheduleDict.exceptionsPanel
 
-  // Cargar excepciones existentes
   useEffect(() => {
     loadExceptions()
   }, [shopId])
@@ -53,35 +58,34 @@ export function ScheduleExceptionsEditor({
     setLoading(true)
     try {
       const startDate = new Date()
-      startDate.setDate(startDate.getDate() - 30) // Últimos 30 días
-      
+      startDate.setDate(startDate.getDate() - 30)
+
       const endDate = new Date()
-      endDate.setDate(endDate.getDate() + 365) // Próximo año
+      endDate.setDate(endDate.getDate() + 365)
 
       const exceptionsData = await scheduleService.getScheduleExceptions(
         shopId,
         startDate.toISOString().split('T')[0],
         endDate.toISOString().split('T')[0]
       )
-      
+
       setExceptions(exceptionsData)
     } catch (error) {
       console.error('Error al cargar excepciones:', error)
-      toast.error('Error al cargar las excepciones')
+      toast.error(exceptionsDict.loadError)
     } finally {
       setLoading(false)
     }
   }
 
-  // Crear nueva excepción
   const createException = async () => {
     if (!formData.exception_date) {
-      toast.error('Selecciona una fecha')
+      toast.error(exceptionsDict.selectDateError)
       return
     }
 
     if (!formData.is_closed && (!formData.open_time || !formData.close_time)) {
-      toast.error('Completa los horarios')
+      toast.error(exceptionsDict.completeHoursError)
       return
     }
 
@@ -93,47 +97,44 @@ export function ScheduleExceptionsEditor({
         is_closed: formData.is_closed,
         open_time: formData.is_closed ? null : formData.open_time,
         close_time: formData.is_closed ? null : formData.close_time,
-        reason: formData.reason || (formData.is_closed ? 'Cerrado' : 'Horario especial')
+        reason: formData.reason || (formData.is_closed ? exceptionsDict.closed : exceptionsDict.special)
       }
 
       await scheduleService.createScheduleException(exceptionData)
-      
-      toast.success('Excepción creada correctamente')
+
+      toast.success(exceptionsDict.createSuccess)
       setShowForm(false)
       resetForm()
       loadExceptions()
       onExceptionUpdated?.()
     } catch (error) {
       console.error('Error al crear excepción:', error)
-      toast.error('Error al crear la excepción')
+      toast.error(exceptionsDict.createError)
     } finally {
       setSaving(false)
     }
   }
 
-  // Eliminar excepción
   const deleteException = async (exceptionId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta excepción?')) {
+    if (!confirm(exceptionsDict.deleteConfirm)) {
       return
     }
 
     try {
       await scheduleService.deleteScheduleException(exceptionId)
-      toast.success('Excepción eliminada correctamente')
+      toast.success(exceptionsDict.deleteSuccess)
       loadExceptions()
       onExceptionUpdated?.()
     } catch (error) {
       console.error('Error al eliminar excepción:', error)
-      toast.error('Error al eliminar la excepción')
+      toast.error(exceptionsDict.deleteError)
     }
   }
 
-  // Actualizar formulario
   const updateForm = (field: keyof ExceptionForm, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  // Resetear formulario
   const resetForm = () => {
     setFormData({
       exception_date: '',
@@ -144,17 +145,15 @@ export function ScheduleExceptionsEditor({
     })
   }
 
-  // Obtener tipo de excepción
   const getExceptionType = (exception: any) => {
     if (exception.is_closed) {
-      return { label: 'Cerrado', variant: 'destructive' as const }
+      return { label: exceptionsDict.closed, variant: 'destructive' as const }
     }
-    return { label: 'Horario Especial', variant: 'secondary' as const }
+    return { label: exceptionsDict.special, variant: 'secondary' as const }
   }
 
-  // Formatear fecha
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    return new Date(dateString).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -174,44 +173,35 @@ export function ScheduleExceptionsEditor({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Encabezado */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
-            Excepciones de Horario
+            {exceptionsDict.title}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Configura excepciones para días específicos como feriados, horarios especiales o días cerrados.
-          </p>
+          <p className="text-sm text-muted-foreground">{exceptionsDict.description}</p>
         </CardContent>
       </Card>
 
-      {/* Botón para agregar excepción */}
       <Card>
         <CardContent className="pt-6">
-          <Button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2"
-          >
+          <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Agregar Excepción
+            {exceptionsDict.add}
           </Button>
         </CardContent>
       </Card>
 
-      {/* Formulario de nueva excepción */}
       {showForm && (
         <Card>
           <CardHeader>
-            <CardTitle>Nueva Excepción</CardTitle>
+            <CardTitle>{exceptionsDict.newTitle}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Fecha */}
             <div>
-              <Label htmlFor="exception-date">Fecha</Label>
+              <Label htmlFor="exception-date">{exceptionsDict.date}</Label>
               <Input
                 id="exception-date"
                 type="date"
@@ -221,61 +211,38 @@ export function ScheduleExceptionsEditor({
               />
             </div>
 
-            {/* Tipo de excepción */}
             <div className="flex items-center gap-3">
-              <Switch
-                isChecked={formData.is_closed}
-                onChange={() => updateForm('is_closed', !formData.is_closed)}
-              />
-              <Label>
-                {formData.is_closed ? 'Cerrado' : 'Horario Especial'}
-              </Label>
+              <Switch isChecked={formData.is_closed} onChange={() => updateForm('is_closed', !formData.is_closed)} />
+              <Label>{formData.is_closed ? exceptionsDict.closed : exceptionsDict.special}</Label>
             </div>
 
-            {/* Horarios (solo si no está cerrado) */}
             {!formData.is_closed && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="open-time">Hora de Apertura</Label>
-                  <Input
-                    id="open-time"
-                    type="time"
-                    value={formData.open_time}
-                    onChange={(e) => updateForm('open_time', e.target.value)}
-                  />
+                  <Label htmlFor="open-time">{exceptionsDict.openTime}</Label>
+                  <Input id="open-time" type="time" value={formData.open_time} onChange={(e) => updateForm('open_time', e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="close-time">Hora de Cierre</Label>
-                  <Input
-                    id="close-time"
-                    type="time"
-                    value={formData.close_time}
-                    onChange={(e) => updateForm('close_time', e.target.value)}
-                  />
+                  <Label htmlFor="close-time">{exceptionsDict.closeTime}</Label>
+                  <Input id="close-time" type="time" value={formData.close_time} onChange={(e) => updateForm('close_time', e.target.value)} />
                 </div>
               </div>
             )}
 
-            {/* Razón */}
             <div>
-              <Label htmlFor="reason">Razón (opcional)</Label>
+              <Label htmlFor="reason">{exceptionsDict.reason}</Label>
               <Input
                 id="reason"
-                placeholder={formData.is_closed ? "Ej: Feriado nacional" : "Ej: Horario extendido"}
+                placeholder={formData.is_closed ? exceptionsDict.reasonClosed : exceptionsDict.reasonSpecial}
                 value={formData.reason}
                 onChange={(e) => updateForm('reason', e.target.value)}
               />
             </div>
 
-            {/* Botones */}
             <div className="flex items-center gap-2">
-              <Button
-                onClick={createException}
-                disabled={saving}
-                className="flex items-center gap-2"
-              >
+              <Button onClick={createException} disabled={saving} className="flex items-center gap-2">
                 <Save className="h-4 w-4" />
-                {saving ? 'Guardando...' : 'Guardar Excepción'}
+                {saving ? exceptionsDict.save : exceptionsDict.save}
               </Button>
               <Button
                 variant="outline"
@@ -284,24 +251,23 @@ export function ScheduleExceptionsEditor({
                   resetForm()
                 }}
               >
-                Cancelar
+                {exceptionsDict.cancel}
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Lista de excepciones */}
       <Card>
         <CardHeader>
-          <CardTitle>Excepciones Configuradas</CardTitle>
+          <CardTitle>{exceptionsDict.listTitle}</CardTitle>
         </CardHeader>
         <CardContent>
           {exceptions.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No hay excepciones configuradas</p>
-              <p className="text-sm">Agrega excepciones para días especiales</p>
+              <p>{exceptionsDict.emptyTitle}</p>
+              <p className="text-sm">{exceptionsDict.emptyDescription}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -309,37 +275,26 @@ export function ScheduleExceptionsEditor({
                 .sort((a, b) => new Date(a.exception_date).getTime() - new Date(b.exception_date).getTime())
                 .map((exception) => {
                   const exceptionType = getExceptionType(exception)
-                  
+
                   return (
-                    <div
-                      key={exception.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                    >
+                    <div key={exception.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">
-                            {formatDate(exception.exception_date)}
-                          </span>
+                          <span className="font-medium">{formatDate(exception.exception_date)}</span>
                         </div>
-                        
-                        <Badge variant={exceptionType.variant}>
-                          {exceptionType.label}
-                        </Badge>
+
+                        <Badge variant={exceptionType.variant}>{exceptionType.label}</Badge>
 
                         {!exception.is_closed && (
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Clock className="h-3 w-3" />
-                            <span>
-                              {exception.open_time} - {exception.close_time}
-                            </span>
+                            <span>{exception.open_time} - {exception.close_time}</span>
                           </div>
                         )}
 
                         {exception.reason && (
-                          <span className="text-sm text-muted-foreground">
-                            {exception.reason}
-                          </span>
+                          <span className="text-sm text-muted-foreground">{exception.reason}</span>
                         )}
                       </div>
 
@@ -359,33 +314,20 @@ export function ScheduleExceptionsEditor({
         </CardContent>
       </Card>
 
-      {/* Estadísticas */}
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold text-primary">
-                {exceptions.length}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Total Excepciones
-              </div>
+              <div className="text-2xl font-bold text-primary">{exceptions.length}</div>
+              <div className="text-sm text-muted-foreground">{exceptionsDict.total}</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-red-600">
-                {exceptions.filter(e => e.is_closed).length}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Días Cerrados
-              </div>
+              <div className="text-2xl font-bold text-red-600">{exceptions.filter(e => e.is_closed).length}</div>
+              <div className="text-sm text-muted-foreground">{exceptionsDict.closedDays}</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-blue-600">
-                {exceptions.filter(e => !e.is_closed).length}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Horarios Especiales
-              </div>
+              <div className="text-2xl font-bold text-blue-600">{exceptions.filter(e => !e.is_closed).length}</div>
+              <div className="text-sm text-muted-foreground">{exceptionsDict.specialHours}</div>
             </div>
           </div>
         </CardContent>
@@ -393,4 +335,3 @@ export function ScheduleExceptionsEditor({
     </div>
   )
 }
-

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { ScheduleService } from '@/lib/services/schedule-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,14 +8,17 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { TimePicker } from '@/components/schedule/TimePicker'
-import { Clock, Save, Calendar, Check, X, Plus, Trash2 } from 'lucide-react'
+import { Save, Calendar, Check, X, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import type { Dictionary, Locale } from '@/lib/types/dictionary'
 
 interface WeeklyScheduleEditorProps {
   shopId: string
   onScheduleUpdated?: () => void
   className?: string
   existingSchedules?: any[]
+  locale: Locale
+  scheduleDict: Dictionary['schedule']
 }
 
 interface TimeBlock {
@@ -35,7 +38,9 @@ export function WeeklyScheduleEditor({
   shopId,
   onScheduleUpdated,
   className = '',
-  existingSchedules = []
+  existingSchedules = [],
+  locale,
+  scheduleDict
 }: WeeklyScheduleEditorProps) {
   const [schedules, setSchedules] = useState<DaySchedule[]>([])
   const [loading, setLoading] = useState(false)
@@ -44,55 +49,61 @@ export function WeeklyScheduleEditor({
 
   const scheduleService = new ScheduleService()
 
-  const dayNames = [
-    'Domingo',
-    'Lunes', 
-    'Martes',
-    'Miércoles',
-    'Jueves',
-    'Viernes',
-    'Sábado'
-  ]
+  const dayNames = useMemo(() => ([
+    scheduleDict.day.sunday,
+    scheduleDict.day.monday,
+    scheduleDict.day.tuesday,
+    scheduleDict.day.wednesday,
+    scheduleDict.day.thursday,
+    scheduleDict.day.friday,
+    scheduleDict.day.saturday
+  ]), [
+    scheduleDict.day.sunday,
+    scheduleDict.day.monday,
+    scheduleDict.day.tuesday,
+    scheduleDict.day.wednesday,
+    scheduleDict.day.thursday,
+    scheduleDict.day.friday,
+    scheduleDict.day.saturday
+  ])
+
+  const initializedRef = useRef(false)
 
   useEffect(() => {
     const initializeSchedules = () => {
-      // Si hay horarios existentes, no inicializar con defaults
-      if (existingSchedules.length > 0) return
-      
+      if (initializedRef.current || existingSchedules.length > 0) return
+
       const defaultSchedules: DaySchedule[] = dayNames.map((name, index) => ({
         dayOfWeek: index,
         dayName: name,
         isWorkingDay: index >= 1 && index <= 5,
         timeBlocks: [{ openTime: '09:00', closeTime: '18:00' }]
       }))
+      initializedRef.current = true
       setSchedules(defaultSchedules)
     }
 
     initializeSchedules()
-  }, [existingSchedules])
+  }, [existingSchedules, dayNames])
 
   useEffect(() => {
     const loadSchedules = async () => {
       setLoading(true)
       try {
-        // Si se pasan horarios existentes, usarlos directamente
         const schedulesToLoad = existingSchedules.length > 0 ? existingSchedules : await scheduleService.getShopSchedules(shopId)
-        
-        // Crear estructura completa para todos los días
+
         const fullSchedules: DaySchedule[] = dayNames.map((name, index) => {
           const daySchedules = schedulesToLoad.filter(s => s.day_of_week === index)
-          
+
           if (daySchedules.length > 0) {
-            // Día con horarios configurados
             return {
               dayOfWeek: index,
               dayName: name,
-              isWorkingDay: true, // Si existe en BD, es día laborable
+              isWorkingDay: true,
               timeBlocks: daySchedules.map(s => {
-                // Formatear tiempo desde la base de datos
                 const formatTime = (timeString: string) => {
                   if (timeString.includes('T')) {
-                    return new Date(timeString).toLocaleTimeString('en-GB', {
+                    return new Date(timeString).toLocaleTimeString(locale === 'en' ? 'en-US' : 'es-ES', {
                       hour: '2-digit',
                       minute: '2-digit',
                       hour12: false
@@ -100,7 +111,7 @@ export function WeeklyScheduleEditor({
                   }
                   return timeString
                 }
-                
+
                 return {
                   id: s.id,
                   openTime: formatTime(s.open_time),
@@ -108,38 +119,32 @@ export function WeeklyScheduleEditor({
                 }
               })
             }
-          } else {
-            // Día sin horarios = día cerrado
-            return {
-              dayOfWeek: index,
-              dayName: name,
-              isWorkingDay: false,
-              timeBlocks: [{ openTime: '09:00', closeTime: '18:00' }]
-            }
+          }
+
+          return {
+            dayOfWeek: index,
+            dayName: name,
+            isWorkingDay: false,
+            timeBlocks: [{ openTime: '09:00', closeTime: '18:00' }]
           }
         })
-        
+
         setSchedules(fullSchedules)
       } catch (error) {
         console.error('Error al cargar horarios:', error)
-        toast.error('Error al cargar los horarios existentes')
+        toast.error(scheduleDict.editor.loadError)
       } finally {
         setLoading(false)
       }
     }
 
-    // Solo cargar si hay horarios existentes o si no hay schedules inicializados
     if (existingSchedules.length > 0 || schedules.length === 0) {
       loadSchedules()
     }
-  }, [shopId, existingSchedules])
+  }, [shopId, existingSchedules, schedules.length, dayNames, locale, scheduleDict.editor.loadError])
 
   const updateDaySchedule = (dayOfWeek: number, updates: Partial<DaySchedule>) => {
-    setSchedules(prev => prev.map(schedule => 
-      schedule.dayOfWeek === dayOfWeek 
-        ? { ...schedule, ...updates }
-        : schedule
-    ))
+    setSchedules(prev => prev.map(schedule => schedule.dayOfWeek === dayOfWeek ? { ...schedule, ...updates } : schedule))
   }
 
   const toggleWorkingDay = (dayOfWeek: number) => {
@@ -160,10 +165,7 @@ export function WeeklyScheduleEditor({
   const addTimeBlock = (dayOfWeek: number) => {
     setSchedules(prev => prev.map(schedule => {
       if (schedule.dayOfWeek === dayOfWeek) {
-        return {
-          ...schedule,
-          timeBlocks: [...schedule.timeBlocks, { openTime: '09:00', closeTime: '18:00' }]
-        }
+        return { ...schedule, timeBlocks: [...schedule.timeBlocks, { openTime: '09:00', closeTime: '18:00' }] }
       }
       return schedule
     }))
@@ -172,52 +174,10 @@ export function WeeklyScheduleEditor({
   const removeTimeBlock = (dayOfWeek: number, blockIndex: number) => {
     setSchedules(prev => prev.map(schedule => {
       if (schedule.dayOfWeek === dayOfWeek && schedule.timeBlocks.length > 1) {
-        return {
-          ...schedule,
-          timeBlocks: schedule.timeBlocks.filter((_, index) => index !== blockIndex)
-        }
+        return { ...schedule, timeBlocks: schedule.timeBlocks.filter((_, index) => index !== blockIndex) }
       }
       return schedule
     }))
-  }
-
-  const saveSchedules = async () => {
-    setSaving(true)
-    try {
-      const schedulesToSave = schedules
-        .filter(schedule => schedule.isWorkingDay)
-        .flatMap(schedule => 
-          schedule.timeBlocks.map((block, index) => ({
-            day_of_week: schedule.dayOfWeek,
-            open_time: block.openTime,
-            close_time: block.closeTime,
-            is_working_day: schedule.isWorkingDay,
-            block_order: index + 1
-          }))
-        )
-
-      await scheduleService.setWeeklySchedule(shopId, schedulesToSave)
-      
-      // Toast de éxito con información útil
-      const workingDays = schedules.filter(s => s.isWorkingDay).length
-      toast.success(`✅ Horarios guardados correctamente`, {
-        description: `${workingDays} días laborables configurados. ¡Tu tienda ya tiene horarios!`,
-        duration: 4000
-      })
-      
-      // Mostrar estado de éxito temporalmente
-      setJustSaved(true)
-      setTimeout(() => setJustSaved(false), 3000)
-      
-      onScheduleUpdated?.()
-    } catch (error) {
-      console.error('Error al guardar horarios:', error)
-      toast.error('❌ Error al guardar los horarios', {
-        description: 'Por favor, inténtalo de nuevo o contacta soporte si persiste.'
-      })
-    } finally {
-      setSaving(false)
-    }
   }
 
   const validateSchedules = () => {
@@ -227,18 +187,17 @@ export function WeeklyScheduleEditor({
       if (schedule.isWorkingDay) {
         schedule.timeBlocks.forEach((block, index) => {
           if (!block.openTime || !block.closeTime) {
-            errors.push(`${schedule.dayName} - Bloque ${index + 1}: Horarios incompletos`)
+            errors.push(`${schedule.dayName} - ${scheduleDict.editor.block} ${index + 1}: ${scheduleDict.validation.incomplete}`)
           } else if (block.openTime >= block.closeTime) {
-            errors.push(`${schedule.dayName} - Bloque ${index + 1}: Hora de cierre debe ser posterior a la de apertura`)
+            errors.push(`${schedule.dayName} - ${scheduleDict.editor.block} ${index + 1}: ${scheduleDict.validation.closeAfterOpen}`)
           }
         })
-        
-        // Validar que no se solapen los bloques
+
         for (let i = 0; i < schedule.timeBlocks.length - 1; i++) {
           const current = schedule.timeBlocks[i]
           const next = schedule.timeBlocks[i + 1]
           if (current.closeTime > next.openTime) {
-            errors.push(`${schedule.dayName}: Los bloques ${i + 1} y ${i + 2} se solapan`)
+            errors.push(`${schedule.dayName}: ${scheduleDict.validation.overlap} (${scheduleDict.editor.block} ${i + 1} / ${scheduleDict.editor.block} ${i + 2})`)
           }
         }
       }
@@ -248,18 +207,11 @@ export function WeeklyScheduleEditor({
   }
 
   const applyToAllWorkingDays = (openTime: string, closeTime: string) => {
-    setSchedules(prev => prev.map(schedule => 
-      schedule.isWorkingDay 
-        ? { ...schedule, timeBlocks: [{ openTime, closeTime }] }
-        : schedule
-    ))
+    setSchedules(prev => prev.map(schedule => schedule.isWorkingDay ? { ...schedule, timeBlocks: [{ openTime, closeTime }] } : schedule))
   }
 
   const setAllDaysWorking = (working: boolean) => {
-    setSchedules(prev => prev.map(schedule => ({ 
-      ...schedule, 
-      isWorkingDay: working 
-    })))
+    setSchedules(prev => prev.map(schedule => ({ ...schedule, isWorkingDay: working })))
   }
 
   const resetToDefaults = () => {
@@ -268,6 +220,41 @@ export function WeeklyScheduleEditor({
       isWorkingDay: schedule.dayOfWeek >= 1 && schedule.dayOfWeek <= 5,
       timeBlocks: [{ openTime: '09:00', closeTime: '18:00' }]
     })))
+  }
+
+  const saveSchedules = async () => {
+    setSaving(true)
+    try {
+      const schedulesToSave = schedules
+        .filter(schedule => schedule.isWorkingDay)
+        .flatMap(schedule => schedule.timeBlocks.map((block, index) => ({
+          day_of_week: schedule.dayOfWeek,
+          open_time: block.openTime,
+          close_time: block.closeTime,
+          is_working_day: schedule.isWorkingDay,
+          block_order: index + 1
+        })))
+
+      await scheduleService.setWeeklySchedule(shopId, schedulesToSave)
+
+      const workingDays = schedules.filter(s => s.isWorkingDay).length
+      toast.success(scheduleDict.editor.saveSuccessTitle, {
+        description: `${workingDays} ${scheduleDict.editor.saveSuccessDescription}`,
+        duration: 4000
+      })
+
+      setJustSaved(true)
+      setTimeout(() => setJustSaved(false), 3000)
+
+      onScheduleUpdated?.()
+    } catch (error) {
+      console.error('Error al guardar horarios:', error)
+      toast.error(scheduleDict.editor.saveErrorTitle, {
+        description: scheduleDict.editor.saveErrorDescription
+      })
+    } finally {
+      setSaving(false)
+    }
   }
 
   const validationErrors = validateSchedules()
@@ -289,17 +276,13 @@ export function WeeklyScheduleEditor({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Configuración de Horarios Semanales
+            {scheduleDict.editor.title}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Configura los horarios de trabajo para cada día de la semana.
-            </p>
-            <Badge variant="outline">
-              {workingDaysCount} días laborables
-            </Badge>
+            <p className="text-sm text-muted-foreground">{scheduleDict.editor.description}</p>
+            <Badge variant="outline">{workingDaysCount} {scheduleDict.editor.workingDaysCount}</Badge>
           </div>
         </CardContent>
       </Card>
@@ -316,18 +299,16 @@ export function WeeklyScheduleEditor({
                       onChange={() => toggleWorkingDay(schedule.dayOfWeek)}
                     />
                     <div className="flex items-center gap-2">
-                      <Label className="font-medium w-20">
-                        {schedule.dayName}
-                      </Label>
+                      <Label className="font-medium w-20">{schedule.dayName}</Label>
                       {schedule.isWorkingDay ? (
                         <Badge variant="default" className="text-xs">
                           <Check className="h-3 w-3 mr-1" />
-                          Abierto ({schedule.timeBlocks.length} bloque{schedule.timeBlocks.length > 1 ? 's' : ''})
+                          {scheduleDict.open} ({schedule.timeBlocks.length} {scheduleDict.editor.block}{schedule.timeBlocks.length > 1 ? 's' : ''})
                         </Badge>
                       ) : (
                         <Badge variant="secondary" className="text-xs">
                           <X className="h-3 w-3 mr-1" />
-                          Cerrado
+                          {scheduleDict.closed}
                         </Badge>
                       )}
                     </div>
@@ -341,7 +322,7 @@ export function WeeklyScheduleEditor({
                       className="text-sm h-9 md:h-8 touch-manipulation"
                     >
                       <Plus className="h-4 w-4 mr-1" />
-                      Bloque
+                      {scheduleDict.editor.addBlock}
                     </Button>
                   )}
                 </div>
@@ -351,7 +332,7 @@ export function WeeklyScheduleEditor({
                     {schedule.timeBlocks.map((block, blockIndex) => (
                       <div key={blockIndex} className="flex flex-col md:flex-row items-start md:items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <Label className="text-sm font-medium text-gray-700 md:w-20">
-                          Bloque {blockIndex + 1}
+                          {scheduleDict.editor.block} {blockIndex + 1}
                         </Label>
                         <div className="flex items-center gap-2 w-full md:w-auto">
                           <TimePicker
@@ -374,7 +355,7 @@ export function WeeklyScheduleEditor({
                             className="text-red-500 hover:text-red-700 hover:bg-red-50 h-10 md:h-8 w-full md:w-auto touch-manipulation"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Eliminar
+                            {scheduleDict.editor.deleteBlock}
                           </Button>
                         )}
                       </div>
@@ -390,7 +371,7 @@ export function WeeklyScheduleEditor({
       {validationErrors.length > 0 && (
         <Card className="border-red-200">
           <CardHeader>
-            <CardTitle className="text-red-600">Errores de Validación</CardTitle>
+            <CardTitle className="text-red-600">{scheduleDict.editor.validationTitle}</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="list-disc list-inside space-y-1">
@@ -404,47 +385,26 @@ export function WeeklyScheduleEditor({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
+          <CardTitle className="text-lg">{scheduleDict.editor.quickActionsTitle}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => applyToAllWorkingDays('09:00', '18:00')}
-              className="h-10 md:h-9 touch-manipulation"
-            >
-              Aplicar 9-18h
+            <Button variant="outline" size="sm" onClick={() => applyToAllWorkingDays('09:00', '18:00')} className="h-10 md:h-9 touch-manipulation">
+              {scheduleDict.editor.applyStandard}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setAllDaysWorking(true)}
-              className="h-10 md:h-9 touch-manipulation"
-            >
-              Todos Abiertos
+            <Button variant="outline" size="sm" onClick={() => setAllDaysWorking(true)} className="h-10 md:h-9 touch-manipulation">
+              {scheduleDict.editor.openAll}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setAllDaysWorking(false)}
-              className="h-10 md:h-9 touch-manipulation"
-            >
-              Todos Cerrados
+            <Button variant="outline" size="sm" onClick={() => setAllDaysWorking(false)} className="h-10 md:h-9 touch-manipulation">
+              {scheduleDict.editor.closeAll}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={resetToDefaults}
-              className="h-10 md:h-9 touch-manipulation"
-            >
-              Restablecer
+            <Button variant="outline" size="sm" onClick={resetToDefaults} className="h-10 md:h-9 touch-manipulation">
+              {scheduleDict.editor.reset}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Mensaje de éxito y próximos pasos */}
       {justSaved && (
         <Card className="border-green-200 bg-green-50">
           <CardContent className="pt-6">
@@ -455,34 +415,32 @@ export function WeeklyScheduleEditor({
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="font-medium text-green-900 mb-1">¡Horarios configurados exitosamente!</h3>
-                <p className="text-sm text-green-700 mb-3">
-                  Tu tienda ya tiene horarios definidos. Ahora puedes:
-                </p>
+                <h3 className="font-medium text-green-900 mb-1">{scheduleDict.editor.savedTitle}</h3>
+                <p className="text-sm text-green-700 mb-3">{scheduleDict.editor.savedDescription}</p>
                 <div className="flex flex-wrap gap-2">
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="outline"
-                    onClick={() => window.location.href = `/dashboard/shops/${shopId}/services`}
+                    onClick={() => window.location.href = `/${locale}/dashboard/shops/${shopId}/services`}
                     className="border-green-300 text-green-700 hover:bg-green-100"
                   >
-                    📋 Configurar Servicios
+                    📋 {scheduleDict.editor.configureServices}
                   </Button>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="outline"
-                    onClick={() => window.location.href = `/dashboard/shops/${shopId}/calendar`}
+                    onClick={() => window.location.href = `/${locale}/dashboard/shops/${shopId}/calendar`}
                     className="border-green-300 text-green-700 hover:bg-green-100"
                   >
-                    📅 Ver Calendario
+                    📅 {scheduleDict.editor.viewCalendar}
                   </Button>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="outline"
-                    onClick={() => window.location.href = `/dashboard/shops`}
+                    onClick={() => window.location.href = `/${locale}/dashboard/shops`}
                     className="border-green-300 text-green-700 hover:bg-green-100"
                   >
-                    🏪 Volver a Tiendas
+                    🏪 {scheduleDict.editor.backToShops}
                   </Button>
                 </div>
               </div>
@@ -500,17 +458,17 @@ export function WeeklyScheduleEditor({
           {saving ? (
             <div className="flex items-center gap-2">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              Guardando...
+              {scheduleDict.editor.saving}
             </div>
           ) : justSaved ? (
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4" />
-              ¡Guardado!
+              {scheduleDict.editor.saved}
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <Save className="h-4 w-4" />
-              Guardar Horarios
+              {scheduleDict.editor.save}
             </div>
           )}
         </Button>

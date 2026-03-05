@@ -154,6 +154,8 @@ export interface Dictionary {
     totalPrice: string
     success: string
     successDescription: string
+    requestReceivedTitle: string
+    requestReceivedDescription: string
     backToHome: string
     invalidLink: string
     errors: {
@@ -208,6 +210,95 @@ export interface Dictionary {
     copySchedule: string
     saveSchedule: string
     scheduleUpdated: string
+    page: {
+      back: string
+      editTitle: string
+      createTitle: string
+      editButton: string
+      timezone: string
+      weeklyTab: string
+      exceptionsTab: string
+      deleteSuccess: string
+      deleteError: string
+      cancelEdit: string
+      shopFallback: string
+    }
+    viewer: {
+      titlePrefix: string
+      description: string
+      edit: string
+      delete: string
+      workingDays: string
+      weeklyHours: string
+      timeBlocks: string
+      block: string
+      deleteConfirmTitle: string
+      deleteConfirmMessage: string
+      deleteConfirmAction: string
+      cancel: string
+    }
+    editor: {
+      title: string
+      description: string
+      workingDaysCount: string
+      block: string
+      addBlock: string
+      deleteBlock: string
+      validationTitle: string
+      quickActionsTitle: string
+      applyStandard: string
+      openAll: string
+      closeAll: string
+      reset: string
+      savedTitle: string
+      savedDescription: string
+      configureServices: string
+      viewCalendar: string
+      backToShops: string
+      saving: string
+      saved: string
+      save: string
+      loadError: string
+      saveSuccessTitle: string
+      saveSuccessDescription: string
+      saveErrorTitle: string
+      saveErrorDescription: string
+    }
+    validation: {
+      incomplete: string
+      closeAfterOpen: string
+      overlap: string
+    }
+    exceptionsPanel: {
+      title: string
+      description: string
+      add: string
+      newTitle: string
+      date: string
+      closed: string
+      special: string
+      openTime: string
+      closeTime: string
+      reason: string
+      reasonClosed: string
+      reasonSpecial: string
+      save: string
+      cancel: string
+      listTitle: string
+      emptyTitle: string
+      emptyDescription: string
+      total: string
+      closedDays: string
+      specialHours: string
+      loadError: string
+      selectDateError: string
+      completeHoursError: string
+      createSuccess: string
+      createError: string
+      deleteConfirm: string
+      deleteSuccess: string
+      deleteError: string
+    }
   }
   email: {
     bookingReceived: {

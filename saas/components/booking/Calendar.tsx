@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import type { Locale } from '@/lib/types/dictionary'
 
 interface CalendarProps {
   selectedDate: string
@@ -10,6 +11,7 @@ interface CalendarProps {
   minDate?: string
   maxDate?: string
   disabledDates?: string[]
+  locale?: Locale
 }
 
 export function Calendar({ 
@@ -17,7 +19,8 @@ export function Calendar({
   onDateSelect, 
   minDate,
   maxDate,
-  disabledDates = []
+  disabledDates = [],
+  locale = 'es'
 }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date())
 
@@ -109,11 +112,12 @@ export function Calendar({
   }
 
   const days = getDaysInMonth(currentMonth)
-  const monthNames = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ]
-  const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+  const monthNames = locale === 'en'
+    ? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    : ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+  const dayNames = locale === 'en'
+    ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    : ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
   const canNavigatePrev = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1) > minDateObj
   const canNavigateNext = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0) < maxDateObj

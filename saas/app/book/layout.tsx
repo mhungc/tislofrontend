@@ -8,8 +8,8 @@ const inter = Inter({
 })
 
 export const metadata = {
-  title: 'Reservar Cita',
-  description: 'Sistema de reservas online',
+  title: 'Book Appointment',
+  description: 'Online booking system',
 }
 
 export default function BookLayout({
@@ -18,7 +18,7 @@ export default function BookLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es">
+    <html lang="en">
       <body className={inter.className}>
         {children}
         <Toaster />

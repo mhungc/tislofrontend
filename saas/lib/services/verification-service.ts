@@ -4,6 +4,32 @@ import { Resend } from 'resend'
 export class VerificationService {
   private resend = new Resend(process.env.RESEND_API_KEY)
 
+  private isPoolTimeoutError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false
+    const maybeError = error as { code?: string; message?: string }
+    return maybeError.code === 'P2024' || (maybeError.message || '').includes('Timed out fetching a new connection from the connection pool')
+  }
+
+  private async withPoolRetry<T>(operation: () => Promise<T>, maxAttempts = 3): Promise<T> {
+    let lastError: unknown
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await operation()
+      } catch (error) {
+        lastError = error
+        if (!this.isPoolTimeoutError(error) || attempt === maxAttempts) {
+          throw error
+        }
+
+        const delayMs = 250 * attempt
+        await new Promise((resolve) => setTimeout(resolve, delayMs))
+      }
+    }
+
+    throw lastError
+  }
+
   // Generar código de 6 dígitos
   private generateCode(): string {
     return Math.floor(100000 + Math.random() * 900000).toString()
@@ -18,18 +44,18 @@ export class VerificationService {
       console.log('Generating verification code for:', email)
 
       // Limpiar códigos anteriores del mismo email
-      await prisma.verification_codes.deleteMany({
+      await this.withPoolRetry(() => prisma.verification_codes.deleteMany({
         where: { email }
-      })
+      }))
 
       // Crear nuevo código
-      await prisma.verification_codes.create({
+      await this.withPoolRetry(() => prisma.verification_codes.create({
         data: {
           email,
           code,
           expires_at: expiresAt
         }
-      })
+      }))
 
       console.log('Verification code saved to database:', code)
 
@@ -38,6 +64,16 @@ export class VerificationService {
       
       // Enviar email
       try {
+        const allowedRecipients = (process.env.RESEND_ALLOWED_RECIPIENTS || '')
+          .split(',')
+          .map((item) => item.trim().toLowerCase())
+          .filter(Boolean)
+
+        if (allowedRecipients.length > 0 && !allowedRecipients.includes(email.toLowerCase())) {
+          console.log('Skipping email send: recipient not in RESEND_ALLOWED_RECIPIENTS')
+          return code
+        }
+
         if (process.env.RESEND_API_KEY) {
           console.log('Sending email with Resend...')
           const result = await this.resend.emails.send({
@@ -73,7 +109,7 @@ export class VerificationService {
 
   // Verificar código
   async verifyCode(email: string, code: string): Promise<boolean> {
-    const verification = await prisma.verification_codes.findFirst({
+    const verification = await this.withPoolRetry(() => prisma.verification_codes.findFirst({
       where: {
         email,
         code,
@@ -82,29 +118,29 @@ export class VerificationService {
           gt: new Date()
         }
       }
-    })
+    }))
 
     if (!verification) {
       return false
     }
 
     // Marcar como usado
-    await prisma.verification_codes.update({
+    await this.withPoolRetry(() => prisma.verification_codes.update({
       where: { id: verification.id },
       data: { used: true }
-    })
+    }))
 
     return true
   }
 
   // Limpiar códigos expirados (tarea de mantenimiento)
   async cleanExpiredCodes(): Promise<void> {
-    await prisma.verification_codes.deleteMany({
+    await this.withPoolRetry(() => prisma.verification_codes.deleteMany({
       where: {
         expires_at: {
           lt: new Date()
         }
       }
-    })
+    }))
   }
 }

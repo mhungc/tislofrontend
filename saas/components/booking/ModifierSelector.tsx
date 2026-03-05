@@ -7,19 +7,22 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { Clock, DollarSign } from 'lucide-react'
+import type { Locale } from '@/lib/types/dictionary'
 
 interface ModifierSelectorProps {
   serviceId: string
   customerData?: any
   selectedModifiers: string[]
   onModifiersChange: (modifierIds: string[], totalDuration: number, totalPrice: number) => void
+  locale?: Locale
 }
 
 export function ModifierSelector({ 
   serviceId, 
   customerData, 
   selectedModifiers, 
-  onModifiersChange 
+  onModifiersChange,
+  locale = 'es'
 }: ModifierSelectorProps) {
   const [modifiers, setModifiers] = useState<ServiceModifier[]>([])
   const [autoApplied, setAutoApplied] = useState<string[]>([])
@@ -77,9 +80,13 @@ export function ModifierSelector({
 
   if (modifiers.length === 0) return null
 
+  const copy = locale === 'en'
+    ? { title: 'Customize your service', auto: 'Auto' }
+    : { title: 'Personaliza tu servicio', auto: 'Auto' }
+
   return (
     <div>
-      <h4 className="font-medium mb-3 text-sm text-gray-700">Personaliza tu servicio</h4>
+      <h4 className="font-medium mb-3 text-sm text-gray-700">{copy.title}</h4>
       <div className="space-y-2">{modifiers.map((modifier) => (
             <div 
               key={modifier.id} 
@@ -98,7 +105,7 @@ export function ModifierSelector({
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{modifier.name}</span>
                   {autoApplied.includes(modifier.id) && (
-                    <Badge variant="secondary" className="text-xs">Auto</Badge>
+                    <Badge variant="secondary" className="text-xs">{copy.auto}</Badge>
                   )}
                 </div>
                 {modifier.description && (

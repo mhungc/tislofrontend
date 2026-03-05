@@ -3,6 +3,7 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Check, Clock } from 'lucide-react'
+import type { Locale } from '@/lib/types/dictionary'
 
 interface TimeSlot {
   time: string
@@ -14,15 +15,38 @@ interface TimeSlotsProps {
   selectedTime: string
   onTimeSelect: (time: string) => void
   loading?: boolean
+  locale?: Locale
 }
 
-export function TimeSlots({ slots, selectedTime, onTimeSelect, loading }: TimeSlotsProps) {
+export function TimeSlots({ slots, selectedTime, onTimeSelect, loading, locale = 'es' }: TimeSlotsProps) {
+  const copy = locale === 'en'
+    ? {
+        loading: 'Loading available times... ',
+        emptyTitle: 'No available times',
+        emptyDescription: 'Select another day to view available times',
+        availableCount: 'available time slots',
+        morning: 'Morning',
+        afternoon: 'Afternoon',
+        evening: 'Evening',
+        unavailable: 'View unavailable times'
+      }
+    : {
+        loading: 'Cargando horarios disponibles...',
+        emptyTitle: 'No hay horarios disponibles',
+        emptyDescription: 'Selecciona otro día para ver los horarios disponibles',
+        availableCount: 'horarios disponibles',
+        morning: 'Mañana',
+        afternoon: 'Tarde',
+        evening: 'Noche',
+        unavailable: 'Ver horarios no disponibles'
+      }
+
   if (loading) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Clock className="h-4 w-4" />
-          <span>Cargando horarios disponibles...</span>
+          <span>{copy.loading}</span>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {Array.from({ length: 12 }).map((_, i) => (
@@ -38,10 +62,10 @@ export function TimeSlots({ slots, selectedTime, onTimeSelect, loading }: TimeSl
       <div className="text-center py-8">
         <Clock className="h-12 w-12 mx-auto mb-4 text-gray-400" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">
-          No hay horarios disponibles
+          {copy.emptyTitle}
         </h3>
         <p className="text-gray-600">
-          Selecciona otro día para ver los horarios disponibles
+          {copy.emptyDescription}
         </p>
       </div>
     )
@@ -114,17 +138,17 @@ export function TimeSlots({ slots, selectedTime, onTimeSelect, loading }: TimeSl
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-sm text-gray-600">
         <Clock className="h-4 w-4" />
-        <span>{availableSlots.length} horarios disponibles</span>
+        <span>{availableSlots.length} {copy.availableCount}</span>
       </div>
 
-      {renderSlotGroup('Mañana', morning)}
-      {renderSlotGroup('Tarde', afternoon)}
-      {renderSlotGroup('Noche', evening)}
+      {renderSlotGroup(copy.morning, morning)}
+      {renderSlotGroup(copy.afternoon, afternoon)}
+      {renderSlotGroup(copy.evening, evening)}
 
       {unavailableSlots.length > 0 && (
         <details className="mt-6">
           <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">
-            Ver horarios no disponibles ({unavailableSlots.length})
+            {copy.unavailable} ({unavailableSlots.length})
           </summary>
           <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
             {unavailableSlots.map(slot => (
