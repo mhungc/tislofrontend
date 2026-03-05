@@ -15,10 +15,16 @@ import { Separator } from '@/components/ui/separator'
 import { MapPin, Clock, CheckCircle, ArrowLeft, User, Mail, Phone } from 'lucide-react'
 import { toast } from 'sonner'
 import { ModifierSelector } from '@/components/booking/ModifierSelector'
+import esDictionary from '@/dictionaries/es.json'
+import enDictionary from '@/dictionaries/en.json'
 
 export default function BookingPage() {
   const params = useParams()
   const token = params.token as string
+  const locale = (params.locale as string) === 'en' ? 'en' : 'es'
+  const dict = locale === 'en' ? enDictionary : esDictionary
+  const bookingDict = dict.booking
+  const commonDict = dict.common
   const [loading, setLoading] = useState(true)
   const [shop, setShop] = useState<any>(null)
   const [services, setServices] = useState<any[]>([])
@@ -57,7 +63,7 @@ export default function BookingPage() {
       setShop(data.shop)
       setServices(data.services)
     } catch (error) {
-      toast.error('Enlace inválido o expirado')
+      toast.error(bookingDict.invalidLink)
     } finally {
       setLoading(false)
     }
@@ -70,7 +76,7 @@ export default function BookingPage() {
       setAvailableSlots(slots)
       setSelectedTime('') // Reset selected time when date changes
     } catch (error) {
-      toast.error('Error al cargar disponibilidad')
+      toast.error(commonDict.error)
     } finally {
       setSlotsLoading(false)
     }
@@ -107,7 +113,7 @@ export default function BookingPage() {
 
   const handleSubmit = async () => {
     if (!customerData.name || !customerData.email) {
-      toast.error('Nombre y email son requeridos')
+      toast.error(bookingDict.errors.requiredFields)
       return
     }
 
@@ -121,13 +127,14 @@ export default function BookingPage() {
         start_time: selectedTime,
         services: selectedServices,
         notes: customerData.notes,
-        modifiers: selectedModifiers
+        modifiers: selectedModifiers,
+        locale
       })
       
       setBookingComplete(true)
-      toast.success('¡Reserva creada exitosamente!')
+      toast.success(bookingDict.successDescription)
     } catch (error) {
-      toast.error('Error al crear la reserva')
+      toast.error(bookingDict.errors.bookingFailed)
     } finally {
       setSubmitting(false)
     }
@@ -144,7 +151,7 @@ export default function BookingPage() {
     // Crear fecha sin problemas de zona horaria
     const [year, month, day] = dateString.split('-').map(Number)
     const date = new Date(year, month - 1, day)
-    return date.toLocaleDateString('es-ES', {
+    return date.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -177,14 +184,14 @@ export default function BookingPage() {
         <Card className="w-full max-w-md">
           <CardContent className="text-center py-8">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">¡Reserva Confirmada!</h2>
+            <h2 className="text-2xl font-bold mb-2">{bookingDict.success}</h2>
             <p className="text-muted-foreground mb-4">
-              Hemos enviado los detalles a tu email
+              {bookingDict.successDescription}
             </p>
             <div className="bg-gray-50 p-4 rounded-lg">
               <p className="font-medium">{shop?.name}</p>
               <p className="text-sm text-gray-600">{formatDate(selectedDate)}</p>
-              <p className="text-sm text-gray-600">a las {selectedTime}</p>
+              <p className="text-sm text-gray-600">{bookingDict.time}: {selectedTime}</p>
             </div>
           </CardContent>
         </Card>
@@ -236,7 +243,7 @@ export default function BookingPage() {
             {step === 1 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Selecciona tus servicios</CardTitle>
+                  <CardTitle>{bookingDict.selectServices}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {services.map(service => (
@@ -263,7 +270,7 @@ export default function BookingPage() {
                               <span>{formatDuration(service.duration_minutes)}</span>
                             </div>
                             <Badge variant="outline">
-                              ${service.price || 'Gratis'}
+                              ${service.price || (locale === 'en' ? 'Free' : 'Gratis')}
                             </Badge>
                           </div>
                         </div>
@@ -307,7 +314,7 @@ export default function BookingPage() {
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Selecciona una fecha</CardTitle>
+                    <CardTitle>{bookingDict.selectDate}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Calendar
@@ -322,7 +329,7 @@ export default function BookingPage() {
                 {selectedDate && (
                   <Card>
                     <CardHeader>
-                      <CardTitle>Horarios disponibles</CardTitle>
+                      <CardTitle>{bookingDict.selectTime}</CardTitle>
                       <p className="text-sm text-gray-600">
                         {formatDate(selectedDate)}
                       </p>
@@ -344,26 +351,26 @@ export default function BookingPage() {
             {step === 3 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Información de contacto</CardTitle>
+                  <CardTitle>{bookingDict.customerInfo}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-4">
                     <div>
-                      <Label htmlFor="name">Nombre completo *</Label>
+                      <Label htmlFor="name">{bookingDict.fullName} *</Label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
                           id="name"
                           value={customerData.name}
                           onChange={(e) => setCustomerData(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="Tu nombre completo"
+                          placeholder={bookingDict.fullNamePlaceholder}
                           className="pl-10"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <Label htmlFor="email">Email *</Label>
+                      <Label htmlFor="email">{bookingDict.email} *</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
@@ -371,14 +378,14 @@ export default function BookingPage() {
                           type="email"
                           value={customerData.email}
                           onChange={(e) => setCustomerData(prev => ({ ...prev, email: e.target.value }))}
-                          placeholder="tu@email.com"
+                          placeholder={bookingDict.emailPlaceholder}
                           className="pl-10"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <Label htmlFor="phone">Teléfono</Label>
+                      <Label htmlFor="phone">{bookingDict.phone}</Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
@@ -386,19 +393,19 @@ export default function BookingPage() {
                           type="tel"
                           value={customerData.phone}
                           onChange={(e) => setCustomerData(prev => ({ ...prev, phone: e.target.value }))}
-                          placeholder="Tu número de teléfono"
+                          placeholder={bookingDict.phonePlaceholder}
                           className="pl-10"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <Label htmlFor="notes">Notas adicionales</Label>
+                      <Label htmlFor="notes">{bookingDict.notes}</Label>
                       <Textarea
                         id="notes"
                         value={customerData.notes}
                         onChange={(e) => setCustomerData(prev => ({ ...prev, notes: e.target.value }))}
-                        placeholder="Alguna información adicional que quieras compartir..."
+                        placeholder={bookingDict.notesPlaceholder}
                         rows={3}
                       />
                     </div>
@@ -413,13 +420,13 @@ export default function BookingPage() {
             {/* Summary */}
             <Card className="sticky top-4">
               <CardHeader>
-                <CardTitle className="text-lg">Resumen</CardTitle>
+                <CardTitle className="text-lg">{bookingDict.summary}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Selected Services */}
                 {selectedServices.length > 0 && (
                   <div>
-                    <h4 className="font-medium mb-2">Servicios seleccionados</h4>
+                    <h4 className="font-medium mb-2">{bookingDict.services}</h4>
                     <div className="space-y-2">
                       {selectedServices.map(serviceId => {
                         const service = services.find(s => s.id === serviceId)
@@ -434,16 +441,16 @@ export default function BookingPage() {
                     <Separator className="my-3" />
                     {(modifierAdjustments.duration !== 0 || modifierAdjustments.price !== 0) && (
                       <>
-                        <div className="text-xs text-gray-600 mb-1">Ajustes:</div>
+                        <div className="text-xs text-gray-600 mb-1">{bookingDict.modifiers}:</div>
                         {modifierAdjustments.duration !== 0 && (
                           <div className="flex justify-between text-xs text-gray-600">
-                            <span>Tiempo adicional:</span>
+                            <span>{bookingDict.duration}:</span>
                             <span>+{modifierAdjustments.duration} min</span>
                           </div>
                         )}
                         {modifierAdjustments.price !== 0 && (
                           <div className="flex justify-between text-xs text-gray-600">
-                            <span>Costo adicional:</span>
+                            <span>{bookingDict.totalPrice}:</span>
                             <span>+${Number(modifierAdjustments.price).toFixed(2)}</span>
                           </div>
                         )}
@@ -451,7 +458,7 @@ export default function BookingPage() {
                       </>
                     )}
                     <div className="flex justify-between font-medium">
-                      <span>Total: {formatDuration(getTotalDuration())}</span>
+                      <span>{bookingDict.duration}: {formatDuration(getTotalDuration())}</span>
                       <span>${getTotalPrice().toFixed(2)}</span>
                     </div>
                   </div>
@@ -460,10 +467,10 @@ export default function BookingPage() {
                 {/* Selected Date & Time */}
                 {selectedDate && (
                   <div>
-                    <h4 className="font-medium mb-2">Fecha y hora</h4>
+                    <h4 className="font-medium mb-2">{bookingDict.date} & {bookingDict.time}</h4>
                     <p className="text-sm text-gray-600">{formatDate(selectedDate)}</p>
                     {selectedTime && (
-                      <p className="text-sm text-gray-600">a las {selectedTime}</p>
+                      <p className="text-sm text-gray-600">{bookingDict.time}: {selectedTime}</p>
                     )}
                   </div>
                 )}
@@ -476,7 +483,7 @@ export default function BookingPage() {
                       disabled={selectedServices.length === 0}
                       className="w-full"
                     >
-                      Continuar
+                      {commonDict.next}
                     </Button>
                   )}
                   {step === 2 && (
@@ -485,7 +492,7 @@ export default function BookingPage() {
                       disabled={!selectedDate || !selectedTime}
                       className="w-full"
                     >
-                      Continuar
+                      {commonDict.next}
                     </Button>
                   )}
                   {step === 3 && (
@@ -494,7 +501,7 @@ export default function BookingPage() {
                       disabled={submitting || !customerData.name || !customerData.email}
                       className="w-full"
                     >
-                      {submitting ? 'Creando reserva...' : 'Confirmar Reserva'}
+                      {submitting ? `${commonDict.loading}...` : bookingDict.confirmBooking}
                     </Button>
                   )}
                 </div>

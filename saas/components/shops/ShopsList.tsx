@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useShopStore } from '@/lib/stores/shop-store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -37,6 +37,44 @@ export function ShopsList({
   className = ''
 }: ShopsListProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const locale = pathname.split('/')[1] || 'es'
+  const isEnglish = locale === 'en'
+  const t = {
+    statusUpdated: isEnglish ? 'Shop status updated' : 'Estado de la tienda actualizado',
+    statusUpdateError: isEnglish ? 'Error changing shop status' : 'Error al cambiar el estado de la tienda',
+    deleteConfirm: isEnglish
+      ? 'Are you sure you want to delete this shop? This action cannot be undone.'
+      : '¿Estás seguro de que quieres eliminar esta tienda? Esta acción no se puede deshacer.',
+    deleted: isEnglish ? 'Shop deleted successfully' : 'Tienda eliminada correctamente',
+    deleteError: isEnglish ? 'Error deleting shop' : 'Error al eliminar la tienda',
+    notConfigured: isEnglish ? 'Not configured' : 'No configurado',
+    closed: isEnglish ? 'Closed' : 'Cerrado',
+    title: isEnglish ? 'My Shops' : 'Mis Tiendas',
+    searchPlaceholder: isEnglish ? 'Search shops...' : 'Buscar tiendas...',
+    all: isEnglish ? 'All' : 'Todas',
+    active: isEnglish ? 'Active' : 'Activas',
+    inactive: isEnglish ? 'Inactive' : 'Inactivas',
+    noneFound: isEnglish ? 'No shops found' : 'No se encontraron tiendas',
+    noShops: isEnglish ? 'You have no shops' : 'No tienes tiendas',
+    tryOtherSearch: isEnglish ? 'Try different search terms' : 'Intenta con otros términos de búsqueda',
+    createFirstShop: isEnglish ? 'Create your first shop to get started' : 'Crea tu primera tienda para comenzar',
+    useNewShop: isEnglish ? 'Use the "New Shop" button to start.' : 'Usa el boton "Nueva Tienda" para empezar.',
+    activeSingle: isEnglish ? 'Active' : 'Activa',
+    inactiveSingle: isEnglish ? 'Inactive' : 'Inactiva',
+    auto: isEnglish ? '⚡ Auto' : '⚡ Auto',
+    manual: isEnglish ? '✋ Manual' : '✋ Manual',
+    deactivate: isEnglish ? 'Deactivate' : 'Desactivar',
+    activate: isEnglish ? 'Activate' : 'Activar',
+    openDays: isEnglish ? 'open days' : 'días abiertos',
+    configure: isEnglish ? 'Configure' : 'Configurar',
+    edit: isEnglish ? 'Edit' : 'Editar',
+    remove: isEnglish ? 'Delete' : 'Eliminar',
+    totalShops: isEnglish ? 'Total Shops' : 'Total Tiendas',
+    activeShops: isEnglish ? 'Active' : 'Activas',
+    inactiveShops: isEnglish ? 'Inactive' : 'Inactivas',
+    withSchedule: isEnglish ? 'With Schedule' : 'Con Horarios',
+  }
   const { shops, loading, loadShops, updateShop, removeShop } = useShopStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterByStatus, setFilterByStatus] = useState<'all' | 'active' | 'inactive'>('all')
@@ -66,17 +104,17 @@ export function ShopsList({
       if (response.ok) {
         const updatedShop = await response.json()
         updateShop(shopId, updatedShop)
-        toast.success('Estado de la tienda actualizado')
+        toast.success(t.statusUpdated)
       }
     } catch (error) {
       console.error('Error al cambiar estado:', error)
-      toast.error('Error al cambiar el estado de la tienda')
+      toast.error(t.statusUpdateError)
     }
   }
 
   // Eliminar tienda
   const deleteShop = async (shopId: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta tienda? Esta acción no se puede deshacer.')) {
+    if (!confirm(t.deleteConfirm)) {
       return
     }
 
@@ -84,11 +122,11 @@ export function ShopsList({
       const response = await fetch(`/api/shops/${shopId}`, { method: 'DELETE' })
       if (response.ok) {
         removeShop(shopId)
-        toast.success('Tienda eliminada correctamente')
+        toast.success(t.deleted)
       }
     } catch (error) {
       console.error('Error al eliminar tienda:', error)
-      toast.error('Error al eliminar la tienda')
+      toast.error(t.deleteError)
     }
   }
 
@@ -100,10 +138,10 @@ export function ShopsList({
 
   // Formatear horario
   const formatHours = (businessHours: any) => {
-    if (!businessHours) return 'No configurado'
+    if (!businessHours) return t.notConfigured
     
     const openDays = Object.entries(businessHours).filter(([_, day]: [string, any]) => day.is_open)
-    if (openDays.length === 0) return 'Cerrado'
+    if (openDays.length === 0) return t.closed
     
     const firstDay = openDays[0][1] as any
     return `${firstDay.open} - ${firstDay.close}`
@@ -127,7 +165,7 @@ export function ShopsList({
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Store className="h-5 w-5" />
-              Mis Tiendas ({filteredShops.length})
+              {t.title} ({filteredShops.length})
             </CardTitle>
           </div>
         </CardHeader>
@@ -137,6 +175,7 @@ export function ShopsList({
             <div className="flex-1">
               <Input
                 placeholder="Buscar tiendas..."
+                placeholder={t.searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -150,9 +189,9 @@ export function ShopsList({
                 onChange={(e) => setFilterByStatus(e.target.value as any)}
                 className="border rounded px-3 py-1 text-sm"
               >
-                <option value="all">Todas</option>
-                <option value="active">Activas</option>
-                <option value="inactive">Inactivas</option>
+                <option value="all">{t.all}</option>
+                <option value="active">{t.active}</option>
+                <option value="inactive">{t.inactive}</option>
               </select>
             </div>
           </div>
@@ -165,17 +204,17 @@ export function ShopsList({
           <CardContent className="text-center py-12">
             <Store className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">
-              {searchTerm ? 'No se encontraron tiendas' : 'No tienes tiendas'}
+              {searchTerm ? t.noneFound : t.noShops}
             </h3>
             <p className="text-muted-foreground mb-4">
               {searchTerm 
-                ? 'Intenta con otros términos de búsqueda'
-                : 'Crea tu primera tienda para comenzar'
+                ? t.tryOtherSearch
+                : t.createFirstShop
               }
             </p>
             {!searchTerm && (
               <p className="text-xs text-muted-foreground">
-                Usa el boton "Nueva Tienda" para empezar.
+                {t.useNewShop}
               </p>
             )}
           </CardContent>
@@ -191,13 +230,13 @@ export function ShopsList({
                     <h3 className="font-medium text-lg mb-1">{shop.name}</h3>
                     <div className="flex items-center gap-2">
                       <Badge variant={shop.is_active ? "default" : "secondary"}>
-                        {shop.is_active ? 'Activa' : 'Inactiva'}
+                        {shop.is_active ? t.activeSingle : t.inactiveSingle}
                       </Badge>
                       <Badge 
                         variant="outline" 
                         className={shop.bookingConfirmationMode === 'automatic' ? 'bg-green-50 text-green-700 border-green-300' : 'bg-yellow-50 text-yellow-700 border-yellow-300'}
                       >
-                        {shop.bookingConfirmationMode === 'automatic' ? '⚡ Auto' : '✋ Manual'}
+                        {shop.bookingConfirmationMode === 'automatic' ? t.auto : t.manual}
                       </Badge>
                     </div>
                   </div>
@@ -206,7 +245,7 @@ export function ShopsList({
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleShopStatus(shop.id)}
-                      title={shop.is_active ? 'Desactivar' : 'Activar'}
+                      title={shop.is_active ? t.deactivate : t.activate}
                     >
                       {shop.is_active ? (
                         <Eye className="h-4 w-4" />
@@ -265,7 +304,7 @@ export function ShopsList({
                 {/* Horarios */}
                 <div className="flex items-center gap-2 text-sm mb-4">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>{getOpenDays(shop.business_hours)} días abiertos</span>
+                  <span>{getOpenDays(shop.business_hours)} {t.openDays}</span>
                   <span className="text-muted-foreground">•</span>
                   <span>{formatHours(shop.business_hours)}</span>
                 </div>
@@ -282,13 +321,13 @@ export function ShopsList({
                     className="flex-1"
                   >
                     <Settings className="h-4 w-4 mr-1" />
-                    Configurar
+                    {t.configure}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => onShopEdit?.(shop.id)}
-                    title="Editar"
+                    title={t.edit}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -296,7 +335,7 @@ export function ShopsList({
                     variant="ghost"
                     size="sm"
                     onClick={() => deleteShop(shop.id)}
-                    title="Eliminar"
+                    title={t.remove}
                     className="text-red-600 hover:text-red-700"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -317,7 +356,7 @@ export function ShopsList({
                 {Array.isArray(shops) ? shops.length : 0}
               </div>
               <div className="text-sm text-muted-foreground">
-                Total Tiendas
+                {t.totalShops}
               </div>
             </div>
             <div>
@@ -325,7 +364,7 @@ export function ShopsList({
                 {Array.isArray(shops) ? shops.filter(s => s.is_active).length : 0}
               </div>
               <div className="text-sm text-muted-foreground">
-                Activas
+                {t.activeShops}
               </div>
             </div>
             <div>
@@ -333,7 +372,7 @@ export function ShopsList({
                 {Array.isArray(shops) ? shops.filter(s => !s.is_active).length : 0}
               </div>
               <div className="text-sm text-muted-foreground">
-                Inactivas
+                {t.inactiveShops}
               </div>
             </div>
             <div>
@@ -341,7 +380,7 @@ export function ShopsList({
                 {Array.isArray(shops) ? shops.filter(s => s.business_hours).length : 0}
               </div>
               <div className="text-sm text-muted-foreground">
-                Con Horarios
+                {t.withSchedule}
               </div>
             </div>
           </div>

@@ -10,7 +10,7 @@ export async function PATCH(
 ) {
   try {
     const { shopId, bookingId } = await params
-    const { status } = await request.json()
+    const { status, locale } = await request.json()
 
     if (!['pending', 'confirmed', 'cancelled'].includes(status)) {
       return NextResponse.json({ error: 'Estado inválido' }, { status: 400 })
@@ -72,7 +72,8 @@ export async function PATCH(
         shopName: booking.shops?.name || shop.name,
         shopAddress: booking.shops?.address || shop.address,
         shopPhone: booking.shops?.phone || shop.phone,
-        notes: booking.notes || undefined
+        notes: booking.notes || undefined,
+        locale: locale === 'en' ? 'en' : 'es'
       }
 
       // Solo enviar email si hay un email válido

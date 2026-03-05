@@ -1,5 +1,6 @@
 import { getDictionary } from '@/lib/dictionaries'
 import { LandingPageLocalized } from '@/components/landing/LandingPageLocalized'
+import type { Locale } from '@/lib/types/dictionary'
 
 export default async function LocalePage({
   params
@@ -7,7 +8,8 @@ export default async function LocalePage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params;
-  const dict = await getDictionary(locale as 'en' | 'es')
+  const safeLocale: Locale = locale === 'en' ? 'en' : 'es'
+  const dict = await getDictionary(safeLocale)
   
-  return <LandingPageLocalized dict={dict} locale={locale} />
+  return <LandingPageLocalized dict={dict} locale={safeLocale} />
 }

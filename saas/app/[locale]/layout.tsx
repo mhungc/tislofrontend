@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { isValidLocale } from '@/lib/dictionaries'
 import "../globals.css";
 
 const geistSans = Geist({
@@ -28,8 +29,9 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  const safeLocale = isValidLocale(locale) ? locale : 'es'
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={safeLocale} suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
         <ThemeProvider>
           <AuthProvider>

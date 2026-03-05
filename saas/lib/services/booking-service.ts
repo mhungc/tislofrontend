@@ -78,6 +78,7 @@ export class BookingService {
     consent?: boolean
     marketing?: boolean
     verification_code?: string
+    locale?: 'es' | 'en'
   }) {
     const response = await fetch(`/api/booking/${token}/create`, {
       method: 'POST',

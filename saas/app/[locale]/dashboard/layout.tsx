@@ -58,61 +58,6 @@ interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-const navigation = [
-  {
-    title: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    description: 'Vista general de tu negocio'
-  },
-  {
-    title: 'Mis Tiendas',
-    href: '/dashboard/shops',
-    icon: Store,
-    description: 'Gestiona tus tiendas'
-  },
-  {
-    title: 'Servicios',
-    href: '/dashboard/services',
-    icon: Package,
-    description: 'Configura tus servicios'
-  },
-  {
-    title: 'Reservas',
-    href: '/dashboard/bookings',
-    icon: Calendar,
-    description: 'Gestiona las citas'
-  },
-  {
-    title: 'Clientes',
-    href: '/dashboard/customers',
-    icon: Users,
-    description: 'Base de datos de clientes',
-    comingSoon: true
-  },
-  {
-    title: 'Horarios',
-    href: '/dashboard/schedule',
-    icon: Clock,
-    description: 'Configura disponibilidad',
-    comingSoon: true
-  },
-  {
-    title: 'Reportes',
-    href: '/dashboard/reports',
-    icon: BarChart3,
-    description: 'Analytics y metricas',
-    comingSoon: true
-  },
-  {
-    title: 'Configuración',
-    href: '/dashboard/settings',
-    icon: Settings,
-    description: 'Ajustes del sistema',
-    comingSoon: true
-  }
-]
-
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const pathname = usePathname()
@@ -121,6 +66,72 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Extract locale from pathname
   const locale = pathname.split('/')[1] || 'es'
+  const isEnglish = locale === 'en'
+
+  const t = {
+    brand: isEnglish ? 'My Business' : 'Mi Negocio',
+    comingSoon: isEnglish ? 'Coming soon' : 'Proximamente',
+    search: isEnglish ? 'Search...' : 'Buscar...',
+    moduleSoonTitle: isEnglish ? 'Module coming soon' : 'Modulo disponible pronto',
+    moduleSoonDescription: isEnglish
+      ? 'We are working on this section. You will be able to use it soon.'
+      : 'Estamos trabajando en esta seccion. Pronto podras usarla.',
+  }
+
+  const navigation = [
+    {
+      title: 'Dashboard',
+      href: '/dashboard',
+      icon: LayoutDashboard,
+      description: isEnglish ? 'Business overview' : 'Vista general de tu negocio'
+    },
+    {
+      title: isEnglish ? 'My Shops' : 'Mis Tiendas',
+      href: '/dashboard/shops',
+      icon: Store,
+      description: isEnglish ? 'Manage your shops' : 'Gestiona tus tiendas'
+    },
+    {
+      title: isEnglish ? 'Services' : 'Servicios',
+      href: '/dashboard/services',
+      icon: Package,
+      description: isEnglish ? 'Configure your services' : 'Configura tus servicios'
+    },
+    {
+      title: isEnglish ? 'Bookings' : 'Reservas',
+      href: '/dashboard/bookings',
+      icon: Calendar,
+      description: isEnglish ? 'Manage appointments' : 'Gestiona las citas'
+    },
+    {
+      title: isEnglish ? 'Customers' : 'Clientes',
+      href: '/dashboard/customers',
+      icon: Users,
+      description: isEnglish ? 'Customer database' : 'Base de datos de clientes',
+      comingSoon: true
+    },
+    {
+      title: isEnglish ? 'Schedule' : 'Horarios',
+      href: '/dashboard/schedule',
+      icon: Clock,
+      description: isEnglish ? 'Configure availability' : 'Configura disponibilidad',
+      comingSoon: true
+    },
+    {
+      title: isEnglish ? 'Reports' : 'Reportes',
+      href: '/dashboard/reports',
+      icon: BarChart3,
+      description: isEnglish ? 'Analytics and metrics' : 'Analytics y metricas',
+      comingSoon: true
+    },
+    {
+      title: isEnglish ? 'Settings' : 'Configuración',
+      href: '/dashboard/settings',
+      icon: Settings,
+      description: isEnglish ? 'System settings' : 'Ajustes del sistema',
+      comingSoon: true
+    }
+  ]
 
   const isComingSoonPath = [
     '/dashboard/customers',
@@ -150,7 +161,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <VStack spacing={0} align="stretch" h="full">
       <Box p={6} borderBottomWidth="1px">
         <Text fontSize="xl" fontWeight="bold" color="blue.600">
-          Mi Negocio
+          {t.brand}
         </Text>
       </Box>
       <ScrollArea flex={1}>
@@ -176,7 +187,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </Text>
                 {isComingSoon && (
                   <Text fontSize="xs" color={isActive ? 'white' : 'gray.500'}>
-                    Proximamente
+                    {t.comingSoon}
                   </Text>
                 )}
               </HStack>
@@ -253,7 +264,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <Flex flex={1} align="center" gap={4}>
             <Box position="relative" flex={1}>
               <Search className="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400" style={{ left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-              <Input placeholder="Buscar..." pl={10} />
+              <Input placeholder={t.search} pl={10} />
             </Box>
           </Flex>
 
@@ -278,6 +289,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 userEmail={profile?.email || user?.email}
                 avatarUrl={profile?.avatar_url}
                 loading={loading}
+                locale={isEnglish ? 'en' : 'es'}
                 onSignOut={handleSignOut}
                 onProfileClick={() => router.push(`/${locale}/dashboard/profile`)}
                 onSettingsClick={() => router.push(`/${locale}/dashboard/settings`)}
@@ -299,10 +311,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 textAlign="center"
               >
                 <Text fontSize="lg" fontWeight="semibold" mb={2}>
-                  Modulo disponible pronto
+                  {t.moduleSoonTitle}
                 </Text>
                 <Text color="gray.600">
-                  Estamos trabajando en esta seccion. Pronto podras usarla.
+                  {t.moduleSoonDescription}
                 </Text>
               </Box>
             ) : (

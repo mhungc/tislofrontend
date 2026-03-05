@@ -8,8 +8,15 @@ import { Calendar, Clock, User, Check, X, AlertCircle } from 'lucide-react'
 import { BookingCalendarService, CalendarBooking } from '@/lib/services/booking-calendar-service'
 import { toast } from 'sonner'
 import { useShopStore } from '@/lib/stores/shop-store'
+import type { Dictionary, Locale } from '@/lib/types/dictionary'
 
-export function PendingBookingsWidget() {
+interface PendingBookingsWidgetProps {
+  dict: Dictionary['dashboard']
+  common: Dictionary['common']
+  locale: Locale
+}
+
+export function PendingBookingsWidget({ dict, common, locale }: PendingBookingsWidgetProps) {
   const [pendingBookings, setPendingBookings] = useState<CalendarBooking[]>([])
   const [loading, setLoading] = useState(true)
   const { shops, selectedShop, loadShops } = useShopStore()
@@ -67,7 +74,7 @@ export function PendingBookingsWidget() {
       setPendingBookings(pending)
     } catch (error) {
       console.error('Error loading pending bookings:', error)
-      toast.error('Error al cargar reservas pendientes')
+      toast.error(common.error)
     } finally {
       setLoading(false)
     }
@@ -76,10 +83,10 @@ export function PendingBookingsWidget() {
   const handleStatusUpdate = async (bookingId: string, status: 'confirmed' | 'cancelled', shopId: string) => {
     try {
       await calendarService.updateBookingStatus(shopId, bookingId, status)
-      toast.success(`Reserva ${status === 'confirmed' ? 'confirmada' : 'cancelada'}`)
+      toast.success(`${status === 'confirmed' ? common.confirmed : common.cancelled}`)
       loadPendingBookings(shopId)
     } catch (error) {
-      toast.error('Error al actualizar reserva')
+      toast.error(common.error)
     }
   }
 
@@ -97,11 +104,11 @@ export function PendingBookingsWidget() {
     tomorrow.setDate(tomorrow.getDate() + 1)
 
     if (date.toDateString() === today.toDateString()) {
-      return 'Hoy'
+      return locale === 'en' ? 'Today' : 'Hoy'
     } else if (date.toDateString() === tomorrow.toDateString()) {
-      return 'Mañana'
+      return locale === 'en' ? 'Tomorrow' : 'Mañana'
     } else {
-      return date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
+      return date.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
     }
   }
 
@@ -113,12 +120,12 @@ export function PendingBookingsWidget() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-yellow-500" />
-            Reservas Pendientes
+            {dict.pendingBookings}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Selecciona una tienda para ver las reservas pendientes
+            {dict.selectShop}
           </p>
         </CardContent>
       </Card>
@@ -131,7 +138,7 @@ export function PendingBookingsWidget() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-yellow-500" />
-            Reservas Pendientes
+            {dict.pendingBookings}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -149,7 +156,7 @@ export function PendingBookingsWidget() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Check className="h-5 w-5 text-green-500" />
-            Reservas Pendientes
+            {dict.pendingBookings}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -159,7 +166,7 @@ export function PendingBookingsWidget() {
               ¡Todo al día!
             </p>
             <p className="text-xs text-muted-foreground">
-              No hay reservas pendientes de confirmar
+              {dict.noPendingBookings}
             </p>
           </div>
         </CardContent>
@@ -173,7 +180,7 @@ export function PendingBookingsWidget() {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-yellow-500" />
-            Reservas Pendientes
+            {dict.pendingBookings}
           </CardTitle>
           <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
             {pendingBookings.length}
@@ -216,7 +223,7 @@ export function PendingBookingsWidget() {
                     onClick={() => handleStatusUpdate(booking.id, 'confirmed', currentShopId)}
                   >
                     <Check className="h-3 w-3 mr-1" />
-                    Confirmar
+                    {common.confirm}
                   </Button>
                   <Button
                     size="sm"
@@ -225,7 +232,7 @@ export function PendingBookingsWidget() {
                     onClick={() => handleStatusUpdate(booking.id, 'cancelled', currentShopId)}
                   >
                     <X className="h-3 w-3 mr-1" />
-                    Cancelar
+                    {common.cancel}
                   </Button>
                 </div>
               </div>
@@ -237,9 +244,9 @@ export function PendingBookingsWidget() {
             <Button
               variant="ghost"
               className="w-full text-sm"
-              onClick={() => window.location.href = '/dashboard/bookings'}
+              onClick={() => window.location.href = `/${locale}/dashboard/bookings`}
             >
-              Ver todas las reservas pendientes →
+              {dict.viewAll}
             </Button>
           </div>
         )}

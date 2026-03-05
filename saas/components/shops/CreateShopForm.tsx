@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { ShopService } from '@/lib/services/shop-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,6 +25,42 @@ interface FormErrors {
 }
 
 export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
+  const pathname = usePathname()
+  const locale = pathname.split('/')[1] || 'es'
+  const isEnglish = locale === 'en'
+  const t = {
+    nameRequired: isEnglish ? 'Shop name is required' : 'El nombre de la tienda es obligatorio',
+    nameMin: isEnglish ? 'Name must have at least 2 characters' : 'El nombre debe tener al menos 2 caracteres',
+    addressRequired: isEnglish ? 'Address is required' : 'La dirección es obligatoria',
+    emailRequired: isEnglish ? 'Email is required' : 'El email es obligatorio',
+    emailInvalid: isEnglish ? 'Enter a valid email (example@domain.com)' : 'Ingresa un email válido (ejemplo@dominio.com)',
+    phoneInvalid: isEnglish ? 'Enter a valid phone number (at least 10 digits)' : 'Ingresa un teléfono válido (mínimo 10 dígitos)',
+    websiteProtocol: isEnglish ? 'URL must start with http:// or https://' : 'La URL debe comenzar con http:// o https://',
+    websiteInvalid: isEnglish ? 'Enter a valid URL (https://example.com)' : 'Ingresa una URL válida (https://ejemplo.com)',
+    formErrors: isEnglish ? 'Please fix form errors' : 'Por favor corrige los errores del formulario',
+    created: isEnglish ? 'Shop created successfully' : 'Tienda creada correctamente',
+    createError: isEnglish ? 'Error creating shop' : 'Error al crear la tienda',
+    newShop: isEnglish ? 'New Shop' : 'Nueva Tienda',
+    name: isEnglish ? 'Name *' : 'Nombre *',
+    namePlaceholder: isEnglish ? 'Shop name' : 'Nombre de la tienda',
+    bookingMode: isEnglish ? 'Booking Confirmation' : 'Confirmación de Reservas',
+    manual: isEnglish ? 'Manual (pending status)' : 'Manual (queda pendiente)',
+    automatic: isEnglish ? 'Automatic (confirmed on create)' : 'Automática (confirmada al crear)',
+    timezone: isEnglish ? 'Timezone' : 'Zona Horaria',
+    description: isEnglish ? 'Description' : 'Descripción',
+    descriptionPlaceholder: isEnglish ? 'Describe your shop...' : 'Describe tu tienda...',
+    address: isEnglish ? 'Address *' : 'Dirección *',
+    addressPlaceholder: isEnglish ? 'Full address' : 'Dirección completa',
+    phone: isEnglish ? 'Phone' : 'Teléfono',
+    email: isEnglish ? 'Email *' : 'Email *',
+    website: isEnglish ? 'Website' : 'Sitio Web',
+    emailPlaceholder: isEnglish ? 'contact@yourshop.com' : 'contacto@tutienda.com',
+    websitePlaceholder: isEnglish ? 'https://www.yourshop.com' : 'https://www.tutienda.com',
+    creating: isEnglish ? 'Creating...' : 'Creando...',
+    createShop: isEnglish ? 'Create Shop' : 'Crear Tienda',
+    cancel: isEnglish ? 'Cancel' : 'Cancelar',
+  }
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -52,23 +89,23 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
 
     // Validar nombre (obligatorio)
     if (!formData.name.trim()) {
-      newErrors.name = 'El nombre de la tienda es obligatorio'
+      newErrors.name = t.nameRequired
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'El nombre debe tener al menos 2 caracteres'
+      newErrors.name = t.nameMin
     }
 
     // Validar dirección (obligatorio)
     if (!formData.address.trim()) {
-      newErrors.address = 'La dirección es obligatoria'
+      newErrors.address = t.addressRequired
     }
 
     // Validar email (obligatorio)
     if (!formData.email.trim()) {
-      newErrors.email = 'El email es obligatorio'
+      newErrors.email = t.emailRequired
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(formData.email)) {
-        newErrors.email = 'Ingresa un email válido (ejemplo@dominio.com)'
+        newErrors.email = t.emailInvalid
       }
     }
 
@@ -76,7 +113,7 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
     if (formData.phone.trim()) {
       const phoneRegex = /^[\d\s\-\+\(\)]+$/
       if (!phoneRegex.test(formData.phone) || formData.phone.replace(/\D/g, '').length < 10) {
-        newErrors.phone = 'Ingresa un teléfono válido (mínimo 10 dígitos)'
+        newErrors.phone = t.phoneInvalid
       }
     }
 
@@ -85,10 +122,10 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
       try {
         const url = new URL(formData.website)
         if (!['http:', 'https:'].includes(url.protocol)) {
-          newErrors.website = 'La URL debe comenzar con http:// o https://'
+          newErrors.website = t.websiteProtocol
         }
       } catch {
-        newErrors.website = 'Ingresa una URL válida (https://ejemplo.com)'
+        newErrors.website = t.websiteInvalid
       }
     }
 
@@ -100,18 +137,18 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
     e.preventDefault()
     
     if (!validateForm()) {
-      toast.error('Por favor corrige los errores del formulario')
+      toast.error(t.formErrors)
       return
     }
 
     setSaving(true)
     try {
       const result = await shopService.createShop(formData)
-      toast.success('Tienda creada correctamente')
+      toast.success(t.created)
       onSuccess?.(result.id, result)
     } catch (error) {
       console.error('Error al crear tienda:', error)
-      toast.error(error instanceof Error ? error.message : 'Error al crear la tienda')
+      toast.error(error instanceof Error ? error.message : t.createError)
     } finally {
       setSaving(false)
     }
@@ -122,19 +159,19 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Store className="h-5 w-5" />
-          Nueva Tienda
+          {t.newShop}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="name">Nombre *</Label>
+              <Label htmlFor="name">{t.name}</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => updateField('name', e.target.value)}
-                placeholder="Nombre de la tienda"
+                placeholder={t.namePlaceholder}
                 className={errors.name ? 'border-red-500 focus-visible:ring-red-500' : ''}
               />
               {errors.name && (
@@ -146,20 +183,20 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
             </div>
 
             <div>
-              <Label htmlFor="booking-confirmation-mode">Confirmación de Reservas</Label>
+              <Label htmlFor="booking-confirmation-mode">{t.bookingMode}</Label>
               <select
                 id="booking-confirmation-mode"
                 value={formData.bookingConfirmationMode}
                 onChange={(e) => updateField('bookingConfirmationMode', e.target.value)}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <option value="manual">Manual (queda pendiente)</option>
-                <option value="automatic">Automática (confirmada al crear)</option>
+                <option value="manual">{t.manual}</option>
+                <option value="automatic">{t.automatic}</option>
               </select>
             </div>
             
             <div>
-              <Label htmlFor="timezone">Zona Horaria</Label>
+              <Label htmlFor="timezone">{t.timezone}</Label>
               <select
                 id="timezone"
                 value={formData.timezone}
@@ -177,23 +214,23 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
           </div>
 
           <div>
-            <Label htmlFor="description">Descripción</Label>
+            <Label htmlFor="description">{t.description}</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => updateField('description', e.target.value)}
-              placeholder="Describe tu tienda..."
+              placeholder={t.descriptionPlaceholder}
               rows={3}
             />
           </div>
 
           <div>
-            <Label htmlFor="address">Dirección *</Label>
+            <Label htmlFor="address">{t.address}</Label>
             <Input
               id="address"
               value={formData.address}
               onChange={(e) => updateField('address', e.target.value)}
-              placeholder="Dirección completa"
+              placeholder={t.addressPlaceholder}
               className={errors.address ? 'border-red-500 focus-visible:ring-red-500' : ''}
             />
             {errors.address && (
@@ -206,7 +243,7 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="phone">Teléfono</Label>
+              <Label htmlFor="phone">{t.phone}</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -224,13 +261,13 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
             </div>
             
             <div>
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="email">{t.email}</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => updateField('email', e.target.value)}
-                placeholder="contacto@tutienda.com"
+                placeholder={t.emailPlaceholder}
                 className={errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}
               />
               {errors.email && (
@@ -243,13 +280,13 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
           </div>
 
           <div>
-            <Label htmlFor="website">Sitio Web</Label>
+            <Label htmlFor="website">{t.website}</Label>
             <Input
               id="website"
               type="url"
               value={formData.website}
               onChange={(e) => updateField('website', e.target.value)}
-              placeholder="https://www.tutienda.com"
+              placeholder={t.websitePlaceholder}
               className={errors.website ? 'border-red-500 focus-visible:ring-red-500' : ''}
             />
             {errors.website && (
@@ -263,11 +300,11 @@ export function CreateShopForm({ onSuccess, onCancel }: CreateShopFormProps) {
           <div className="flex items-center gap-2 pt-4">
             <Button type="submit" disabled={saving} className="flex items-center gap-2">
               <Save className="h-4 w-4" />
-              {saving ? 'Creando...' : 'Crear Tienda'}
+              {saving ? t.creating : t.createShop}
             </Button>
             <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
               <X className="h-4 w-4 mr-2" />
-              Cancelar
+              {t.cancel}
             </Button>
           </div>
         </form>

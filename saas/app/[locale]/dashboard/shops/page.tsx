@@ -36,6 +36,15 @@ import { CreateShopForm } from '@/components/shops/CreateShopForm'
 export default function ShopsPage() {
   const router = useRouter()
   const pathname = usePathname()
+  const locale = pathname.split('/')[1] || 'es'
+  const isEnglish = locale === 'en'
+  const t = {
+    title: isEnglish ? 'My Shops' : 'Mis Tiendas',
+    description: isEnglish
+      ? 'Manage all your shops and locations from one place.'
+      : 'Gestiona todas tus tiendas y locales desde un solo lugar.',
+    newShop: isEnglish ? 'New Shop' : 'Nueva Tienda'
+  }
   const [searchTerm, setSearchTerm] = useState('')
   const [filterByStatus, setFilterByStatus] = useState<'all' | 'active' | 'inactive'>('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -46,7 +55,6 @@ export default function ShopsPage() {
     setRefreshKey(prev => prev + 1)
     if (shopId && shopData) {
       // Obtener el locale de la ruta actual usando usePathname
-      const locale = pathname.split('/')[1] || 'es'
       // Pasar los datos de la tienda en la URL para evitar fetch inicial
       const shopParam = encodeURIComponent(JSON.stringify(shopData))
       router.push(`/${locale}/dashboard/shops/${shopId}/schedule?shop=${shopParam}`)
@@ -69,14 +77,14 @@ export default function ShopsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Mis Tiendas</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t.title}</h1>
           <p className="text-muted-foreground">
-            Gestiona todas tus tiendas y locales desde un solo lugar.
+            {t.description}
           </p>
         </div>
         <Button onClick={() => setShowCreateForm(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Nueva Tienda
+          {t.newShop}
         </Button>
       </div>
 

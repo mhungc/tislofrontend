@@ -20,6 +20,7 @@ interface UserMenuProps {
   userEmail?: string | null;
   avatarUrl?: string | null;
   loading?: boolean;
+  locale?: 'es' | 'en';
   onSignOut: () => void;
   onProfileClick?: () => void;
   onSettingsClick?: () => void;
@@ -30,10 +31,20 @@ export function UserMenu({
   userEmail,
   avatarUrl,
   loading = false,
+  locale = 'es',
   onSignOut,
   onProfileClick,
   onSettingsClick,
 }: UserMenuProps) {
+  const isEnglish = locale === 'en';
+  const t = {
+    user: isEnglish ? 'User' : 'Usuario',
+    loading: isEnglish ? 'Loading...' : 'Cargando...',
+    profile: isEnglish ? 'My Profile' : 'Mi Perfil',
+    settings: isEnglish ? 'Settings' : 'Configuración',
+    signOut: isEnglish ? 'Sign Out' : 'Cerrar Sesión',
+  };
+
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "U";
     return name
@@ -54,7 +65,7 @@ export function UserMenu({
       >
         <ChakraAvatar
           size="sm"
-          name={userName || "Usuario"}
+          name={userName || t.user}
           src={avatarUrl || undefined}
           bg="blue.500"
           color="white"
@@ -72,7 +83,7 @@ export function UserMenu({
         <Box px={3} py={2} mb={2}>
           <VStack align="start" spacing={0}>
             <Text fontSize="sm" fontWeight="medium" color="gray.900">
-              {loading ? "Cargando..." : userName || "Usuario"}
+              {loading ? t.loading : userName || t.user}
             </Text>
             <Text fontSize="xs" color="gray.500">
               {loading ? "" : userEmail || ""}
@@ -88,7 +99,7 @@ export function UserMenu({
           onClick={onProfileClick}
           _hover={{ bg: "gray.100" }}
         >
-          Mi Perfil
+          {t.profile}
         </MenuItem>
         
         <MenuItem
@@ -96,7 +107,7 @@ export function UserMenu({
           onClick={onSettingsClick}
           _hover={{ bg: "gray.100" }}
         >
-          Configuración
+          {t.settings}
         </MenuItem>
 
         <MenuDivider />
@@ -107,7 +118,7 @@ export function UserMenu({
           _hover={{ bg: "gray.100" }}
           color="red.500"
         >
-          Cerrar Sesión
+          {t.signOut}
         </MenuItem>
       </MenuList>
     </Menu>

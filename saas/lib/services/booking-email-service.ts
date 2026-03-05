@@ -22,14 +22,15 @@ interface BookingEmailData {
   shopAddress?: string | null
   shopPhone?: string | null
   notes?: string | null
+  locale?: 'es' | 'en'
 }
 
 export class BookingEmailService {
   private resend = new Resend(process.env.RESEND_API_KEY)
 
-  private formatDate(date: string): string {
+  private formatDate(date: string, locale: 'es' | 'en' = 'es'): string {
     const dateObj = new Date(date)
-    return dateObj.toLocaleDateString('es-ES', {
+    return dateObj.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -42,8 +43,8 @@ export class BookingEmailService {
     return `${hours}:${minutes}`
   }
 
-  private formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('es-ES', {
+  private formatCurrency(amount: number, locale: 'es' | 'en' = 'es'): string {
+    return new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-ES', {
       style: 'currency',
       currency: 'EUR'
     }).format(amount)
@@ -59,10 +60,11 @@ export class BookingEmailService {
         return
       }
 
-      const formattedDate = this.formatDate(data.bookingDate)
+      const locale = data.locale || 'es'
+      const formattedDate = this.formatDate(data.bookingDate, locale)
       const formattedStartTime = this.formatTime(data.startTime)
       const formattedEndTime = this.formatTime(data.endTime)
-      const formattedTotal = this.formatCurrency(data.totalPrice)
+      const formattedTotal = this.formatCurrency(data.totalPrice, locale)
 
       const servicesList = data.services
         .map(
@@ -70,7 +72,7 @@ export class BookingEmailService {
         <tr>
           <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${service.name}</td>
           <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">${service.duration_minutes} min</td>
-          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">${this.formatCurrency(service.price)}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">${this.formatCurrency(service.price, locale)}</td>
         </tr>
       `
         )
@@ -82,7 +84,7 @@ export class BookingEmailService {
         <tr>
           <td style="padding: 8px 8px 8px 24px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">↳ ${modifier.name}</td>
           <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 14px;">${modifier.duration_modifier > 0 ? '+' : ''}${modifier.duration_modifier} min</td>
-          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right; color: #6b7280; font-size: 14px;">${modifier.price_modifier > 0 ? '+' : ''}${this.formatCurrency(modifier.price_modifier)}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right; color: #6b7280; font-size: 14px;">${modifier.price_modifier > 0 ? '+' : ''}${this.formatCurrency(modifier.price_modifier, locale)}</td>
         </tr>
       `
         )
@@ -225,7 +227,7 @@ export class BookingEmailService {
       await this.resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || 'ReservaFácil <onboarding@resend.dev>',
         to: data.customerEmail,
-        subject: `📅 Reserva Recibida - ${data.shopName}`,
+        subject: `${locale === 'en' ? '📅 Booking Received' : '📅 Reserva Recibida'} - ${data.shopName}`,
         html
       })
 
@@ -246,10 +248,11 @@ export class BookingEmailService {
         return
       }
 
-      const formattedDate = this.formatDate(data.bookingDate)
+      const locale = data.locale || 'es'
+      const formattedDate = this.formatDate(data.bookingDate, locale)
       const formattedStartTime = this.formatTime(data.startTime)
       const formattedEndTime = this.formatTime(data.endTime)
-      const formattedTotal = this.formatCurrency(data.totalPrice)
+      const formattedTotal = this.formatCurrency(data.totalPrice, locale)
 
       const servicesList = data.services
         .map(
@@ -257,7 +260,7 @@ export class BookingEmailService {
         <tr>
           <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${service.name}</td>
           <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">${service.duration_minutes} min</td>
-          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">${this.formatCurrency(service.price)}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">${this.formatCurrency(service.price, locale)}</td>
         </tr>
       `
         )
@@ -269,7 +272,7 @@ export class BookingEmailService {
         <tr>
           <td style="padding: 8px 8px 8px 24px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 14px;">↳ ${modifier.name}</td>
           <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 14px;">${modifier.duration_modifier > 0 ? '+' : ''}${modifier.duration_modifier} min</td>
-          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right; color: #6b7280; font-size: 14px;">${modifier.price_modifier > 0 ? '+' : ''}${this.formatCurrency(modifier.price_modifier)}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right; color: #6b7280; font-size: 14px;">${modifier.price_modifier > 0 ? '+' : ''}${this.formatCurrency(modifier.price_modifier, locale)}</td>
         </tr>
       `
         )
@@ -404,7 +407,7 @@ export class BookingEmailService {
       await this.resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || 'ReservaFácil <onboarding@resend.dev>',
         to: data.customerEmail,
-        subject: `✅ Reserva Confirmada - ${data.shopName}`,
+        subject: `${locale === 'en' ? '✅ Booking Confirmed' : '✅ Reserva Confirmada'} - ${data.shopName}`,
         html
       })
 
@@ -425,7 +428,8 @@ export class BookingEmailService {
         return
       }
 
-      const formattedDate = this.formatDate(data.bookingDate)
+      const locale = data.locale || 'es'
+      const formattedDate = this.formatDate(data.bookingDate, locale)
       const formattedStartTime = this.formatTime(data.startTime)
       const formattedEndTime = this.formatTime(data.endTime)
 
@@ -504,7 +508,7 @@ export class BookingEmailService {
       await this.resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || 'ReservaFácil <onboarding@resend.dev>',
         to: data.customerEmail,
-        subject: `❌ Reserva Cancelada - ${data.shopName}`,
+        subject: `${locale === 'en' ? '❌ Booking Cancelled' : '❌ Reserva Cancelada'} - ${data.shopName}`,
         html
       })
 

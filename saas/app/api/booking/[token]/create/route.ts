@@ -39,8 +39,10 @@ export async function POST(
       modifiers: modifierIds = [],
       consent,
       marketing,
-      verification_code
+      verification_code,
+      locale
     } = await request.json()
+    const emailLocale: 'es' | 'en' = locale === 'en' ? 'en' : 'es'
 
     // Validar datos requeridos
     if (!customer_name || !customer_email || !booking_date || !start_time || !serviceIds?.length) {
@@ -270,7 +272,8 @@ export async function POST(
         shopName: bookingLink.shops?.name || '',
         shopAddress: bookingLink.shops?.address || null,
         shopPhone: bookingLink.shops?.phone || null,
-        notes: bookingWithDetails.notes || notes || undefined
+        notes: bookingWithDetails.notes || notes || undefined,
+        locale: emailLocale
       }
 
       if (bookingStatus === 'confirmed') {
