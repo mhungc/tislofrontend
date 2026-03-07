@@ -9,14 +9,21 @@ export async function GET(request: NextRequest) {
   // Detect locale from referrer or accept-language header
   const referrer = request.headers.get('referer')
   const acceptLanguage = request.headers.get('accept-language')
+  const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value
   
   let locale = 'es' // default
   
-  if (referrer && referrer.includes('/en/')) {
+  if (cookieLocale === 'en' || cookieLocale === 'es') {
+    locale = cookieLocale
+  } else if (referrer && referrer.includes('/en/')) {
     locale = 'en'
   } else if (acceptLanguage && acceptLanguage.includes('en')) {
     locale = 'en'
   }
+
+  const normalizedNext = next.startsWith('/') ? next : `/${next}`
+  const nextHasLocale = /^\/(en|es)(\/|$)/.test(normalizedNext)
+  const redirectPath = nextHasLocale ? normalizedNext : `/${locale}${normalizedNext}`
 
   if (code) {
     const supabase = await createClient()
@@ -25,11 +32,11 @@ export async function GET(request: NextRequest) {
       const forwardedHost = request.headers.get('x-forwarded-host')
       const isLocalEnv = process.env.NODE_ENV === 'development'
       if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}/${locale}${next}`)
+        return NextResponse.redirect(`${origin}${redirectPath}`)
       } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}/${locale}${next}`)
+        return NextResponse.redirect(`https://${forwardedHost}${redirectPath}`)
       } else {
-        return NextResponse.redirect(`${origin}/${locale}${next}`)
+        return NextResponse.redirect(`${origin}${redirectPath}`)
       }
     }
   }

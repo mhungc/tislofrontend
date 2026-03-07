@@ -29,19 +29,75 @@
   "landing": {
     "header": {
       "login": "Iniciar Sesión",
-      "signup": "Comenzar Gratis"
+      "signup": "Continuar con Google"
     },
     "hero": {
-      "badge": "🚀 Nuevo: Modificadores Inteligentes de Servicio",
-      "title": "Gestiona tu Negocio de Servicios",
-      "subtitle": "Sin Complicaciones",
-      "description": "La plataforma todo-en-uno para peluquerías, consultorios, spas y eventos. Reservas online, gestión inteligente y clientes felices.",
-      "demo": "Ver Demo",
-      "benefits": {
-        "free": "Gratis por 30 días",
-        "noCard": "Sin tarjeta de crédito",
-        "setup": "Configuración en 5 minutos"
+      "title": "Reservas inteligentes para negocios de servicios",
+      "subtitle": "Tislo te ayuda a gestionar disponibilidad y reservas sin llamadas, sin errores y sin dobles reservas.",
+      "cta": "Continuar con Google"
+    },
+    "explainer": {
+      "title": "Diseñado para negocios que venden tiempo",
+      "description": "Define reglas de disponibilidad, comparte tu enlace de reservas y deja que tus clientes reserven en segundos. Tislo evita conflictos calculando disponibilidad en tiempo real."
+    },
+    "features": {
+      "items": [
+        {
+          "title": "Hecho para negocios reales",
+          "description": "Tislo está diseñado para negocios que reservan tiempo real: peluquerías, centros de estética, estudios y espacios por horas."
+        },
+        {
+          "title": "Sin dobles reservas",
+          "description": "La disponibilidad se calcula automáticamente para evitar conflictos entre reservas."
+        },
+        {
+          "title": "Agenda flexible",
+          "description": "Define horarios recurrentes, excepciones y disponibilidades especiales."
+        },
+        {
+          "title": "Comparte tu enlace de reservas",
+          "description": "Tus clientes pueden elegir un horario disponible en segundos."
+        }
+      ]
+    }
+  },
+  "auth": {
+    "title": "Accede a tu panel de reservas",
+    "description": "Gestiona tu disponibilidad y reservas desde un solo lugar.",
+    "button": "Continuar con Google",
+    "loading": "Conectando...",
+    "securityNote": "Tislo utiliza tu cuenta de Google únicamente para iniciar sesión. No almacenamos contraseñas."
+  },
+  "auth": {
+    "welcome": {
+      "title": "Comienza tu Prueba Gratis",
+      "subtitle": "Únete a miles de negocios que gestionan sus reservas sin esfuerzo"
+    },
+    "card": {
+      "title": "Bienvenido a ReservaFácil",
+      "subtitle": "Inicia sesión con tu cuenta de Google para comenzar",
+      "privacy": "Al continuar, aceptas nuestros términos de servicio y política de privacidad",
+      "help": "¿Necesitas ayuda?",
+      "contact": "Contactar soporte"
+    },
+    "features": {
+      "bookings": {
+        "title": "Gestión Inteligente de Reservas",
+        "description": "Automatiza citas y reduce ausencias con recordatorios"
+      },
+      "fast": {
+        "title": "Configuración en 5 Minutos",
+        "description": "Comienza a recibir reservas en minutos, no en horas"
+      },
+      "secure": {
+        "title": "Seguro y Confiable",
+        "description": "Tus datos protegidos con seguridad empresarial"
       }
+    },
+    "trust": {
+      "freeTrial": "30 días gratis",
+      "noCard": "Sin tarjeta",
+      "fastSetup": "Config. rápida"
     }
   },
   "dashboard": {

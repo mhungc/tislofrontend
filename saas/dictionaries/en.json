@@ -29,19 +29,75 @@
   "landing": {
     "header": {
       "login": "Sign In",
-      "signup": "Get Started Free"
+      "signup": "Continue with Google"
     },
     "hero": {
-      "badge": "🚀 New: Smart Service Modifiers",
-      "title": "Manage Your Service Business",
-      "subtitle": "Without Complications",
-      "description": "The all-in-one platform for salons, clinics, spas and events. Online bookings, smart management and happy customers.",
-      "demo": "Watch Demo",
-      "benefits": {
-        "free": "Free for 30 days",
-        "noCard": "No credit card required",
-        "setup": "5-minute setup"
+      "title": "Smart booking for service businesses",
+      "subtitle": "Tislo helps you manage availability and bookings without phone calls, double bookings, or manual scheduling.",
+      "cta": "Continue with Google"
+    },
+    "explainer": {
+      "title": "Built for businesses that sell time",
+      "description": "Set your availability rules, share your booking link, and let clients book in seconds. Tislo prevents conflicts by calculating real-time availability automatically."
+    },
+    "features": {
+      "items": [
+        {
+          "title": "Built for real-world services",
+          "description": "Tislo is designed for businesses that sell time-based services such as salons, studios, and hourly spaces."
+        },
+        {
+          "title": "No double bookings",
+          "description": "Availability is calculated automatically to prevent scheduling conflicts."
+        },
+        {
+          "title": "Flexible scheduling",
+          "description": "Define recurring schedules, exceptions, and custom availability."
+        },
+        {
+          "title": "Share your booking link",
+          "description": "Let your clients pick an available time instantly."
+        }
+      ]
+    }
+  },
+  "auth": {
+    "title": "Access your booking dashboard",
+    "description": "Manage your schedules and bookings in one place.",
+    "button": "Continue with Google",
+    "loading": "Connecting...",
+    "securityNote": "Tislo uses your Google account only for authentication. We never store passwords."
+  },
+  "auth": {
+    "welcome": {
+      "title": "Start Your Free Trial",
+      "subtitle": "Join thousands of businesses managing their bookings effortlessly"
+    },
+    "card": {
+      "title": "Welcome to ReservaFácil",
+      "subtitle": "Sign in with your Google account to get started",
+      "privacy": "By continuing, you agree to our terms of service and privacy policy",
+      "help": "Need help?",
+      "contact": "Contact support"
+    },
+    "features": {
+      "bookings": {
+        "title": "Smart Booking Management",
+        "description": "Automate appointments and reduce no-shows with reminders"
+      },
+      "fast": {
+        "title": "5-Minute Setup",
+        "description": "Start accepting bookings in minutes, not hours"
+      },
+      "secure": {
+        "title": "Secure & Reliable",
+        "description": "Your data is protected with enterprise-grade security"
       }
+    },
+    "trust": {
+      "freeTrial": "30 days free",
+      "noCard": "No credit card",
+      "fastSetup": "Quick setup"
     }
   },
   "dashboard": {

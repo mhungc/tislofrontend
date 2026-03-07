@@ -3,21 +3,13 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { GoogleAuthButton } from '@/components/google-auth-button'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { 
   Calendar, 
-  Clock, 
-  Users, 
-  Smartphone, 
-  TrendingUp, 
+  Link2, 
   Shield, 
-  Zap,
-  CheckCircle,
-  Star,
-  ArrowRight,
-  Play
+  Users 
 } from 'lucide-react'
 
 interface LandingPageLocalizedProps {
@@ -27,24 +19,31 @@ interface LandingPageLocalizedProps {
 
 export function LandingPageLocalized({ dict, locale }: LandingPageLocalizedProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50" suppressHydrationWarning>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-emerald-50" suppressHydrationWarning>
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-sky-600 to-emerald-600 rounded-lg flex items-center justify-center">
               <Calendar className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              ReservaFácil
+            <span className="text-xl font-bold bg-gradient-to-r from-sky-600 to-emerald-600 bg-clip-text text-transparent">
+              Tislo
             </span>
           </div>
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
-            <Button variant="ghost" onClick={() => window.location.href = `/${locale}/auth/login`}>
+            <Button 
+              variant="ghost" 
+              onClick={() => window.location.href = `/${locale}/auth/login`}
+              className="hidden sm:inline-flex"
+            >
               {dict.landing.header.login}
             </Button>
-            <Button onClick={() => window.location.href = `/${locale}/auth/sign-up`}>
+            <Button 
+              onClick={() => window.location.href = `/${locale}/auth/login`}
+              className="bg-gradient-to-r from-sky-600 to-emerald-600 text-white hover:from-sky-700 hover:to-emerald-700"
+            >
               {dict.landing.header.signup}
             </Button>
           </div>
@@ -54,44 +53,57 @@ export function LandingPageLocalized({ dict, locale }: LandingPageLocalizedProps
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20">
         <div className="text-center max-w-4xl mx-auto">
-          <Badge className="mb-4 bg-blue-100 text-blue-700 border-blue-200">
-            {dict.landing.hero.badge}
-          </Badge>
-          
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-sky-600 via-emerald-600 to-teal-600 bg-clip-text text-transparent">
             {dict.landing.hero.title}
-            <span className="block">{dict.landing.hero.subtitle}</span>
           </h1>
           
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            {dict.landing.hero.description}
+          <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+            {dict.landing.hero.subtitle}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <GoogleAuthButton 
               className="w-full sm:w-auto px-8 py-3 text-lg"
-              redirectTo="/dashboard"
+              redirectTo={`/${locale}/dashboard`}
+              label={dict.landing.hero.cta}
+              loadingLabel={dict.auth.loading}
             />
-            <Button variant="outline" className="w-full sm:w-auto px-8 py-3 text-lg group">
-              <Play className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-              {dict.landing.hero.demo}
-            </Button>
           </div>
+        </div>
+      </section>
 
-          <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-500">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              {dict.landing.hero.benefits.free}
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              {dict.landing.hero.benefits.noCard}
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              {dict.landing.hero.benefits.setup}
-            </div>
-          </div>
+      {/* Explanation */}
+      <section className="container mx-auto px-4 pb-12">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-2xl md:text-3xl font-semibold mb-4 text-gray-900">
+            {dict.landing.explainer.title}
+          </h2>
+          <p className="text-lg text-gray-600">
+            {dict.landing.explainer.description}
+          </p>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="container mx-auto px-4 pb-20">
+        <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+          {dict.landing.features.items.map((feature: { title: string; description: string }, index: number) => {
+            const icons = [Users, Shield, Calendar, Link2];
+            const Icon = icons[index] ?? Calendar;
+            return (
+              <Card key={feature.title} className="border-0 shadow-lg hover:shadow-xl transition-shadow bg-white/80">
+                <CardContent className="p-6 flex gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-sky-600 to-emerald-600 flex items-center justify-center flex-shrink-0">
+                    <Icon className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2 text-gray-900">{feature.title}</h3>
+                    <p className="text-gray-600">{feature.description}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </section>
     </div>

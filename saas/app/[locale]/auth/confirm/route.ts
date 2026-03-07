@@ -9,6 +9,11 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type") as EmailOtpType | null;
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/dashboard";
+  const pathname = new URL(request.url).pathname;
+  const localeFromPath = pathname.split("/")[1];
+  const normalizedNext = next.startsWith("/") ? next : `/${next}`;
+  const nextHasLocale = /^\/(en|es)(\/|$)/.test(normalizedNext);
+  const redirectTarget = nextHasLocale ? normalizedNext : `/${localeFromPath}${normalizedNext}`;
 
   const supabase = await createClient();
 
@@ -16,9 +21,9 @@ export async function GET(request: NextRequest) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      redirect(next);
+      redirect(redirectTarget);
     } else {
-      redirect(`/auth/error?error=${error?.message}`);
+      redirect(`/${localeFromPath}/auth/error?error=${error?.message}`);
     }
   }
 
@@ -29,12 +34,12 @@ export async function GET(request: NextRequest) {
       token_hash,
     });
     if (!error) {
-      redirect(next);
+      redirect(redirectTarget);
     } else {
-      redirect(`/auth/error?error=${error?.message}`);
+      redirect(`/${localeFromPath}/auth/error?error=${error?.message}`);
     }
   }
 
   // If no valid parameters, redirect to error
-  redirect(`/auth/error?error=Invalid authentication parameters`);
+  redirect(`/${localeFromPath}/auth/error?error=Invalid authentication parameters`);
 }

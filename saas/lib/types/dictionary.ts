@@ -32,17 +32,27 @@ export interface Dictionary {
       signup: string
     }
     hero: {
-      badge: string
       title: string
       subtitle: string
-      description: string
-      demo: string
-      benefits: {
-        free: string
-        noCard: string
-        setup: string
-      }
+      cta: string
     }
+    explainer: {
+      title: string
+      description: string
+    }
+    features: {
+      items: Array<{
+        title: string
+        description: string
+      }>
+    }
+  }
+  auth: {
+    title: string
+    description: string
+    button: string
+    loading: string
+    securityNote: string
   }
   dashboard: {
     title: string
