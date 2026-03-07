@@ -73,7 +73,7 @@ export async function PATCH(
         shopAddress: booking.shops?.address || shop.address,
         shopPhone: booking.shops?.phone || shop.phone,
         notes: booking.notes || undefined,
-        locale: locale === 'en' ? 'en' : 'es'
+        locale: (locale === 'en' ? 'en' : 'es') as 'en' | 'es'
       }
 
       // Solo enviar email si hay un email válido
