@@ -68,38 +68,6 @@
     "loading": "Conectando...",
     "securityNote": "Tislo utiliza tu cuenta de Google únicamente para iniciar sesión. No almacenamos contraseñas."
   },
-  "auth": {
-    "welcome": {
-      "title": "Comienza tu Prueba Gratis",
-      "subtitle": "Únete a miles de negocios que gestionan sus reservas sin esfuerzo"
-    },
-    "card": {
-      "title": "Bienvenido a ReservaFácil",
-      "subtitle": "Inicia sesión con tu cuenta de Google para comenzar",
-      "privacy": "Al continuar, aceptas nuestros términos de servicio y política de privacidad",
-      "help": "¿Necesitas ayuda?",
-      "contact": "Contactar soporte"
-    },
-    "features": {
-      "bookings": {
-        "title": "Gestión Inteligente de Reservas",
-        "description": "Automatiza citas y reduce ausencias con recordatorios"
-      },
-      "fast": {
-        "title": "Configuración en 5 Minutos",
-        "description": "Comienza a recibir reservas en minutos, no en horas"
-      },
-      "secure": {
-        "title": "Seguro y Confiable",
-        "description": "Tus datos protegidos con seguridad empresarial"
-      }
-    },
-    "trust": {
-      "freeTrial": "30 días gratis",
-      "noCard": "Sin tarjeta",
-      "fastSetup": "Config. rápida"
-    }
-  },
   "dashboard": {
     "title": "Dashboard",
     "summary": "Resumen de tu negocio",
