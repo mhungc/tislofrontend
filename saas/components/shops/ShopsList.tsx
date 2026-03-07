@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useShopStore } from '@/lib/stores/shop-store'
+import { BookingService } from '@/lib/services/booking-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Store, Edit, Trash2, Eye, EyeOff, MapPin, Phone, Mail, Globe, Clock, Filter, Settings } from 'lucide-react'
+import { Store, Edit, Trash2, Eye, EyeOff, MapPin, Phone, Mail, Globe, Clock, Filter, Settings, Copy, Link2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Dictionary, Locale } from '@/lib/types/dictionary'
 
@@ -23,11 +24,79 @@ export function ShopsList({ locale, shopsDict, commonDict, className = '' }: Sho
   const { shops, loading, loadShops, updateShop, removeShop } = useShopStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterByStatus, setFilterByStatus] = useState<'all' | 'active' | 'inactive'>('all')
+  const [bookingLinks, setBookingLinks] = useState<Record<string, { token: string; url: string; is_active: boolean; expires_at: string } | null>>({})
+  const [loadingLinks, setLoadingLinks] = useState(false)
   const isEnglish = locale === 'en'
+  const bookingService = new BookingService()
 
   useEffect(() => {
     loadShops()
   }, [loadShops])
+
+  useEffect(() => {
+    if (shops && shops.length > 0 && !loadingLinks) {
+      loadBookingLinks()
+    }
+  }, [shops])
+
+  const loadBookingLinks = async () => {
+    if (loadingLinks || !Array.isArray(shops) || shops.length === 0) return
+    
+    setLoadingLinks(true)
+    const linksData: Record<string, { token: string; url: string; is_active: boolean; expires_at: string } | null> = {}
+    
+    await Promise.all(
+      shops.map(async (shop) => {
+        try {
+          const links = await bookingService.getBookingLinks(shop.id)
+          // Encontrar el primer link activo y no expirado
+          const activeLink = links.find((link: any) => 
+            link.is_active && new Date(link.expires_at) > new Date()
+          )
+          
+          if (activeLink) {
+            const baseUrl = typeof window !== 'undefined'
+              ? `${window.location.protocol}//${window.location.host}`
+              : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+            
+            linksData[shop.id] = {
+              token: activeLink.token,
+              url: `${baseUrl}/book/${activeLink.token}`,
+              is_active: activeLink.is_active,
+              expires_at: activeLink.expires_at
+            }
+          } else {
+            linksData[shop.id] = null
+          }
+        } catch (error) {
+          console.error(`Error loading links for shop ${shop.id}:`, error)
+          linksData[shop.id] = null
+        }
+      })
+    )
+    
+    setBookingLinks(linksData)
+    setLoadingLinks(false)
+  }
+
+  const copyBookingUrl = async (url: string, shopName: string) => {
+    try {
+      await navigator.clipboard.writeText(url)
+      toast.success(isEnglish ? `Copied ${shopName} booking link!` : `¡Enlace de ${shopName} copiado!`)
+    } catch (error) {
+      toast.error(isEnglish ? 'Error copying link' : 'Error al copiar enlace')
+    }
+  }
+
+  const createBookingLink = async (shopId: string) => {
+    try {
+      const result = await bookingService.createBookingLink(shopId, 365)
+      await loadBookingLinks()
+      toast.success(isEnglish ? 'Booking link created!' : '¡Enlace de reserva creado!')
+    } catch (error) {
+      toast.error(isEnglish ? 'Error creating link' : 'Error al crear enlace')
+    }
+  }
 
   const filteredShops = Array.isArray(shops)
     ? shops.filter(shop => {
@@ -202,6 +271,46 @@ export function ShopsList({ locale, shopsDict, commonDict, className = '' }: Sho
                   <span>{getOpenDays(shop.business_hours)} {shopsDict.openDays}</span>
                   <span className="text-muted-foreground">•</span>
                   <span>{formatHours(shop.business_hours)}</span>
+                </div>
+
+                {/* Booking URL - Quick Access */}
+                <div className="mb-4 p-3 bg-gradient-to-r from-sky-50 to-emerald-50 border border-sky-200 rounded-lg">
+                  {bookingLinks[shop.id] ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-medium text-sky-700">
+                        <Link2 className="h-3 w-3" />
+                        <span>{isEnglish ? 'Booking Link' : 'Enlace de Reservas'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 text-xs bg-white px-2 py-1 rounded border truncate">
+                          {bookingLinks[shop.id]?.url}
+                        </code>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyBookingUrl(bookingLinks[shop.id]!.url, shop.name)}
+                          className="h-7 w-7 p-0"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs text-amber-700">
+                        <AlertCircle className="h-3 w-3" />
+                        <span>{isEnglish ? 'No booking link' : 'Sin enlace de reserva'}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => createBookingLink(shop.id)}
+                        className="h-7 text-xs"
+                      >
+                        {isEnglish ? 'Create' : 'Crear'}
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
