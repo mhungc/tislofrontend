@@ -23,7 +23,7 @@ export function ShopsPageClient({ locale, dict }: ShopsPageClientProps) {
     setRefreshKey(prev => prev + 1)
     if (shopId && shopData) {
       const shopParam = encodeURIComponent(JSON.stringify(shopData))
-      router.push(`/${locale}/dashboard/shops/${shopId}/schedule?shop=${shopParam}`)
+      router.push(`/${locale}/dashboard/shops/${shopId}/schedule?shop=${shopParam}&onboarding=1`)
     }
   }
 

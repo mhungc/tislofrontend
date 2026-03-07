@@ -29,6 +29,13 @@ export function ShopSchedulePageClient({ shopId, locale, dict }: ShopSchedulePag
 
   const scheduleService = new ScheduleService()
   const scheduleDict = dict.schedule
+  const isEnglish = locale === 'en'
+  const isOnboarding = searchParams.get('onboarding') === '1'
+
+  const navigateToServices = () => {
+    const shopParam = shop ? `&shop=${encodeURIComponent(JSON.stringify(shop))}` : ''
+    router.push(`/${locale}/dashboard/shops/${shopId}/services?onboarding=1${shopParam}`)
+  }
 
   useEffect(() => {
     const loadData = async () => {
@@ -100,6 +107,35 @@ export function ShopSchedulePageClient({ shopId, locale, dict }: ShopSchedulePag
 
   return (
     <div className="space-y-6">
+      {isOnboarding && (
+        <Card className="border-sky-200 bg-gradient-to-r from-sky-50 to-emerald-50">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-sky-700 mb-1">
+                  {isEnglish ? 'Guided setup • Step 2 of 3' : 'Configuración guiada • Paso 2 de 3'}
+                </p>
+                <h2 className="text-lg font-semibold">
+                  {isEnglish
+                    ? 'Define your availability schedule'
+                    : 'Define tu horario de disponibilidad'}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isEnglish
+                    ? 'After saving, we take you directly to service setup.'
+                    : 'Después de guardar, te llevamos directo a configurar servicios.'}
+                </p>
+              </div>
+              {schedules.length > 0 && mode === 'view' && (
+                <Button onClick={navigateToServices}>
+                  {isEnglish ? 'Continue to Services' : 'Continuar a Servicios'}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
@@ -208,6 +244,17 @@ export function ShopSchedulePageClient({ shopId, locale, dict }: ShopSchedulePag
                 locale={locale}
                 scheduleDict={scheduleDict}
                 existingSchedules={mode === 'edit' ? schedules : []}
+                onScheduleSaved={() => {
+                  if (!isOnboarding) return
+                  toast.success(
+                    isEnglish
+                      ? 'Schedule saved. Next step: add your services.'
+                      : 'Horario guardado. Siguiente paso: agrega tus servicios.'
+                  )
+                  setTimeout(() => {
+                    navigateToServices()
+                  }, 800)
+                }}
                 onScheduleUpdated={async () => {
                   try {
                     const updatedSchedules = await scheduleService.getShopSchedules(shopId)

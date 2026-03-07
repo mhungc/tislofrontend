@@ -13,10 +13,14 @@ export default function ShopServicesPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const shopId = params.shopId as string
+  const locale = (params.locale as string) || 'es'
+  const isEnglish = locale === 'en'
+  const isOnboarding = searchParams.get('onboarding') === '1'
   const [shop, setShop] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list')
   const [editingServiceId, setEditingServiceId] = useState<string | undefined>()
+  const [serviceCreated, setServiceCreated] = useState(false)
 
   useEffect(() => {
     const loadShop = async () => {
@@ -24,7 +28,7 @@ export default function ShopServicesPage() {
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
       if (!uuidRegex.test(shopId)) {
         console.error('ShopId inválido:', shopId)
-        router.push('/dashboard/shops')
+        router.push(`/${locale}/dashboard/shops`)
         return
       }
       
@@ -55,9 +59,9 @@ export default function ShopServicesPage() {
           const data = await response.json()
           setShop(data.shop || data)
         } else if (response.status === 401) {
-          router.push('/auth/login')
+          router.push(`/${locale}/auth/login`)
         } else if (response.status === 400) {
-          router.push('/dashboard/shops')
+          router.push(`/${locale}/dashboard/shops`)
         }
       } catch (error) {
         console.error('Error al cargar tienda:', error)
@@ -69,7 +73,12 @@ export default function ShopServicesPage() {
     if (shopId) {
       loadShop()
     }
-  }, [shopId, router, searchParams])
+  }, [shopId, router, searchParams, locale])
+
+  const goToFullConfig = () => {
+    const shopParam = shop ? `?shop=${encodeURIComponent(JSON.stringify(shop))}` : ''
+    router.push(`/${locale}/dashboard/shops/${shopId}/config${shopParam}`)
+  }
 
   const handleCreateNew = () => {
     setEditingServiceId(undefined)
@@ -126,6 +135,33 @@ export default function ShopServicesPage() {
         )}
       </div>
 
+      {isOnboarding && (
+        <Card className="border-sky-200 bg-gradient-to-r from-sky-50 to-emerald-50">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-sky-700 mb-1">
+                  {isEnglish ? 'Guided setup • Step 3 of 3' : 'Configuración guiada • Paso 3 de 3'}
+                </p>
+                <h2 className="text-lg font-semibold">
+                  {isEnglish ? 'Create at least one service' : 'Crea al menos un servicio'}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isEnglish
+                    ? 'Once done, continue to full configuration (booking links, settings and more).'
+                    : 'Luego continúa a configuración completa (enlaces de reserva, ajustes y más).'}
+                </p>
+              </div>
+              {serviceCreated && (
+                <Button variant="outline" onClick={goToFullConfig}>
+                  {isEnglish ? 'Finish Setup' : 'Finalizar Configuración'}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Información de la tienda */}
       {shop && mode === 'list' && (
         <Card>
@@ -156,9 +192,34 @@ export default function ShopServicesPage() {
         <ServiceForm
           shopId={shopId}
           serviceId={editingServiceId}
-          onSuccess={handleFormSuccess}
+          onSuccess={() => {
+            handleFormSuccess()
+            if (isOnboarding) {
+              setServiceCreated(true)
+            }
+          }}
           onCancel={handleFormCancel}
         />
+      )}
+
+      {isOnboarding && serviceCreated && mode === 'list' && (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="pt-6 flex items-center justify-between gap-4">
+            <div>
+              <p className="font-medium text-green-900">
+                {isEnglish ? 'Great! Your service is ready.' : '¡Listo! Tu servicio ya está creado.'}
+              </p>
+              <p className="text-sm text-green-700">
+                {isEnglish
+                  ? 'Now open complete setup to review booking links and final settings.'
+                  : 'Ahora abre la configuración completa para revisar enlaces y ajustes finales.'}
+              </p>
+            </div>
+            <Button onClick={goToFullConfig}>
+              {isEnglish ? 'Open Full Config' : 'Abrir Configuración'}
+            </Button>
+          </CardContent>
+        </Card>
       )}
     </div>
   )

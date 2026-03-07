@@ -15,6 +15,7 @@ import type { Dictionary, Locale } from '@/lib/types/dictionary'
 interface WeeklyScheduleEditorProps {
   shopId: string
   onScheduleUpdated?: () => void
+  onScheduleSaved?: () => void
   className?: string
   existingSchedules?: any[]
   locale: Locale
@@ -37,6 +38,7 @@ interface DaySchedule {
 export function WeeklyScheduleEditor({
   shopId,
   onScheduleUpdated,
+  onScheduleSaved,
   className = '',
   existingSchedules = [],
   locale,
@@ -246,6 +248,7 @@ export function WeeklyScheduleEditor({
       setJustSaved(true)
       setTimeout(() => setJustSaved(false), 3000)
 
+      onScheduleSaved?.()
       onScheduleUpdated?.()
     } catch (error) {
       console.error('Error al guardar horarios:', error)
