@@ -12,6 +12,8 @@ interface Shop {
   is_active: boolean
   business_hours?: any
   created_at: string
+  base_slot_minutes?: number
+  buffer_minutes?: number
 }
 
 interface ShopState {

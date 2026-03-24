@@ -66,12 +66,15 @@ export async function GET(
       })
     )
 
-    // Generar estructura de calendario
+    // Usar base_slot_minutes de la tienda (default 15)
+    const baseSlotMinutes = shop.base_slot_minutes ?? 15
+    // Generar estructura de calendario con franja real
     const calendar = calendarService.generateCalendarStructure(
       schedules,
       enrichedBookings,
       startDate,
-      endDate
+      endDate,
+      baseSlotMinutes
     )
 
     return NextResponse.json({ 
@@ -79,7 +82,8 @@ export async function GET(
       shop: {
         id: shop.id,
         name: shop.name,
-        address: shop.address
+        address: shop.address,
+        base_slot_minutes: baseSlotMinutes
       }
     })
   } catch (error) {

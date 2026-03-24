@@ -30,6 +30,8 @@ interface ShopFormData {
   bookingConfirmationMode: 'manual' | 'automatic'
   timezone: string
   is_active: boolean
+  base_slot_minutes: number
+  buffer_minutes: number
   business_hours: {
     monday: { open: string; close: string; is_open: boolean }
     tuesday: { open: string; close: string; is_open: boolean }
@@ -57,6 +59,8 @@ export function ShopForm({
     bookingConfirmationMode: 'manual',
     timezone: 'America/New_York',
     is_active: true,
+    base_slot_minutes: 15,
+    buffer_minutes: 0,
     business_hours: {
       monday: { open: '09:00', close: '18:00', is_open: true },
       tuesday: { open: '09:00', close: '18:00', is_open: true },
@@ -97,6 +101,8 @@ export function ShopForm({
           bookingConfirmationMode: shop.bookingConfirmationMode || 'manual',
           timezone: shop.timezone || 'America/New_York',
           is_active: shop.is_active,
+          base_slot_minutes: shop.base_slot_minutes ?? 15,
+          buffer_minutes: shop.buffer_minutes ?? 0,
           business_hours: (shop.business_hours as ShopFormData['business_hours']) || {
             monday: { open: '09:00', close: '18:00', is_open: true },
             tuesday: { open: '09:00', close: '18:00', is_open: true },
@@ -138,6 +144,20 @@ export function ShopForm({
 
   // Validar formulario
   const validateForm = (): { valid: boolean; errors: string[] } => {
+            if (
+              formData.buffer_minutes < 0 ||
+              formData.buffer_minutes > 60 ||
+              ![0, 5, 10, 15, 20].includes(formData.buffer_minutes)
+            ) {
+              errors.push('El buffer entre reservas debe ser 0, 5, 10, 15 o 20 minutos.')
+            }
+        if (
+          formData.base_slot_minutes < 5 ||
+          formData.base_slot_minutes > 60 ||
+          ![5, 10, 15, 20, 30, 60].includes(formData.base_slot_minutes)
+        ) {
+          errors.push('La duración mínima de franja debe ser 5, 10, 15, 20, 30 o 60 minutos.')
+        }
     const errors: string[] = []
 
     if (!formData.name.trim()) {
@@ -176,14 +196,18 @@ export function ShopForm({
 
     setSaving(true)
     try {
+      const payload = {
+        ...formData,
+        base_slot_minutes: formData.base_slot_minutes,
+        buffer_minutes: formData.buffer_minutes
+      }
       if (isEditing && shopId) {
-        await shopService.updateShop(shopId, formData)
+        await shopService.updateShop(shopId, payload)
         toast.success('Tienda actualizada correctamente')
       } else {
-        await shopService.createShop(formData)
+        await shopService.createShop(payload)
         toast.success('Tienda creada correctamente')
       }
-      
       onSave?.()
     } catch (error) {
       console.error('Error al guardar tienda:', error)
@@ -236,6 +260,43 @@ export function ShopForm({
       <CardContent className="space-y-6">
         {/* Información Básica */}
         <div className="space-y-4">
+          <div>
+            <Label htmlFor="shop-buffer-minutes">Buffer entre reservas</Label>
+            <select
+              id="shop-buffer-minutes"
+              value={formData.buffer_minutes}
+              onChange={e => updateField('buffer_minutes', Number(e.target.value))}
+              className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value={0}>Sin buffer (citas consecutivas)</option>
+              <option value={5}>5 minutos</option>
+              <option value={10}>10 minutos</option>
+              <option value={15}>15 minutos</option>
+              <option value={20}>20 minutos</option>
+            </select>
+            <span className="text-xs text-muted-foreground block mt-1">
+              Tiempo extra que se deja libre después de cada reserva para limpieza, preparación, etc.
+            </span>
+          </div>
+          <div>
+            <Label htmlFor="shop-base-slot-minutes">Duración mínima de franja horaria</Label>
+            <select
+              id="shop-base-slot-minutes"
+              value={formData.base_slot_minutes}
+              onChange={e => updateField('base_slot_minutes', Number(e.target.value))}
+              className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value={5}>5 minutos</option>
+              <option value={10}>10 minutos</option>
+              <option value={15}>15 minutos</option>
+              <option value={20}>20 minutos</option>
+              <option value={30}>30 minutos</option>
+              <option value={60}>60 minutos</option>
+            </select>
+            <span className="text-xs text-muted-foreground block mt-1">
+              Intervalo base con el que se generan los huecos disponibles en tu agenda.
+            </span>
+          </div>
           <h3 className="font-medium flex items-center gap-2">
             <Store className="h-4 w-4" />
             Información Básica

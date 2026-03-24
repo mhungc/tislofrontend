@@ -45,7 +45,10 @@ export async function POST(request: NextRequest) {
       email,
       website,
       timezone,
-      bookingConfirmationMode
+      bookingConfirmationMode,
+      base_slot_minutes,
+      buffer_minutes,
+      business_hours
     } = body
 
     // Validar campos requeridos
@@ -72,6 +75,40 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Validar base_slot_minutes
+    let slotMinutes = 15
+    if (base_slot_minutes !== undefined) {
+      if (
+        typeof base_slot_minutes !== 'number' ||
+        !Number.isInteger(base_slot_minutes) ||
+        base_slot_minutes < 5 ||
+        base_slot_minutes > 60
+      ) {
+        return NextResponse.json({
+          error: 'base_slot_minutes debe ser un número entre 5 y 60'
+        }, { status: 400 })
+      }
+      slotMinutes = base_slot_minutes
+    }
+
+    // Validar buffer_minutes
+    let bufferMinutes = 0
+    if (buffer_minutes !== undefined) {
+      if (
+        typeof buffer_minutes !== 'number' ||
+        !Number.isInteger(buffer_minutes) ||
+        buffer_minutes < 0 ||
+        buffer_minutes > 60
+      ) {
+        return NextResponse.json({
+          error: 'buffer_minutes debe ser un número entre 0 y 60'
+        }, { status: 400 })
+      }
+      bufferMinutes = buffer_minutes
+    }
+
+
+    // Crear la tienda primero
     const shop = await repo.create({
       owner_id: user.id,
       name,
@@ -82,7 +119,32 @@ export async function POST(request: NextRequest) {
       website,
       timezone,
       bookingConfirmationMode,
+      base_slot_minutes: slotMinutes,
+      buffer_minutes: bufferMinutes
     })
+
+    // Crear horarios base automáticamente si business_hours está presente
+    if (business_hours && typeof business_hours === 'object') {
+      // Mapear días a day_of_week (0=domingo, 6=sábado)
+      const dayMap = [
+        'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
+      ]
+      const schedules = dayMap.map((day, idx) => {
+        const bh = business_hours[day]
+        return {
+          shop_id: shop.id,
+          day_of_week: idx,
+          open_time: bh?.open ? `1970-01-01T${bh.open}:00.000` : `1970-01-01T09:00:00.000`,
+          close_time: bh?.close ? `1970-01-01T${bh.close}:00.000` : `1970-01-01T18:00:00.000`,
+          is_working_day: bh?.is_open ?? false,
+          block_order: 0
+        }
+      })
+      // Importar y usar ScheduleRepository
+      const { ScheduleRepository } = await import('@/lib/repositories/schedule-repository')
+      const scheduleRepo = new ScheduleRepository()
+      await scheduleRepo.createMany(schedules)
+    }
 
     // Auto-crear booking link para la nueva tienda (válido por 365 días)
     try {

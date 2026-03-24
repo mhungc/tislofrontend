@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
+
 export interface CreateShopInput {
   owner_id: string
   name: string
@@ -11,7 +12,10 @@ export interface CreateShopInput {
   website?: string | null
   bookingConfirmationMode?: 'manual' | 'automatic'
   timezone?: string | null
+  base_slot_minutes?: number
+  buffer_minutes?: number
 }
+
 
 export interface UpdateShopInput {
   name?: string
@@ -23,18 +27,56 @@ export interface UpdateShopInput {
   bookingConfirmationMode?: 'manual' | 'automatic'
   timezone?: string | null
   is_active?: boolean
+  base_slot_minutes?: number
+  buffer_minutes?: number
 }
 
 export class ShopRepository {
   async listByOwner(ownerId: string) {
     return prisma.shops.findMany({
       where: { owner_id: ownerId },
-      orderBy: { created_at: 'desc' }
+      orderBy: { created_at: 'desc' },
+      select: {
+        id: true,
+        owner_id: true,
+        name: true,
+        description: true,
+        address: true,
+        phone: true,
+        email: true,
+        website: true,
+        bookingConfirmationMode: true,
+        timezone: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+        base_slot_minutes: true,
+        buffer_minutes: true
+      }
     })
   }
 
   async getByIdForOwner(shopId: string, ownerId: string) {
-    return prisma.shops.findFirst({ where: { id: shopId, owner_id: ownerId } })
+    return prisma.shops.findFirst({
+      where: { id: shopId, owner_id: ownerId },
+      select: {
+        id: true,
+        owner_id: true,
+        name: true,
+        description: true,
+        address: true,
+        phone: true,
+        email: true,
+        website: true,
+        bookingConfirmationMode: true,
+        timezone: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+        base_slot_minutes: true,
+        buffer_minutes: true
+      }
+    })
   }
 
   async create(input: CreateShopInput) {
@@ -50,6 +92,8 @@ export class ShopRepository {
         bookingConfirmationMode: input.bookingConfirmationMode ?? 'manual',
         timezone: input.timezone ?? 'America/New_York',
         is_active: true,
+        base_slot_minutes: input.base_slot_minutes ?? 15,
+        buffer_minutes: input.buffer_minutes ?? 0
       }
     })
   }
@@ -65,6 +109,8 @@ export class ShopRepository {
       bookingConfirmationMode: input.bookingConfirmationMode ?? undefined,
       timezone: input.timezone ?? undefined,
       is_active: input.is_active ?? undefined,
+      ...(input.base_slot_minutes !== undefined ? { base_slot_minutes: input.base_slot_minutes } : {}),
+      ...(input.buffer_minutes !== undefined ? { buffer_minutes: input.buffer_minutes } : {})
     }
     return prisma.shops.update({ where: { id: shopId }, data })
   }

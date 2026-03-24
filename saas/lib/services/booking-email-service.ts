@@ -25,10 +25,13 @@ interface BookingEmailData {
   locale?: 'es' | 'en'
 }
 
+type ReminderEmailData = BookingEmailData & { reminderType: '24h' | '2h' };
+
 export class BookingEmailService {
   private resend = new Resend(process.env.RESEND_API_KEY)
 
-  private formatDate(date: string, locale: 'es' | 'en' = 'es'): string {
+  // Formatea la fecha según el locale
+  private formatDate(date, locale = 'es') {
     const dateObj = new Date(date)
     return dateObj.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
       weekday: 'long',
@@ -38,16 +41,105 @@ export class BookingEmailService {
     })
   }
 
-  private formatTime(time: string): string {
+  // Formatea la hora (HH:mm)
+  private formatTime(time) {
     const [hours, minutes] = time.split(':')
     return `${hours}:${minutes}`
   }
 
-  private formatCurrency(amount: number, locale: 'es' | 'en' = 'es'): string {
+  // Formatea el precio según el locale
+  private formatCurrency(amount, locale = 'es') {
     return new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-ES', {
       style: 'currency',
       currency: 'EUR'
     }).format(amount)
+  }
+
+  /**
+   * Envía email recordatorio de reserva (UX optimizado)
+   * @param {ReminderEmailData} data
+   */
+  async sendReminderEmail(data) {
+    try {
+      if (!process.env.RESEND_API_KEY) {
+        console.log('⚠️ RESEND_API_KEY no configurada, email no enviado')
+        return
+      }
+      const locale = data.locale || 'es'
+      const formattedDate = this.formatDate(data.bookingDate, locale)
+      const formattedStartTime = this.formatTime(data.startTime)
+      const formattedEndTime = this.formatTime(data.endTime)
+      const reminderColor = data.reminderType === '24h' ? '#f59e42' : '#2563eb'
+      const reminderIcon = data.reminderType === '24h' ? '⏰' : '🚗'
+      const reminderTitle = data.reminderType === '24h'
+        ? (locale === 'en' ? '24h Booking Reminder' : 'Recordatorio de Reserva (24h)')
+        : (locale === 'en' ? '2h Booking Reminder' : 'Recordatorio de Reserva (2h)')
+      const reminderMsg = data.reminderType === '24h'
+        ? (locale === 'en'
+            ? 'This is a friendly reminder of your booking for tomorrow. If you need to modify or cancel, please contact us at least 24 hours in advance.'
+            : 'Este es un recordatorio amistoso de tu reserva para mañana. Si necesitas modificar o cancelar, contáctanos con al menos 24h de anticipación.')
+        : (locale === 'en'
+            ? 'Your booking is in 2 hours. Please arrive on time. If you have questions, contact us.'
+            : 'Tu reserva es en 2 horas. Por favor, llega puntual a tu cita. Si tienes dudas, contáctanos.')
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${reminderTitle}</title>
+          </head>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background: #f9fafb;">
+            <div style="background: linear-gradient(135deg, ${reminderColor} 0%, #fef08a 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+              <h1 style="color: #fff; margin: 0; font-size: 28px; letter-spacing: 1px;">${reminderIcon} ${reminderTitle}</h1>
+            </div>
+            <div style="background: #fff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+              <p style="font-size: 16px; margin-bottom: 20px;">
+                Hola <strong>${data.customerName}</strong>,
+              </p>
+              <div style="background: #fef9c3; padding: 18px; border-radius: 8px; margin: 20px 0; border-left: 4px solid ${reminderColor};">
+                <p style="margin: 0; color: #92400e; font-size: 16px;">
+                  <strong>${reminderMsg}</strong>
+                </p>
+              </div>
+              <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                <h2 style="margin-top: 0; color: #111827; font-size: 20px; border-bottom: 2px solid ${reminderColor}; padding-bottom: 10px;">
+                  📅 Detalles de tu Reserva
+                </h2>
+                <div style="margin: 15px 0;"><strong style="color: #6b7280;">Fecha:</strong> <span style="margin-left: 10px; color: #111827;">${formattedDate}</span></div>
+                <div style="margin: 15px 0;"><strong style="color: #6b7280;">Horario:</strong> <span style="margin-left: 10px; color: #111827;">${formattedStartTime} - ${formattedEndTime}</span></div>
+                <div style="margin: 15px 0;"><strong style="color: #6b7280;">Negocio:</strong> <span style="margin-left: 10px; color: #111827;">${data.shopName}</span></div>
+                ${data.shopAddress ? `<div style="margin: 15px 0;"><strong style="color: #6b7280;">Dirección:</strong> <span style="margin-left: 10px; color: #111827;">${data.shopAddress}</span></div>` : ''}
+                ${data.shopPhone ? `<div style="margin: 15px 0;"><strong style="color: #6b7280;">Teléfono:</strong> <span style="margin-left: 10px; color: #111827;">${data.shopPhone}</span></div>` : ''}
+              </div>
+              <div style="background: #eff6ff; padding: 18px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #3b82f6;">
+                <p style="margin: 0; color: #1e40af; font-size: 15px;">
+                  Si tienes preguntas o necesitas ayuda, responde a este email o llámanos.
+                </p>
+              </div>
+              <p style="font-size: 15px; margin-top: 30px; color: #6b7280;">
+                Este es un recordatorio automático. ¡Te esperamos!
+              </p>
+              <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+                Saludos,<br>
+                <strong>${data.shopName}</strong>
+              </p>
+            </div>
+          </body>
+        </html>
+      `
+
+      await this.resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || 'ReservaFácil <onboarding@resend.dev>',
+        to: data.customerEmail,
+        subject: `${reminderIcon} ${reminderTitle} - ${data.shopName}`,
+        html
+      })
+      console.log(`✅ Email de recordatorio enviado a ${data.customerEmail}`)
+    } catch (error) {
+      console.error('Error al enviar email de recordatorio:', error)
+    }
   }
 
   /**

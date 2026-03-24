@@ -104,7 +104,8 @@ export class BookingCalendarService {
     schedules: any[],
     bookings: CalendarBooking[],
     startDate: string,
-    endDate: string
+    endDate: string,
+    baseSlotMinutes: number = 15
   ): CalendarDay[] {
     const days: CalendarDay[] = []
     const start = new Date(startDate)
@@ -118,7 +119,7 @@ export class BookingCalendarService {
       const daySchedules = schedules.filter(s => s.day_of_week === dayOfWeek && s.is_working_day)
       const dayBookings = bookings.filter(b => b.booking_date === dateStr)
       
-      const slots = this.generateDaySlots(daySchedules, dayBookings)
+      const slots = this.generateDaySlots(daySchedules, dayBookings, baseSlotMinutes)
       
       days.push({
         date: dateStr,
@@ -131,24 +132,21 @@ export class BookingCalendarService {
     return days
   }
 
-  private generateDaySlots(schedules: any[], bookings: CalendarBooking[]): CalendarSlot[] {
+  private generateDaySlots(schedules: any[], bookings: CalendarBooking[], baseSlotMinutes: number = 15): CalendarSlot[] {
     if (schedules.length === 0) return []
 
     const slots: CalendarSlot[] = []
-    const BASE_SLOT_MINUTES = 15
     const allTimes = new Set<string>()
 
     // Generar todos los slots posibles de todos los bloques horarios
     for (const schedule of schedules) {
       const openTime = this.parseTime(schedule.open_time)
       const closeTime = this.parseTime(schedule.close_time)
-      
       let currentTime = new Date(openTime)
-      
       while (currentTime < closeTime) {
         const timeStr = this.formatTime(currentTime)
         allTimes.add(timeStr)
-        currentTime.setMinutes(currentTime.getMinutes() + BASE_SLOT_MINUTES)
+        currentTime.setMinutes(currentTime.getMinutes() + baseSlotMinutes)
       }
     }
 
@@ -157,7 +155,6 @@ export class BookingCalendarService {
       const booking = bookings.find(b => 
         timeStr >= b.start_time && timeStr < b.end_time
       )
-      
       slots.push({
         time: timeStr,
         booking,

@@ -1,3 +1,4 @@
+import { toZonedTime, fromZonedTime } from 'date-fns-tz'
 export interface TimeSlot {
   time: string
   available: boolean
@@ -18,50 +19,131 @@ export interface Booking {
 
 export class AvailabilityCalculator {
   private readonly baseSlotMinutes: number
+  private readonly bufferMinutes: number
 
-  constructor(baseSlotMinutes: number = 15) {
+  constructor(baseSlotMinutes: number = 15, bufferMinutes: number = 0) {
     this.baseSlotMinutes = baseSlotMinutes
+    this.bufferMinutes = bufferMinutes
   }
 
   /**
    * Calcula los slots disponibles para una fecha específica
    */
+  /**
+   * Devuelve slots y fillableGaps (huecos rellenables) en formato:
+   * { slots: TimeSlot[], fillableGaps: { startTime, endTime, durationMinutes }[] }
+   */
   calculateAvailableSlots(
     date: string,
     schedules: Schedule[],
     existingBookings: Booking[],
-    serviceDurationMinutes: number = 60
-  ): TimeSlot[] {
+    serviceDurationMinutes?: number,
+    timezone: string = 'UTC'
+  ): { slots: TimeSlot[]; fillableGaps: { startTime: string; endTime: string; durationMinutes: number }[] } {
+    // timezone: string = 'UTC'  // <-- removed invalid field declaration
     console.log('=== CALCULATE AVAILABLE SLOTS ===')
     console.log('Date:', date)
+    console.log('Timezone:', timezone)
     console.log('Schedules count:', schedules.length)
     console.log('Existing bookings:', existingBookings.length)
     console.log('Service duration:', serviceDurationMinutes, 'minutes')
     
-    // Crear fecha sin problemas de zona horaria
+    // Crear fecha en la zona horaria de la tienda para obtener el día de la semana correcto
     const [year, month, day] = date.split('-').map(Number)
-    const dateObj = new Date(year, month - 1, day)
-    const dayOfWeek = dateObj.getDay()
-    console.log('Day of week:', dayOfWeek, ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][dayOfWeek])
-    
+    // Creamos la fecha en UTC primero, luego la convertimos a la zona horaria de la tienda
+    const utcDate = new Date(Date.UTC(year, month - 1, day))
+    const zonedDate = toZonedTime(utcDate, timezone)
+    const dayOfWeek = zonedDate.getDay()
+    console.log('Day of week (zoned):', dayOfWeek, ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][dayOfWeek])
+
     const daySchedules = this.getDaySchedules(dayOfWeek, schedules)
     console.log('Day schedules found:', daySchedules.length)
-    
+
     if (daySchedules.length === 0) {
       console.log('❌ No schedules for this day')
       console.log('=================================')
-      return []
+      return { slots: [], fillableGaps: [] }
     }
 
     const allSlots = this.generateTimeSlots(daySchedules)
     console.log('Total slots generated:', allSlots.length)
     
-    const availableSlots = this.filterAvailableSlots(allSlots, existingBookings, serviceDurationMinutes)
+    // Filtrar slots pasados SOLO si la fecha es hoy en la zona horaria de la tienda
+    // Obtener la fecha actual en la zona horaria de la tienda
+    const nowZoned = toZonedTime(new Date(), timezone)
+    const todayStr = nowZoned.getFullYear() + '-' + String(nowZoned.getMonth() + 1).padStart(2, '0') + '-' + String(nowZoned.getDate()).padStart(2, '0')
+    const isToday = date === todayStr
+    console.log('nowZoned:', nowZoned.toISOString(), '| todayStr:', todayStr, '| isToday:', isToday)
+    const availableSlots = this.filterAvailableSlots(allSlots, existingBookings, serviceDurationMinutes ?? 60)
+      .map(slot => {
+        if (isToday) {
+          const slotDateLocal = toZonedTime(`${date}T${slot.time}:00`, timezone)
+          console.log(`[DEBUG] Slot:`, slot.time, '| slotDateLocal:', slotDateLocal.toISOString(), '| nowZoned:', nowZoned.toISOString(), '| available:', slotDateLocal >= nowZoned)
+          if (slotDateLocal < nowZoned) {
+            return { ...slot, available: false }
+          }
+        }
+        return slot
+      })
     const availableCount = availableSlots.filter(s => s.available).length
     console.log('Available slots:', availableCount, '/', allSlots.length)
+
+    // TAREA 5: Calcular fillableGaps solo si se pasa serviceDurationMinutes
+    let fillableGaps: { startTime: string; endTime: string; durationMinutes: number }[] = []
+    if (serviceDurationMinutes) {
+      fillableGaps = this.findFillableGaps(daySchedules, existingBookings, allSlots, serviceDurationMinutes)
+    }
+
     console.log('=================================')
-    
-    return availableSlots
+    return { slots: availableSlots, fillableGaps }
+  }
+
+  /**
+   * Encuentra huecos rellenables (gaps) entre reservas donde cabe el servicio pero no hay slot generado
+   */
+  private findFillableGaps(
+    daySchedules: Schedule[],
+    existingBookings: Booking[],
+    allSlots: TimeSlot[],
+    serviceDurationMinutes: number
+  ): { startTime: string; endTime: string; durationMinutes: number }[] {
+    // 1. Ordenar reservas por start_time
+    const sortedBookings = [...existingBookings].sort((a, b) => a.start_time.localeCompare(b.start_time))
+    // 2. Construir lista de intervalos ocupados (start_time, end_time+buffer)
+    const busyIntervals = sortedBookings.map(b => ({
+      start: b.start_time,
+      end: this.addMinutesToTime(b.end_time, this.bufferMinutes)
+    }))
+    // 3. Agregar extremos del día (inicio y fin de horarios)
+    const scheduleStarts = daySchedules.map(s => this.formatTime(this.parseTime(s.open_time)))
+    const scheduleEnds = daySchedules.map(s => this.formatTime(this.parseTime(s.close_time)))
+    const dayStart = scheduleStarts.sort()[0]
+    const dayEnd = scheduleEnds.sort().reverse()[0]
+    // 4. Buscar huecos entre intervalos ocupados
+    const gaps: { start: string; end: string }[] = []
+    let prevEnd = dayStart
+    for (const interval of busyIntervals) {
+      if (this.timeToMinutes(interval.start) > this.timeToMinutes(prevEnd)) {
+        gaps.push({ start: prevEnd, end: interval.start })
+      }
+      prevEnd = interval.end
+    }
+    // Último hueco hasta el cierre
+    if (this.timeToMinutes(prevEnd) < this.timeToMinutes(dayEnd)) {
+      gaps.push({ start: prevEnd, end: dayEnd })
+    }
+    // 5. Filtrar gaps donde cabe el servicio y NO hay slot generado en ese inicio
+    const slotTimes = new Set(allSlots.map(s => s.time))
+    return gaps
+      .map(gap => {
+        const duration = this.timeToMinutes(gap.end) - this.timeToMinutes(gap.start)
+        return {
+          startTime: gap.start,
+          endTime: gap.end,
+          durationMinutes: duration
+        }
+      })
+      .filter(gap => gap.durationMinutes >= serviceDurationMinutes && !slotTimes.has(gap.startTime))
   }
 
   /**
@@ -191,11 +273,11 @@ export class AvailabilityCalculator {
     const lastNeededSlot = allSlots[startIndex + slotsNeeded - 1]
     const lastNeededSlotEnd = this.addMinutesToTime(lastNeededSlot.time, this.baseSlotMinutes)
     
+    // TAREA 1: Permitir que el servicio termine exactamente a la hora de cierre (<= en vez de <)
     const fits = this.timeToMinutes(endTime) <= this.timeToMinutes(lastNeededSlotEnd)
     if (!fits) {
       console.log(`⚠️ ${startTime}: Service ends at ${endTime} but last needed slot ends at ${lastNeededSlotEnd}`)
     }
-    
     return fits
   }
 
@@ -220,7 +302,9 @@ export class AvailabilityCalculator {
    */
   private hasBookingConflict(slotTime: string, existingBookings: Booking[]): boolean {
     return existingBookings.some(booking => {
-      return slotTime >= booking.start_time && slotTime < booking.end_time
+      // Fin real de la reserva = end_time + buffer
+      const bufferEnd = this.addMinutesToTime(booking.end_time, this.bufferMinutes)
+      return slotTime >= booking.start_time && this.timeToMinutes(slotTime) < this.timeToMinutes(bufferEnd)
     })
   }
 

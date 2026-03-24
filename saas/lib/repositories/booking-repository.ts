@@ -173,15 +173,15 @@ export class BookingRepository {
     })
   }
 
-  async getAvailableSlots(shopId: string, date: string, schedules: any[], serviceDurationMinutes: number = 60, baseSlotMinutes: number = 15) {
+  async getAvailableSlots(shopId: string, date: string, schedules: any[], serviceDurationMinutes: number = 60, baseSlotMinutes: number = 15, bufferMinutes: number = 0, timezone: string = 'UTC') {
     const bookings = await this.getByDateRange(shopId, date, date)
-    const calculator = new AvailabilityCalculator(baseSlotMinutes)
-    
+    const calculator = new AvailabilityCalculator(baseSlotMinutes, bufferMinutes)
     return calculator.calculateAvailableSlots(
       date,
       schedules,
       bookings,
-      serviceDurationMinutes
+      serviceDurationMinutes,
+      timezone
     )
   }
 }

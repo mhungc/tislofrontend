@@ -81,6 +81,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
     }
 
+
     const body = await request.json()
     const {
       name,
@@ -91,7 +92,9 @@ export async function PATCH(
       website,
       timezone,
       is_active,
-      bookingConfirmationMode
+      bookingConfirmationMode,
+      base_slot_minutes,
+      buffer_minutes
     } = body
 
     if (
@@ -99,6 +102,37 @@ export async function PATCH(
       !['manual', 'automatic'].includes(bookingConfirmationMode)
     ) {
       return NextResponse.json({ error: 'Modo de confirmación inválido' }, { status: 400 })
+    }
+
+    // Validar base_slot_minutes si viene en el body
+    let slotMinutes: number | undefined = undefined
+    if (base_slot_minutes !== undefined) {
+      if (
+        typeof base_slot_minutes !== 'number' ||
+        !Number.isInteger(base_slot_minutes) ||
+        base_slot_minutes < 5 ||
+        base_slot_minutes > 60
+      ) {
+        return NextResponse.json({
+          error: 'base_slot_minutes debe ser un número entre 5 y 60'
+        }, { status: 400 })
+      }
+      slotMinutes = base_slot_minutes
+    }
+    // Validar buffer_minutes si viene en el body
+    let bufferMinutes: number | undefined = undefined
+    if (buffer_minutes !== undefined) {
+      if (
+        typeof buffer_minutes !== 'number' ||
+        !Number.isInteger(buffer_minutes) ||
+        buffer_minutes < 0 ||
+        buffer_minutes > 60
+      ) {
+        return NextResponse.json({
+          error: 'buffer_minutes debe ser un número entre 0 y 60'
+        }, { status: 400 })
+      }
+      bufferMinutes = buffer_minutes
     }
 
     const shop = await shopRepository.update(shopId, {
@@ -110,7 +144,9 @@ export async function PATCH(
       website,
       timezone,
       is_active,
-      bookingConfirmationMode
+      bookingConfirmationMode,
+      ...(slotMinutes !== undefined ? { base_slot_minutes: slotMinutes } : {}),
+      ...(bufferMinutes !== undefined ? { buffer_minutes: bufferMinutes } : {})
     })
 
     return NextResponse.json({ shop })

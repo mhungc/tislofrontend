@@ -1,0 +1,14 @@
+
+import { defineConfig } from '@prisma/internals';
+
+export default defineConfig({
+  schema: "saas/prisma/schema.prisma",
+  migrations: {
+    path: "saas/prisma/migrations",
+  },
+  datasource: {
+    db: {
+      url: "postgresql://postgres.hvojpahvxruzaoukjgwl:iiyEhopNbKqRLO7D@aws-0-eu-west-2.pooler.supabase.com:5432/postgres",
+    },
+  },
+});

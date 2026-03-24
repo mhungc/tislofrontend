@@ -98,7 +98,8 @@ export function Calendar({
 
   const isDateDisabled = (dateString: string, date: Date, isCurrentMonth: boolean) => {
     if (!isCurrentMonth) return true
-    if (date < minDateObj || date > maxDateObj) return true
+    // Permitir seleccionar el día actual (hoy) aunque la hora sea menor
+    if (date.toDateString() < minDateObj.toDateString() || date > maxDateObj) return true
     if (disabledDates.includes(dateString)) return true
     return false
   }
@@ -112,6 +113,17 @@ export function Calendar({
   }
 
   const days = getDaysInMonth(currentMonth)
+  // DEBUG: Log all days and their disabled status
+  if (typeof window !== 'undefined') {
+    // Only log in browser
+    console.log('[DEBUG][Calendar] days:', days.map(({ date, isCurrentMonth, dateString }) => ({
+      dateString,
+      isCurrentMonth,
+      disabled: isDateDisabled(dateString, date, isCurrentMonth),
+      today: date.toDateString() === (new Date()).toDateString()
+    })))
+    console.log('[DEBUG][Calendar] minDateObj:', minDateObj, 'maxDateObj:', maxDateObj, 'today:', today)
+  }
   const monthNames = locale === 'en'
     ? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
     : ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']

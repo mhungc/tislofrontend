@@ -236,6 +236,16 @@ export function ShopsList({ locale, shopsDict, commonDict, className = '' }: Sho
                       >
                         {shop.bookingConfirmationMode === 'automatic' ? '⚡ Auto' : '✋ Manual'}
                       </Badge>
+                      {typeof shop.base_slot_minutes === 'number' && (
+                        <Badge variant="secondary" className="ml-1 text-xs px-2 py-0.5 border border-gray-200 bg-gray-50 text-gray-700">
+                          Franjas: {shop.base_slot_minutes} min
+                        </Badge>
+                      )}
+                      {typeof shop.buffer_minutes === 'number' && shop.buffer_minutes > 0 && (
+                        <Badge variant="secondary" className="ml-1 text-xs px-2 py-0.5 border border-gray-200 bg-gray-50 text-gray-700">
+                          Buffer: {shop.buffer_minutes} min
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">

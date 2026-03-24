@@ -3,10 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-  schemas   = ["public"]
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public"]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -15,8 +14,8 @@ model booking_services {
   booking_id       String    @db.Uuid
   service_id       String    @db.Uuid
   price            Decimal   @db.Decimal(10, 2)
-  duration_minutes Int?      @default(60)
   created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  duration_minutes Int?      @default(60)
   bookings         bookings  @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   services         services  @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -29,20 +28,22 @@ model bookings {
   id                String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   shop_id           String                      @db.Uuid
   customer_id       String?                     @db.Uuid
-  customer_name     String?
-  customer_email    String?
-  customer_phone    String?
   booking_date      DateTime                    @db.Date
-  start_time        String                      @db.VarChar(5)
-  end_time          String                      @db.VarChar(5)
-  total_duration    Int?                        @default(0)
-  total_price       Decimal?                    @default(0) @db.Decimal(10, 2)
   status            String?                     @default("pending")
   notes             String?
   created_at        DateTime?                   @default(now()) @db.Timestamptz(6)
   updated_at        DateTime?                   @default(now()) @db.Timestamptz(6)
-  booking_services  booking_services[]
+  customer_email    String?
+  customer_name     String?
+  customer_phone    String?
+  total_duration    Int?                        @default(0)
+  total_price       Decimal?                    @default(0) @db.Decimal(10, 2)
+  start_time        String                      @db.VarChar(5)
+  end_time          String                      @db.VarChar(5)
+  reminder_24h_sent Boolean?                    @default(false)
+  reminder_2h_sent  Boolean?                    @default(false)
   booking_modifiers booking_service_modifiers[]
+  booking_services  booking_services[]
   customers         customers?                  @relation(fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   shops             shops                       @relation(fields: [shop_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   notifications     notifications[]
@@ -54,22 +55,22 @@ model bookings {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model customers {
-  id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email                 String?
-  phone                 String?
-  full_name             String
-  birth_date            DateTime?       @db.Date
-  consent_given         Boolean?        @default(false)
-  marketing_consent     Boolean?        @default(false)
-  consent_date          DateTime?       @db.Timestamptz(6)
-  data_retention_until  DateTime?       @db.Timestamptz(6)
-  total_visits          Int?            @default(0)
-  last_visit_date       DateTime?       @db.Timestamptz(6)
-  loyalty_points        Int?            @default(0)
-  created_at            DateTime?       @default(now()) @db.Timestamptz(6)
-  updated_at            DateTime?       @default(now()) @db.Timestamptz(6)
-  bookings              bookings[]
-  tags                  customer_tags[]
+  id                   String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                String?
+  phone                String?
+  full_name            String
+  created_at           DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime?       @default(now()) @db.Timestamptz(6)
+  birth_date           DateTime?       @db.Date
+  consent_date         DateTime?       @db.Timestamptz(6)
+  consent_given        Boolean?        @default(false)
+  data_retention_until DateTime?       @db.Timestamptz(6)
+  last_visit_date      DateTime?       @db.Timestamptz(6)
+  loyalty_points       Int?            @default(0)
+  marketing_consent    Boolean?        @default(false)
+  total_visits         Int?            @default(0)
+  bookings             bookings[]
+  tags                 customer_tags[]
 
   @@schema("public")
 }
@@ -113,9 +114,9 @@ model profiles {
   full_name  String?
   phone      String?
   avatar_url String?
-  is_demo    Boolean?  @default(false)
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  is_demo    Boolean?  @default(false)
   shops      shops[]
 
   @@schema("public")
@@ -160,20 +161,20 @@ model services {
 
 /// Modificadores de servicio condicionales
 model service_modifiers {
-  id                  String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  service_id          String                      @db.Uuid
-  name                String
-  description         String?
-  condition_type      String
-  condition_value     Json?
-  duration_modifier   Int?                        @default(0)
-  price_modifier      Decimal?                    @default(0) @db.Decimal(10, 2)
-  is_active           Boolean?                    @default(true)
-  auto_apply          Boolean?                    @default(false)
-  created_at          DateTime?                   @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime?                   @default(now()) @db.Timestamptz(6)
-  services            services                    @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  booking_modifiers   booking_service_modifiers[]
+  id                String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  service_id        String                      @db.Uuid
+  name              String
+  description       String?
+  condition_type    String
+  condition_value   Json?
+  duration_modifier Int?                        @default(0)
+  price_modifier    Decimal?                    @default(0) @db.Decimal(10, 2)
+  is_active         Boolean?                    @default(true)
+  auto_apply        Boolean?                    @default(false)
+  created_at        DateTime?                   @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?                   @default(now()) @db.Timestamptz(6)
+  booking_modifiers booking_service_modifiers[]
+  services          services                    @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([service_id], map: "idx_service_modifiers_service_id")
   @@schema("public")
@@ -228,27 +229,29 @@ model shop_schedules {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model shops {
-  id                  String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  owner_id            String                @db.Uuid
-  name                String
-  description         String?
-  address             String?
-  phone               String?
-  email               String
-  website             String?
-  logo_url            String?
-  bookingConfirmationMode String            @default("manual")
-  timezone            String?               @default("America/New_York")
-  is_active           Boolean?              @default(true)
-  created_at          DateTime?             @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime?             @default(now()) @db.Timestamptz(6)
-  bookings            bookings[]
-  booking_links       booking_links[]
-  message_templates   message_templates[]
-  schedule_exceptions schedule_exceptions[]
-  services            services[]
-  schedules           shop_schedules[]
-  profiles            profiles              @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                      String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  owner_id                String                @db.Uuid
+  name                    String
+  description             String?
+  address                 String?
+  phone                   String?
+  email                   String
+  website                 String?
+  logo_url                String?
+  is_active               Boolean?              @default(true)
+  created_at              DateTime?             @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?             @default(now()) @db.Timestamptz(6)
+  timezone                String?               @default("America/New_York")
+  bookingConfirmationMode String                @default("manual")
+  base_slot_minutes       Int                   @default(15)
+  buffer_minutes          Int                   @default(0)
+  booking_links           booking_links[]
+  bookings                bookings[]
+  message_templates       message_templates[]
+  schedule_exceptions     schedule_exceptions[]
+  services                services[]
+  schedules               shop_schedules[]
+  profiles                profiles              @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([owner_id], map: "idx_shops_owner_id")
   @@schema("public")

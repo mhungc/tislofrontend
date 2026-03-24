@@ -30,6 +30,10 @@ export default function ShopConfigPageClient({ shopId, locale, dict }: ShopConfi
   const [scheduleMode, setScheduleMode] = useState<'view' | 'edit' | 'create'>('view')
   const [serviceMode, setServiceMode] = useState<'list' | 'create' | 'edit'>('list')
   const [editingServiceId, setEditingServiceId] = useState<string | undefined>()
+  // NUEVO: edición de franja y buffer
+  const [editingGeneral, setEditingGeneral] = useState(false)
+  const [pendingBaseSlot, setPendingBaseSlot] = useState<number | null>(null)
+  const [pendingBuffer, setPendingBuffer] = useState<number | null>(null)
 
   const scheduleService = new ScheduleService()
   const scheduleDict = dict.schedule
@@ -92,6 +96,101 @@ export default function ShopConfigPageClient({ shopId, locale, dict }: ShopConfi
           <Store className="h-5 w-5" />
           <h1 className="text-2xl font-bold">Configuración - {shop?.name}</h1>
         </div>
+
+                  {/* NUEVO: Configuración de franja horaria y buffer */}
+                  <div className="pt-4 border-t space-y-6">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <label htmlFor="shop-base-slot-minutes" className="block font-medium mb-1">Duración mínima de franja horaria</label>
+                        {editingGeneral ? (
+                          <select
+                            id="shop-base-slot-minutes"
+                            value={pendingBaseSlot ?? shop?.base_slot_minutes ?? 15}
+                            onChange={e => setPendingBaseSlot(Number(e.target.value))}
+                            className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          >
+                            <option value={5}>5 minutos</option>
+                            <option value={10}>10 minutos</option>
+                            <option value={15}>15 minutos</option>
+                            <option value={20}>20 minutos</option>
+                            <option value={30}>30 minutos</option>
+                            <option value={60}>60 minutos</option>
+                          </select>
+                        ) : (
+                          <div className="mt-1 text-base">{shop?.base_slot_minutes ?? 15} minutos</div>
+                        )}
+                        <span className="text-xs text-muted-foreground block mt-1">
+                          Intervalo base con el que se generan los huecos disponibles en tu agenda.
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <label htmlFor="shop-buffer-minutes" className="block font-medium mb-1">Buffer entre reservas</label>
+                        {editingGeneral ? (
+                          <select
+                            id="shop-buffer-minutes"
+                            value={pendingBuffer ?? shop?.buffer_minutes ?? 0}
+                            onChange={e => setPendingBuffer(Number(e.target.value))}
+                            className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          >
+                            <option value={0}>Sin buffer (citas consecutivas)</option>
+                            <option value={5}>5 minutos</option>
+                            <option value={10}>10 minutos</option>
+                            <option value={15}>15 minutos</option>
+                            <option value={20}>20 minutos</option>
+                          </select>
+                        ) : (
+                          <div className="mt-1 text-base">{shop?.buffer_minutes ?? 0} minutos</div>
+                        )}
+                        <span className="text-xs text-muted-foreground block mt-1">
+                          Tiempo extra que se deja libre después de cada reserva para limpieza, preparación, etc.
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      {editingGeneral ? (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={async () => {
+                              const base_slot_minutes = pendingBaseSlot ?? shop?.base_slot_minutes ?? 15
+                              const buffer_minutes = pendingBuffer ?? shop?.buffer_minutes ?? 0
+                              try {
+                                const response = await fetch(`/api/shops/${shopId}`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ base_slot_minutes, buffer_minutes })
+                                })
+                                if (response.ok) {
+                                  setShop({ ...shop, base_slot_minutes, buffer_minutes })
+                                  toast.success('Configuración guardada')
+                                  setEditingGeneral(false)
+                                } else {
+                                  toast.error('Error al guardar cambios')
+                                }
+                              } catch {
+                                toast.error('Error al guardar cambios')
+                              }
+                            }}
+                          >Guardar cambios</Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setPendingBaseSlot(null)
+                              setPendingBuffer(null)
+                              setEditingGeneral(false)
+                            }}
+                          >Cancelar</Button>
+                        </>
+                      ) : (
+                        <Button size="sm" variant="outline" onClick={() => {
+                          setPendingBaseSlot(shop?.base_slot_minutes ?? 15)
+                          setPendingBuffer(shop?.buffer_minutes ?? 0)
+                          setEditingGeneral(true)
+                        }}>Editar</Button>
+                      )}
+                    </div>
+                  </div>
       </div>
 
       {shop && (
