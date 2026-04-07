@@ -6,6 +6,10 @@ import { ScheduleRepository } from '@/lib/repositories/schedule-repository'
 const shopRepository = new ShopRepository()
 const scheduleRepository = new ScheduleRepository()
 
+const dayMap = [
+  'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
+] as const
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ shopId: string }> }
@@ -27,7 +31,69 @@ export async function GET(
       return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
     }
 
-    return NextResponse.json({ shop })
+    const schedules = await scheduleRepository.getByShopId(shopId)
+
+    const defaultBusinessHours = {
+      monday: { open: '09:00', close: '18:00', is_open: true },
+      tuesday: { open: '09:00', close: '18:00', is_open: true },
+      wednesday: { open: '09:00', close: '18:00', is_open: true },
+      thursday: { open: '09:00', close: '18:00', is_open: true },
+      friday: { open: '09:00', close: '18:00', is_open: true },
+      saturday: { open: '10:00', close: '16:00', is_open: true },
+      sunday: { open: '10:00', close: '16:00', is_open: false }
+    }
+
+    const business_hours = dayMap.reduce((acc, day, idx) => {
+      const daySchedules = schedules.filter((s) => s.day_of_week === idx)
+      if (daySchedules.length === 0) {
+        acc[day] = {
+          open: defaultBusinessHours[day].open,
+          close: defaultBusinessHours[day].close,
+          is_open: false
+        }
+        return acc
+      }
+
+      const working = daySchedules.filter((s) => s.is_working_day)
+      if (working.length === 0) {
+        acc[day] = {
+          open: defaultBusinessHours[day].open,
+          close: defaultBusinessHours[day].close,
+          is_open: false
+        }
+        return acc
+      }
+
+      const parseHHMM = (value: Date | string) => {
+        if (value instanceof Date) {
+          return `${value.getUTCHours().toString().padStart(2, '0')}:${value.getUTCMinutes().toString().padStart(2, '0')}`
+        }
+
+        const str = String(value)
+        if (str.includes('T')) {
+          const time = str.split('T')[1]?.slice(0, 5)
+          return time || defaultBusinessHours[day].open
+        }
+        return str.slice(0, 5)
+      }
+
+      const times = working.map((s) => ({
+        open: parseHHMM(s.open_time),
+        close: parseHHMM(s.close_time)
+      }))
+
+      const earliestOpen = times.map((t) => t.open).sort()[0]
+      const latestClose = times.map((t) => t.close).sort().reverse()[0]
+
+      acc[day] = {
+        open: earliestOpen,
+        close: latestClose,
+        is_open: true
+      }
+      return acc
+    }, {} as Record<typeof dayMap[number], { open: string; close: string; is_open: boolean }>)
+
+    return NextResponse.json({ shop: { ...shop, business_hours } })
   } catch (error) {
     console.error('Error:', error)
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
