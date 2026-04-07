@@ -52,7 +52,12 @@ export class BookingLinkRepository {
         shops: {
           include: {
             schedules: {
-              where: { is_working_day: true },
+              where: {
+                OR: [
+                  { is_working_day: true },
+                  { is_working_day: null }
+                ]
+              },
               orderBy: [{ day_of_week: 'asc' }, { block_order: 'asc' }]
             },
             services: {

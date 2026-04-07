@@ -54,7 +54,7 @@ export async function GET(
         return acc
       }
 
-      const working = daySchedules.filter((s) => s.is_working_day)
+      const working = daySchedules.filter((s) => s.is_working_day !== false)
       if (working.length === 0) {
         acc[day] = {
           open: defaultBusinessHours[day].open,

@@ -151,7 +151,7 @@ export class AvailabilityCalculator {
    */
   private getDaySchedules(dayOfWeek: number, schedules: Schedule[]): Schedule[] {
     return schedules
-      .filter(s => s.day_of_week === dayOfWeek && s.is_working_day)
+      .filter(s => s.day_of_week === dayOfWeek && s.is_working_day !== false)
       .sort((a, b) => a.block_order - b.block_order)
   }
 

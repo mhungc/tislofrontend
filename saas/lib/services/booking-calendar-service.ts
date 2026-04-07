@@ -116,7 +116,7 @@ export class BookingCalendarService {
       const dayOfWeek = date.getDay()
       
       // Obtener horarios del día
-      const daySchedules = schedules.filter(s => s.day_of_week === dayOfWeek && s.is_working_day)
+      const daySchedules = schedules.filter(s => s.day_of_week === dayOfWeek && s.is_working_day !== false)
       const dayBookings = bookings.filter(b => b.booking_date === dateStr)
       
       const slots = this.generateDaySlots(daySchedules, dayBookings, baseSlotMinutes)
