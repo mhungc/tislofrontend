@@ -72,15 +72,15 @@ export class BookingEmailService {
       const reminderColor = data.reminderType === '24h' ? '#f59e42' : '#2563eb'
       const reminderIcon = data.reminderType === '24h' ? '⏰' : '🚗'
       const reminderTitle = data.reminderType === '24h'
-        ? (locale === 'en' ? '24h Booking Reminder' : 'Recordatorio de Reserva (24h)')
-        : (locale === 'en' ? '2h Booking Reminder' : 'Recordatorio de Reserva (2h)')
+        ? (locale === 'en' ? 'Reminder: Your booking is tomorrow' : 'Recordatorio: Tu cita es mañana')
+        : (locale === 'en' ? 'Reminder: Your booking is today' : 'Recordatorio: Tu cita es hoy')
       const reminderMsg = data.reminderType === '24h'
         ? (locale === 'en'
-            ? 'This is a friendly reminder of your booking for tomorrow. If you need to modify or cancel, please contact us at least 24 hours in advance.'
-            : 'Este es un recordatorio amistoso de tu reserva para mañana. Si necesitas modificar o cancelar, contáctanos con al menos 24h de anticipación.')
+            ? 'This is a friendly reminder that your booking is tomorrow. If you need to modify or cancel, please contact us as soon as possible.'
+            : 'Este es un recordatorio de que tu cita es mañana. Si necesitas modificar o cancelar, contáctanos lo antes posible.')
         : (locale === 'en'
-            ? 'Your booking is in 2 hours. Please arrive on time. If you have questions, contact us.'
-            : 'Tu reserva es en 2 horas. Por favor, llega puntual a tu cita. Si tienes dudas, contáctanos.')
+            ? 'Your booking is today! Please arrive on time. If you have any questions, contact us.'
+            : '¡Tu cita es hoy! Por favor, llega puntual. Si tienes alguna duda, contáctanos.')
 
       const html = `
         <!DOCTYPE html>
