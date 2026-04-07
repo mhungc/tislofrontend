@@ -19,8 +19,8 @@ export async function processBookingReminders() {
     where: {
       reminder_24h_sent: false,
       start_time: {
-        gte: in24h,
-        lt: new Date(in24h.getTime() + 60 * 60 * 1000), // within 1h window
+        gte: in24h.toISOString(),
+        lt: new Date(in24h.getTime() + 60 * 60 * 1000).toISOString(), // within 1h window
       },
     },
   });
