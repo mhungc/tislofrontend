@@ -1,0 +1,3 @@
+Test deploy trigger for Vercel builds.
+Created: 2026-04-07
+Purpose: force a new deployment and verify build pipeline.
