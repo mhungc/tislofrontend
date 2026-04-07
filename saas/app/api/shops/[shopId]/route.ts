@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { ShopRepository } from '@/lib/repositories/shop-repository'
+import { ScheduleRepository } from '@/lib/repositories/schedule-repository'
 
 const shopRepository = new ShopRepository()
+const scheduleRepository = new ScheduleRepository()
 
 export async function GET(
   request: NextRequest,
@@ -94,7 +96,8 @@ export async function PATCH(
       is_active,
       bookingConfirmationMode,
       base_slot_minutes,
-      buffer_minutes
+      buffer_minutes,
+      business_hours
     } = body
 
     if (
@@ -148,6 +151,27 @@ export async function PATCH(
       ...(slotMinutes !== undefined ? { base_slot_minutes: slotMinutes } : {}),
       ...(bufferMinutes !== undefined ? { buffer_minutes: bufferMinutes } : {})
     })
+
+    // Sync weekly schedules when business_hours is provided from ShopForm
+    if (business_hours && typeof business_hours === 'object') {
+      const dayMap = [
+        'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
+      ]
+
+      const schedules = dayMap.map((day, idx) => {
+        const bh = business_hours[day]
+        return {
+          shop_id: shopId,
+          day_of_week: idx,
+          open_time: bh?.open ? `1970-01-01T${bh.open}:00.000` : `1970-01-01T09:00:00.000`,
+          close_time: bh?.close ? `1970-01-01T${bh.close}:00.000` : `1970-01-01T18:00:00.000`,
+          is_working_day: bh?.is_open ?? false,
+          block_order: 0
+        }
+      })
+
+      await scheduleRepository.replaceSchedules(shopId, schedules)
+    }
 
     return NextResponse.json({ shop })
   } catch (error) {
