@@ -45,6 +45,18 @@ Sistema completo de gestión de reservas online para negocios de servicios como 
 - **Bloqueo de horarios** ocupados
 - **Duración variable** según servicios seleccionados
 
+### ✅ Algoritmo Actual de Booking/Calendario
+- **Fecha solicitada estable por calendario:** `YYYY-MM-DD` se interpreta como fecha de calendario (sin comparación lexicográfica por texto).
+- **Día de semana consistente:** se calcula desde la fecha solicitada para evitar desfases por zona horaria del servidor.
+- **Horarios semanales activos:** un bloque se considera laborable cuando `is_working_day !== false` (incluye `null` como abierto).
+- **Horas de apertura/cierre sin drift:** los campos `TIME` (`open_time`, `close_time`) se normalizan a `HH:MM` usando extracción UTC para no desplazar horas.
+- **Duración efectiva por reserva:** `blockedMinutes = ceil(totalDuration / baseSlotMinutes) * baseSlotMinutes`.
+- **Conflictos con reservas + buffer:** un slot entra en conflicto si cae en `[start_time, end_time + buffer_minutes)`.
+- **Filtrado de horas pasadas (solo hoy):** para el día actual en la zona horaria de la tienda, se bloquean slots anteriores a `now`.
+- **Respuesta de disponibilidad:** API devuelve `slots` y, cuando aplica, `fillableGaps` para huecos rellenables.
+
+Referencia detallada: `CALENDAR_AVAILABILITY_README.md`.
+
 ## 🛠️ Stack Tecnológico
 
 ### Frontend

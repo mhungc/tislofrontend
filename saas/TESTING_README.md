@@ -31,7 +31,8 @@ Multi-Service Totals
 
 Existing Booking Conflicts
 - Existing booking: 10:00 to 10:45
-  - 45-min blocked service should not allow starts at 10:00, 10:15, 10:30, 10:45
+  - With buffer 0, 45-min blocked service should not allow starts at 10:00, 10:15, 10:30
+  - With buffer 15, it should also block 10:45
 - Existing booking: 09:30 to 10:00
   - 35-min service start at 09:00 should be allowed (blocks 09:00 to 09:45)
   - 35-min service start at 09:15 should be blocked (overlaps 09:30 to 10:00)

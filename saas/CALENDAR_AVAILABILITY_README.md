@@ -51,7 +51,7 @@ El sistema marca como disponible solo los inicios que pueden acomodar la duraci�
 Se seleccionan solo los bloques que cumplen:
 
 - day_of_week == día solicitado
-- is_working_day == true
+- is_working_day != false (true o null)
 
 Luego se ordenan por block_order.
 
@@ -95,9 +95,15 @@ Si alguna validación falla, available = false.
 
 Un slot entra en conflicto si:
 
-slotTime >= booking.start_time AND slotTime < booking.end_time
+slotTime >= booking.start_time AND slotTime < (booking.end_time + buffer_minutes)
 
-Con esta regla, los inicios dentro de una reserva quedan bloqueados.
+Con esta regla, los inicios dentro de una reserva y durante el buffer quedan bloqueados.
+
+## Manejo de fecha y zona horaria
+
+- El día de semana se calcula desde la fecha solicitada (`YYYY-MM-DD`) de forma consistente para evitar desfases por timezone del servidor.
+- Los campos de tipo `TIME` (`open_time`, `close_time`) se normalizan a `HH:MM` usando extracción UTC para evitar corrimientos de hora.
+- Para el día actual en la zona horaria de la tienda, se marcan como no disponibles los slots ya pasados.
 
 ## Manejo de medianoche
 
@@ -155,4 +161,4 @@ En práctica, es eficiente para agendas diarias típicas.
 
 ---
 
-Última actualización: sincronizado con la implementación actual en AvailabilityCalculator y endpoint de disponibilidad.
+Última actualización: sincronizado con `AvailabilityCalculator`, `BookingCalendarService` y `GET /api/booking/[token]/availability`.
