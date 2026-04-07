@@ -23,6 +23,7 @@ interface PublicBookingPageClientProps {
 }
 
 export function PublicBookingPageClient({ token, locale, dict }: PublicBookingPageClientProps) {
+  const DEBUG_TAG = '[BOOKING_DEBUG]'
   const bookingDict = dict.booking
   const commonDict = dict.common
 
@@ -70,9 +71,21 @@ export function PublicBookingPageClient({ token, locale, dict }: PublicBookingPa
   const loadBookingData = async () => {
     try {
       const data = await bookingService.getBookingData(token)
+      console.log(`${DEBUG_TAG} booking-data`, {
+        tokenPreview: token.slice(0, 8),
+        shopId: data?.shop?.id,
+        shopName: data?.shop?.name,
+        timezone: data?.shop?.timezone,
+        baseSlotMinutes: data?.shop?.base_slot_minutes,
+        bufferMinutes: data?.shop?.buffer_minutes,
+        servicesCount: Array.isArray(data?.services) ? data.services.length : 0,
+        schedulesCount: Array.isArray(data?.schedules) ? data.schedules.length : 0,
+        schedules: data?.schedules
+      })
       setShop(data.shop)
       setServices(data.services)
-    } catch {
+    } catch (error) {
+      console.error(`${DEBUG_TAG} booking-data-error`, error)
       toast.error(bookingDict.invalidLink)
     } finally {
       setLoading(false)
@@ -82,10 +95,32 @@ export function PublicBookingPageClient({ token, locale, dict }: PublicBookingPa
   const loadAvailableSlots = async () => {
     setSlotsLoading(true)
     try {
+      console.log(`${DEBUG_TAG} availability-request`, {
+        tokenPreview: token.slice(0, 8),
+        selectedDate,
+        selectedServiceIds,
+        expandedServices: selectedServicesExpanded,
+        nowIso: new Date().toISOString(),
+        calendarMinDate: getMinDate(),
+        calendarMaxDate: getMaxDate(),
+        timezone: shop?.timezone,
+        baseSlotMinutes: shop?.base_slot_minutes,
+        bufferMinutes: shop?.buffer_minutes
+      })
+
       const slots = await bookingService.getAvailableSlots(token, selectedDate, selectedServicesExpanded)
+
+      console.log(`${DEBUG_TAG} availability-response`, {
+        selectedDate,
+        totalSlots: Array.isArray(slots) ? slots.length : 0,
+        availableSlots: Array.isArray(slots) ? slots.filter((s: any) => s?.available).length : 0,
+        firstSlots: Array.isArray(slots) ? slots.slice(0, 8) : slots
+      })
+
       setAvailableSlots(slots)
       setSelectedTime('')
-    } catch {
+    } catch (error) {
+      console.error(`${DEBUG_TAG} availability-error`, error)
       toast.error(commonDict.error)
     } finally {
       setSlotsLoading(false)
@@ -223,12 +258,19 @@ export function PublicBookingPageClient({ token, locale, dict }: PublicBookingPa
     })
   }
 
-  const getMinDate = () => new Date().toISOString().split('T')[0]
+  const toDateInputString = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const getMinDate = () => toDateInputString(new Date())
 
   const getMaxDate = () => {
     const maxDate = new Date()
     maxDate.setMonth(maxDate.getMonth() + 3)
-    return maxDate.toISOString().split('T')[0]
+    return toDateInputString(maxDate)
   }
 
   if (loading) {

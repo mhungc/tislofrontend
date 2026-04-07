@@ -108,12 +108,12 @@ export class BookingCalendarService {
     baseSlotMinutes: number = 15
   ): CalendarDay[] {
     const days: CalendarDay[] = []
-    const start = new Date(startDate)
-    const end = new Date(endDate)
+    const start = this.parseDateOnly(startDate)
+    const end = this.parseDateOnly(endDate)
 
     for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
       const dateStr = this.formatDate(date)
-      const dayOfWeek = date.getDay()
+      const dayOfWeek = this.getDayOfWeek(dateStr)
       
       // Obtener horarios del día
       const daySchedules = schedules.filter(s => s.day_of_week === dayOfWeek && s.is_working_day !== false)
@@ -167,17 +167,24 @@ export class BookingCalendarService {
 
   private parseTime(time: Date | string): Date {
     if (time instanceof Date) {
-      return time
+      return this.buildTimeDate(time.getUTCHours(), time.getUTCMinutes())
     }
     
-    if (typeof time === 'string' && time.includes(':')) {
+    if (typeof time === 'string' && /^\d{2}:\d{2}$/.test(time)) {
       const [hours, minutes] = time.split(':').map(Number)
-      const date = new Date()
-      date.setHours(hours, minutes, 0, 0)
-      return date
+      return this.buildTimeDate(hours, minutes)
+    }
+
+    if (typeof time === 'string' && time.includes('T')) {
+      const hhmm = time.split('T')[1]?.slice(0, 5)
+      if (hhmm && /^\d{2}:\d{2}$/.test(hhmm)) {
+        const [hours, minutes] = hhmm.split(':').map(Number)
+        return this.buildTimeDate(hours, minutes)
+      }
     }
     
-    return new Date(time)
+    const parsed = new Date(time)
+    return this.buildTimeDate(parsed.getUTCHours(), parsed.getUTCMinutes())
   }
 
   private formatTime(date: Date): string {
@@ -189,5 +196,21 @@ export class BookingCalendarService {
     const month = (date.getMonth() + 1).toString().padStart(2, '0')
     const day = date.getDate().toString().padStart(2, '0')
     return `${year}-${month}-${day}`
+  }
+
+  private parseDateOnly(date: string): Date {
+    const [year, month, day] = date.split('-').map(Number)
+    return new Date(year, month - 1, day)
+  }
+
+  private getDayOfWeek(date: string): number {
+    const [year, month, day] = date.split('-').map(Number)
+    return new Date(Date.UTC(year, month - 1, day, 12, 0, 0)).getUTCDay()
+  }
+
+  private buildTimeDate(hours: number, minutes: number): Date {
+    const date = new Date(1970, 0, 1)
+    date.setHours(hours, minutes, 0, 0)
+    return date
   }
 }

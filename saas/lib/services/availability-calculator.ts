@@ -1,4 +1,4 @@
-import { toZonedTime, fromZonedTime } from 'date-fns-tz'
+import { fromZonedTime, toZonedTime } from 'date-fns-tz'
 export interface TimeSlot {
   time: string
   available: boolean
@@ -48,12 +48,7 @@ export class AvailabilityCalculator {
     console.log('Existing bookings:', existingBookings.length)
     console.log('Service duration:', serviceDurationMinutes, 'minutes')
     
-    // Crear fecha en la zona horaria de la tienda para obtener el día de la semana correcto
-    const [year, month, day] = date.split('-').map(Number)
-    // Creamos la fecha en UTC primero, luego la convertimos a la zona horaria de la tienda
-    const utcDate = new Date(Date.UTC(year, month - 1, day))
-    const zonedDate = toZonedTime(utcDate, timezone)
-    const dayOfWeek = zonedDate.getDay()
+    const dayOfWeek = this.getDayOfWeek(date)
     console.log('Day of week (zoned):', dayOfWeek, ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][dayOfWeek])
 
     const daySchedules = this.getDaySchedules(dayOfWeek, schedules)
@@ -77,9 +72,9 @@ export class AvailabilityCalculator {
     const availableSlots = this.filterAvailableSlots(allSlots, existingBookings, serviceDurationMinutes ?? 60)
       .map(slot => {
         if (isToday) {
-          const slotDateLocal = toZonedTime(`${date}T${slot.time}:00`, timezone)
-          console.log(`[DEBUG] Slot:`, slot.time, '| slotDateLocal:', slotDateLocal.toISOString(), '| nowZoned:', nowZoned.toISOString(), '| available:', slotDateLocal >= nowZoned)
-          if (slotDateLocal < nowZoned) {
+          const slotDateUtc = fromZonedTime(`${date}T${slot.time}:00`, timezone)
+          console.log(`[DEBUG] Slot:`, slot.time, '| slotDateUtc:', slotDateUtc.toISOString(), '| now:', new Date().toISOString(), '| available:', slotDateUtc >= new Date())
+          if (slotDateUtc < new Date()) {
             return { ...slot, available: false }
           }
         }
@@ -313,19 +308,24 @@ export class AvailabilityCalculator {
    */
   private parseTime(time: Date | string): Date {
     if (time instanceof Date) {
-      return time
+      return this.buildTimeDate(time.getUTCHours(), time.getUTCMinutes())
     }
     
-    // Si es string en formato HH:MM
-    if (typeof time === 'string' && time.includes(':')) {
+    if (typeof time === 'string' && /^\d{2}:\d{2}$/.test(time)) {
       const [hours, minutes] = time.split(':').map(Number)
-      const date = new Date()
-      date.setHours(hours, minutes, 0, 0)
-      return date
+      return this.buildTimeDate(hours, minutes)
     }
-    
-    // Si es string de fecha completa
-    return new Date(time)
+
+    if (typeof time === 'string' && time.includes('T')) {
+      const hhmm = time.split('T')[1]?.slice(0, 5)
+      if (hhmm && /^\d{2}:\d{2}$/.test(hhmm)) {
+        const [hours, minutes] = hhmm.split(':').map(Number)
+        return this.buildTimeDate(hours, minutes)
+      }
+    }
+
+    const parsed = new Date(time)
+    return this.buildTimeDate(parsed.getUTCHours(), parsed.getUTCMinutes())
   }
 
   /**
@@ -335,6 +335,17 @@ export class AvailabilityCalculator {
     const hours = date.getHours()
     const minutes = date.getMinutes()
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+  }
+
+  private getDayOfWeek(date: string): number {
+    const [year, month, day] = date.split('-').map(Number)
+    return new Date(Date.UTC(year, month - 1, day, 12, 0, 0)).getUTCDay()
+  }
+
+  private buildTimeDate(hours: number, minutes: number): Date {
+    const date = new Date(1970, 0, 1)
+    date.setHours(hours, minutes, 0, 0)
+    return date
   }
 
   /**

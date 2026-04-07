@@ -22,11 +22,16 @@ export function Calendar({
   disabledDates = [],
   locale = 'es'
 }: CalendarProps) {
+  function parseDateOnly(date: string): Date {
+    const [year, month, day] = date.split('-').map(Number)
+    return new Date(year, month - 1, day)
+  }
+
   const [currentMonth, setCurrentMonth] = useState(new Date())
 
   const today = new Date()
-  const minDateObj = minDate ? new Date(minDate) : today
-  const maxDateObj = maxDate ? new Date(maxDate) : new Date(today.getFullYear() + 1, today.getMonth(), today.getDate())
+  const minDateObj = minDate ? parseDateOnly(minDate) : new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  const maxDateObj = maxDate ? parseDateOnly(maxDate) : new Date(today.getFullYear() + 1, today.getMonth(), today.getDate())
 
   useEffect(() => {
     if (selectedDate) {
@@ -98,8 +103,8 @@ export function Calendar({
 
   const isDateDisabled = (dateString: string, date: Date, isCurrentMonth: boolean) => {
     if (!isCurrentMonth) return true
-    // Permitir seleccionar el día actual (hoy) aunque la hora sea menor
-    if (date.toDateString() < minDateObj.toDateString() || date > maxDateObj) return true
+    const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    if (normalizedDate < minDateObj || normalizedDate > maxDateObj) return true
     if (disabledDates.includes(dateString)) return true
     return false
   }
