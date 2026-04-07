@@ -86,7 +86,6 @@ export function BookingCalendar({ shopId, shopName }: BookingCalendarProps) {
     const year = date.getFullYear()
     const month = (date.getMonth() + 1).toString().padStart(2, '0')
     const day = date.getDate().toString().padStart(2, '0')
-      const [baseSlotMinutes, setBaseSlotMinutes] = useState<number>(15)
     return `${year}-${month}-${day}`
   }
 
@@ -105,11 +104,6 @@ export function BookingCalendar({ shopId, shopName }: BookingCalendarProps) {
       case 'confirmed': return 'bg-green-100 text-green-800 border-green-200'
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200'
-          if (data.shop && typeof data.shop.base_slot_minutes === 'number') {
-            setBaseSlotMinutes(data.shop.base_slot_minutes)
-          } else {
-            setBaseSlotMinutes(15)
-          }
       default: return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
