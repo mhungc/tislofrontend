@@ -31,7 +31,7 @@ export class BookingEmailService {
   private resend = new Resend(process.env.RESEND_API_KEY)
 
   // Formatea la fecha según el locale
-  private formatDate(date, locale = 'es') {
+  private formatDate(date: string | Date, locale = 'es') {
     const dateObj = new Date(date)
     return dateObj.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', {
       weekday: 'long',
@@ -42,13 +42,13 @@ export class BookingEmailService {
   }
 
   // Formatea la hora (HH:mm)
-  private formatTime(time) {
+  private formatTime(time: string) {
     const [hours, minutes] = time.split(':')
     return `${hours}:${minutes}`
   }
 
   // Formatea el precio según el locale
-  private formatCurrency(amount, locale = 'es') {
+  private formatCurrency(amount: number, locale = 'es') {
     return new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-ES', {
       style: 'currency',
       currency: 'EUR'
@@ -59,7 +59,7 @@ export class BookingEmailService {
    * Envía email recordatorio de reserva (UX optimizado)
    * @param {ReminderEmailData} data
    */
-  async sendReminderEmail(data) {
+  async sendReminderEmail(data: ReminderEmailData) {
     try {
       if (!process.env.RESEND_API_KEY) {
         console.log('⚠️ RESEND_API_KEY no configurada, email no enviado')

@@ -144,21 +144,23 @@ export function ShopForm({
 
   // Validar formulario
   const validateForm = (): { valid: boolean; errors: string[] } => {
-            if (
-              formData.buffer_minutes < 0 ||
-              formData.buffer_minutes > 60 ||
-              ![0, 5, 10, 15, 20].includes(formData.buffer_minutes)
-            ) {
-              errors.push('El buffer entre reservas debe ser 0, 5, 10, 15 o 20 minutos.')
-            }
-        if (
-          formData.base_slot_minutes < 5 ||
-          formData.base_slot_minutes > 60 ||
-          ![5, 10, 15, 20, 30, 60].includes(formData.base_slot_minutes)
-        ) {
-          errors.push('La duración mínima de franja debe ser 5, 10, 15, 20, 30 o 60 minutos.')
-        }
     const errors: string[] = []
+
+    if (
+      formData.buffer_minutes < 0 ||
+      formData.buffer_minutes > 60 ||
+      ![0, 5, 10, 15, 20].includes(formData.buffer_minutes)
+    ) {
+      errors.push('El buffer entre reservas debe ser 0, 5, 10, 15 o 20 minutos.')
+    }
+
+    if (
+      formData.base_slot_minutes < 5 ||
+      formData.base_slot_minutes > 60 ||
+      ![5, 10, 15, 20, 30, 60].includes(formData.base_slot_minutes)
+    ) {
+      errors.push('La duración mínima de franja debe ser 5, 10, 15, 20, 30 o 60 minutos.')
+    }
 
     if (!formData.name.trim()) {
       errors.push('El nombre de la tienda es requerido')

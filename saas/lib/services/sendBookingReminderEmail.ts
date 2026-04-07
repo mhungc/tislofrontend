@@ -42,9 +42,9 @@ function buildReminderEmailData(booking: ReminderBooking, type: '24h' | '2h') {
   return {
     customerName: booking.customer_name || '',
     customerEmail: booking.customer_email || '',
-    bookingDate: booking.booking_date instanceof Date ? booking.booking_date.toISOString() : booking.booking_date,
-    startTime: booking.start_time,
-    endTime: booking.end_time,
+    bookingDate: booking.booking_date instanceof Date ? booking.booking_date.toISOString() : booking.booking_date || '',
+    startTime: booking.start_time || '',
+    endTime: booking.end_time || '',
     totalDuration: booking.total_duration || 0,
     totalPrice: toNumber(booking.total_price),
     services: (booking.booking_services || []).map((s: any) => ({
@@ -60,7 +60,7 @@ function buildReminderEmailData(booking: ReminderBooking, type: '24h' | '2h') {
     shopName: booking.shops?.name || '',
     shopAddress: booking.shops?.address || '',
     shopPhone: booking.shops?.phone || '',
-    locale: 'es',
+    locale: 'es' as const,
     reminderType: type,
   };
 }
