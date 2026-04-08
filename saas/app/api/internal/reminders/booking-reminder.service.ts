@@ -3,6 +3,18 @@ import { sendBookingReminderEmail } from '../../../../lib/services/sendBookingRe
 
 const prisma = new PrismaClient();
 
+export interface ReminderRunSummary {
+  ranAt: string;
+  tomorrowDate: string;
+  todayDate: string;
+  pending24h: number;
+  matched24h: number;
+  sent24h: string[];
+  pendingToday: number;
+  matchedToday: number;
+  sentToday: string[];
+}
+
 function isSameUTCDate(a: Date, b: Date): boolean {
   return (
     a.getUTCFullYear() === b.getUTCFullYear() &&
@@ -36,6 +48,18 @@ export async function processBookingReminders() {
     isSameUTCDate(new Date(booking.booking_date), tomorrow)
   );
 
+  const summary: ReminderRunSummary = {
+    ranAt: now.toISOString(),
+    tomorrowDate: tomorrow.toISOString().split('T')[0],
+    todayDate: today.toISOString().split('T')[0],
+    pending24h: allBookings24h.length,
+    matched24h: bookings24h.length,
+    sent24h: [],
+    pendingToday: 0,
+    matchedToday: 0,
+    sentToday: [],
+  };
+
   console.log('[REMINDER] Recordatorios 24h (mañana):', {
     date: tomorrow.toISOString().split('T')[0],
     total: bookings24h.length,
@@ -48,6 +72,7 @@ export async function processBookingReminders() {
       where: { id: booking.id },
       data: { reminder_24h_sent: true },
     });
+    summary.sent24h.push(booking.id);
   }
 
   // ── Same-day reminder: reservas de hoy ───────────────────────────────────
@@ -58,6 +83,9 @@ export async function processBookingReminders() {
   const bookingsToday = allBookingsToday.filter((booking) =>
     isSameUTCDate(new Date(booking.booking_date), today)
   );
+
+  summary.pendingToday = allBookingsToday.length;
+  summary.matchedToday = bookingsToday.length;
 
   console.log('[REMINDER] Recordatorios mismo día (hoy):', {
     date: today.toISOString().split('T')[0],
@@ -75,5 +103,9 @@ export async function processBookingReminders() {
       where: { id: booking.id },
       data: { reminder_2h_sent: true },
     });
+    summary.sentToday.push(booking.id);
   }
+
+  console.log('[REMINDER] Resumen de ejecución:', summary);
+  return summary;
 }

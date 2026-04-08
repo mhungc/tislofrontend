@@ -18,8 +18,8 @@ async function handleReminderRun(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  await processBookingReminders();
-  return NextResponse.json({ status: 'ok' });
+  const summary = await processBookingReminders();
+  return NextResponse.json({ status: 'ok', summary });
 }
 
 // Vercel Cron invokes this endpoint via GET.
