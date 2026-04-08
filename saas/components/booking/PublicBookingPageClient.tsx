@@ -273,6 +273,10 @@ export function PublicBookingPageClient({ token, locale, dict }: PublicBookingPa
     return toDateInputString(maxDate)
   }
 
+  const primaryBtn = 'w-full h-12 flex items-center justify-center rounded-lg bg-blue-600 text-white font-semibold text-sm shadow-sm hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed'
+
+  const secondaryBtn = 'inline-flex items-center justify-center rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:border-gray-300 active:bg-gray-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed'
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
   }
@@ -299,12 +303,22 @@ export function PublicBookingPageClient({ token, locale, dict }: PublicBookingPa
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white border-b px-4 py-6">
-          <div className="flex items-center gap-4 mb-4">
-            {step > 1 && <Button variant="ghost" size="sm" onClick={() => setStep(step - 1)}><ArrowLeft className="h-4 w-4" /></Button>}
-            <div>
-              <h1 className="text-2xl font-bold">{shop?.name}</h1>
-              <div className="flex items-center gap-2 text-gray-600"><MapPin className="h-4 w-4" /><span className="text-sm">{shop?.address}</span></div>
+        <div className="bg-white border-b px-4 py-4 sm:py-6">
+          <div className="flex items-center gap-3 mb-4">
+            {step > 1 && (
+              <button
+                onClick={() => setStep(step - 1)}
+                className="flex-shrink-0 p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg sm:text-2xl font-bold truncate">{shop?.name}</h1>
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-xs sm:text-sm truncate">{shop?.address}</span>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -317,7 +331,7 @@ export function PublicBookingPageClient({ token, locale, dict }: PublicBookingPa
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6 p-4">
+        <div className="grid lg:grid-cols-3 gap-6 p-4 pb-28 lg:pb-4">
           <div className="lg:col-span-2 space-y-6">
             {step === 1 && (
               <Card>
@@ -435,8 +449,18 @@ export function PublicBookingPageClient({ token, locale, dict }: PublicBookingPa
                     </div>
 
                     {verificationStep && (
-                      <div className="space-y-2">
-                        <Label htmlFor="verificationCode">{bookingDict.verificationCode}</Label>
+                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-4">
+                        <div className="space-y-1">
+                          <Label htmlFor="verificationCode" className="text-sm font-semibold text-foreground">
+                            {bookingDict.verificationCode}
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            {locale === 'en'
+                              ? `Enter the 6-digit code sent to ${customerData.email}.`
+                              : `Ingresa el codigo de 6 digitos que enviamos a ${customerData.email}.`}
+                          </p>
+                        </div>
+
                         <Input
                           id="verificationCode"
                           value={verificationCode}
@@ -444,10 +468,24 @@ export function PublicBookingPageClient({ token, locale, dict }: PublicBookingPa
                           placeholder="123456"
                           inputMode="numeric"
                           maxLength={6}
+                          className="h-12 border-primary/20 bg-white text-center text-lg font-semibold tracking-[0.35em]"
                         />
-                        <Button type="button" variant="outline" onClick={sendVerificationCode} disabled={sendingCode}>
-                          {sendingCode ? `${commonDict.loading}...` : bookingDict.resendCode}
-                        </Button>
+
+                        <div className="flex flex-col gap-3 rounded-lg border border-dashed border-border bg-background/80 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                          <p className="text-xs leading-5 text-muted-foreground">
+                            {locale === 'en'
+                              ? "Didn't receive the code? Request a new one here."
+                              : 'No recibiste el codigo? Solicita uno nuevo aqui.'}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={sendVerificationCode}
+                            disabled={sendingCode}
+                            className={`${secondaryBtn} w-full sm:w-auto min-w-[150px]`}
+                          >
+                            {sendingCode ? `${commonDict.loading}...` : bookingDict.resendCode}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -491,15 +529,70 @@ export function PublicBookingPageClient({ token, locale, dict }: PublicBookingPa
                   </div>
                 )}
 
-                <div className="pt-4">
-                  {step === 1 && <Button onClick={() => setStep(2)} disabled={selectedServiceIds.length === 0} className="w-full">{commonDict.next}</Button>}
-                  {step === 2 && <Button onClick={() => setStep(3)} disabled={!selectedDate || !selectedTime} className="w-full">{commonDict.next}</Button>}
-                  {step === 3 && <Button onClick={handleSubmit} disabled={submitting || sendingCode || !customerData.name || !customerData.email} className="w-full">{submitting || sendingCode ? `${commonDict.loading}...` : verificationStep ? bookingDict.confirmBooking : bookingDict.sendCode}</Button>}
+                <div className="pt-4 hidden lg:block">
+                  {step === 1 && (
+                    <button
+                      onClick={() => setStep(2)}
+                      disabled={selectedServiceIds.length === 0}
+                      className={primaryBtn}
+                    >
+                      {commonDict.next}
+                    </button>
+                  )}
+                  {step === 2 && (
+                    <button
+                      onClick={() => setStep(3)}
+                      disabled={!selectedDate || !selectedTime}
+                      className={primaryBtn}
+                    >
+                      {commonDict.next}
+                    </button>
+                  )}
+                  {step === 3 && (
+                    <button
+                      onClick={handleSubmit}
+                      disabled={submitting || sendingCode || !customerData.name || !customerData.email}
+                      className={primaryBtn}
+                    >
+                      {submitting || sendingCode ? `${commonDict.loading}...` : verificationStep ? bookingDict.confirmBooking : bookingDict.sendCode}
+                    </button>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
+      </div>
+
+      {/* ── Mobile fixed bottom CTA ─────────────────────────────────── */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+        {step === 1 && (
+          <button
+            onClick={() => setStep(2)}
+            disabled={selectedServiceIds.length === 0}
+            className={primaryBtn}
+          >
+            {commonDict.next}
+          </button>
+        )}
+        {step === 2 && (
+          <button
+            onClick={() => setStep(3)}
+            disabled={!selectedDate || !selectedTime}
+            className={primaryBtn}
+          >
+            {commonDict.next}
+          </button>
+        )}
+        {step === 3 && (
+          <button
+            onClick={handleSubmit}
+            disabled={submitting || sendingCode || !customerData.name || !customerData.email}
+            className={primaryBtn}
+          >
+            {submitting || sendingCode ? `${commonDict.loading}...` : verificationStep ? bookingDict.confirmBooking : bookingDict.sendCode}
+          </button>
+        )}
       </div>
     </div>
   )
