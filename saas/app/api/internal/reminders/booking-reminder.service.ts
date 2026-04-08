@@ -32,6 +32,43 @@ export async function processBookingReminders() {
   const now = new Date();
   console.log('[REMINDER] Ejecutando proceso de recordatorios:', now.toISOString());
 
+  const bookingInclude = {
+    shops: {
+      select: {
+        name: true,
+        address: true,
+        phone: true,
+      },
+    },
+    booking_services: {
+      include: {
+        services: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    },
+    booking_modifiers: {
+      include: {
+        service_modifiers: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    },
+  } as const;
+
+  const toReminderBooking = (booking: any) => ({
+    ...booking,
+    booking_modifiers: (booking.booking_modifiers || []).map((modifier: any) => ({
+      name: modifier.service_modifiers?.name || null,
+      duration_modifier: modifier.applied_duration || 0,
+      price_modifier: modifier.applied_price || 0,
+    })),
+  });
+
   const tomorrow = new Date(now);
   tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
   tomorrow.setUTCHours(0, 0, 0, 0);
@@ -42,6 +79,7 @@ export async function processBookingReminders() {
   // ── 24h reminder: reservas de mañana ─────────────────────────────────────
   const allBookings24h = await prisma.bookings.findMany({
     where: { reminder_24h_sent: false },
+    include: bookingInclude,
   });
 
   const bookings24h = allBookings24h.filter((booking) =>
@@ -67,7 +105,7 @@ export async function processBookingReminders() {
 
   for (const booking of bookings24h) {
     console.log(`[REMINDER] Enviando recordatorio 24h → ID: ${booking.id}, cliente: ${booking.customer_email}`);
-    await sendBookingReminderEmail(booking, '24h');
+    await sendBookingReminderEmail(toReminderBooking(booking), '24h');
     await prisma.bookings.update({
       where: { id: booking.id },
       data: { reminder_24h_sent: true },
@@ -78,6 +116,7 @@ export async function processBookingReminders() {
   // ── Same-day reminder: reservas de hoy ───────────────────────────────────
   const allBookingsToday = await prisma.bookings.findMany({
     where: { reminder_2h_sent: false },
+    include: bookingInclude,
   });
 
   const bookingsToday = allBookingsToday.filter((booking) =>
@@ -95,7 +134,7 @@ export async function processBookingReminders() {
   for (const booking of bookingsToday) {
     console.log(`[REMINDER] Enviando recordatorio hoy → ID: ${booking.id}, cliente: ${booking.customer_email}`);
     try {
-      await sendBookingReminderEmail(booking, '2h');
+      await sendBookingReminderEmail(toReminderBooking(booking), '2h');
     } catch (err) {
       console.error(`[REMINDER][ERROR] Fallo al enviar recordatorio hoy → ID: ${booking.id}`, err);
     }
