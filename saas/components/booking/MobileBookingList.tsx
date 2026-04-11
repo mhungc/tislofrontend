@@ -1,13 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { BookingCalendarService, CalendarBooking } from '@/lib/services/booking-calendar-service'
+import { BookingCalendarService, CalendarBooking, CalendarEventBlock } from '@/lib/services/booking-calendar-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from '@/components/ui/dialog'
 import { Select} from '@/components/ui/select'
-import { Calendar, User, Mail, Phone, Check, X, Clock, ChevronRight, Filter } from 'lucide-react'
+import { Calendar, User, Mail, Phone, Check, X, Clock, ChevronRight, PartyPopper } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface MobileBookingListProps {
@@ -17,8 +17,10 @@ interface MobileBookingListProps {
 
 export function MobileBookingList({ shopId, shopName }: MobileBookingListProps) {
   const [bookings, setBookings] = useState<CalendarBooking[]>([])
+  const [eventBlocks, setEventBlocks] = useState<CalendarEventBlock[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null)
+  const [selectedEventBlock, setSelectedEventBlock] = useState<CalendarEventBlock | null>(null)
   const [showBookingDialog, setShowBookingDialog] = useState(false)
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('week')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -63,8 +65,10 @@ export function MobileBookingList({ shopId, shopName }: MobileBookingListProps) 
         formatDate(startDate),
         formatDate(endDate)
       )
+      const storeEvents = await calendarService.getEvents(shopId)
       
       setBookings(data.bookings)
+      setEventBlocks(storeEvents)
     } catch (error) {
       toast.error('Error al cargar reservas')
     } finally {
@@ -113,14 +117,21 @@ export function MobileBookingList({ shopId, shopName }: MobileBookingListProps) 
     return booking.status === statusFilter
   })
 
-  const groupedBookings = filteredBookings.reduce((groups, booking) => {
-    const date = booking.booking_date
+  const groupedBookings = [...filteredBookings, ...eventBlocks.map((eventBlock) => ({
+    id: `event-${eventBlock.id}`,
+    booking_date: eventBlock.date,
+    start_time: eventBlock.start_time,
+    end_time: eventBlock.end_time,
+    type: 'event' as const,
+    source: eventBlock
+  }))].reduce((groups, item: any) => {
+    const date = item.booking_date
     if (!groups[date]) {
       groups[date] = []
     }
-    groups[date].push(booking)
+    groups[date].push(item)
     return groups
-  }, {} as Record<string, CalendarBooking[]>)
+  }, {} as Record<string, any[]>)
 
   if (loading) {
     return (
@@ -230,34 +241,54 @@ export function MobileBookingList({ shopId, shopName }: MobileBookingListProps) 
               <CardContent className="space-y-3">
                 {dayBookings
                   .sort((a, b) => a.start_time.localeCompare(b.start_time))
-                  .map((booking) => (
+                  .map((item) => (
                     <div
-                      key={booking.id}
+                      key={item.id}
                       className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
                       onClick={() => {
-                        setSelectedBooking(booking)
+                        if (item.type === 'event') {
+                          setSelectedEventBlock(item.source)
+                          setSelectedBooking(null)
+                        } else {
+                          setSelectedBooking(item)
+                          setSelectedEventBlock(null)
+                        }
                         setShowBookingDialog(true)
                       }}
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <Badge className={`${getStatusBadgeColor(booking.status)} text-xs`}>
-                            {getStatusText(booking.status)}
-                          </Badge>
+                          {item.type === 'event' ? (
+                            <Badge className="bg-teal-100 text-teal-800 border-teal-200 text-xs">
+                              Evento
+                            </Badge>
+                          ) : (
+                            <Badge className={`${getStatusBadgeColor(item.status)} text-xs`}>
+                              {getStatusText(item.status)}
+                            </Badge>
+                          )}
                           <span className="text-sm text-gray-500 flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {booking.start_time} - {booking.end_time}
+                            {item.start_time} - {item.end_time}
                           </span>
                         </div>
                         <div className="font-medium text-sm truncate">
-                          {booking.customer_name}
+                          {item.type === 'event' ? item.source.name : item.customer_name}
                         </div>
-                        <div className="text-xs text-gray-500 truncate">
-                          {booking.services.map(s => s.name).join(', ')}
-                        </div>
-                        <div className="text-sm font-medium text-green-600">
-                          ${booking.total_price}
-                        </div>
+                        {item.type === 'event' ? (
+                          <div className="text-xs text-gray-500 truncate">
+                            {item.source.availability.available} disponibles de {item.source.capacity}
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-xs text-gray-500 truncate">
+                              {item.services.map((s: any) => s.name).join(', ')}
+                            </div>
+                            <div className="text-sm font-medium text-green-600">
+                              ${item.total_price}
+                            </div>
+                          </>
+                        )}
                       </div>
                       <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
                     </div>
@@ -359,6 +390,38 @@ export function MobileBookingList({ shopId, shopName }: MobileBookingListProps) 
                   </div>
                 </DialogFooter>
               )}
+            </>
+          )}
+          {selectedEventBlock && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-lg">Bloque de Evento</DialogTitle>
+              </DialogHeader>
+              <DialogBody>
+                <div className="space-y-4">
+                  <Badge className="bg-teal-100 text-teal-800 border-teal-200">
+                    Evento
+                  </Badge>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <PartyPopper className="h-4 w-4 text-teal-600 flex-shrink-0" />
+                      <span className="font-medium">{selectedEventBlock.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <span className="text-sm">{selectedEventBlock.date} · {selectedEventBlock.start_time} - {selectedEventBlock.end_time}</span>
+                    </div>
+                    <div className="rounded-lg bg-teal-50 p-3 text-sm text-teal-900">
+                      Capacidad: {selectedEventBlock.capacity}<br />
+                      Reservadas: {selectedEventBlock.availability.reserved}<br />
+                      Disponibles: {selectedEventBlock.availability.available}
+                    </div>
+                    {selectedEventBlock.description && (
+                      <p className="text-sm bg-gray-50 p-2 rounded">{selectedEventBlock.description}</p>
+                    )}
+                  </div>
+                </div>
+              </DialogBody>
             </>
           )}
         </DialogContent>

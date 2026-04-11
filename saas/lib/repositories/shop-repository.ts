@@ -32,6 +32,29 @@ export interface UpdateShopInput {
 }
 
 export class ShopRepository {
+  async getById(shopId: string) {
+    return prisma.shops.findUnique({
+      where: { id: shopId },
+      select: {
+        id: true,
+        owner_id: true,
+        name: true,
+        description: true,
+        address: true,
+        phone: true,
+        email: true,
+        website: true,
+        bookingConfirmationMode: true,
+        timezone: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+        base_slot_minutes: true,
+        buffer_minutes: true
+      }
+    })
+  }
+
   async listByOwner(ownerId: string) {
     return prisma.shops.findMany({
       where: { owner_id: ownerId },

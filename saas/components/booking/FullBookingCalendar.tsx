@@ -5,7 +5,7 @@ import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import { BookingCalendarService, CalendarBooking } from '@/lib/services/booking-calendar-service'
+import { BookingCalendarService, CalendarBooking, CalendarEventBlock } from '@/lib/services/booking-calendar-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -48,6 +48,7 @@ export function FullBookingCalendar({ shopId, shopName }: BookingCalendarProps) 
   const [events, setEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null)
+  const [selectedEventBlock, setSelectedEventBlock] = useState<CalendarEventBlock | null>(null)
   const [showBookingDialog, setShowBookingDialog] = useState(false)
 
   const calendarService = new BookingCalendarService()
@@ -80,6 +81,7 @@ export function FullBookingCalendar({ shopId, shopName }: BookingCalendarProps) 
         formatDate(startDate),
         formatDate(endDate)
       )
+      const eventBlocks = await calendarService.getEvents(shopId)
       
       const calendarEvents = data.bookings.map((booking: CalendarBooking) => ({
         id: booking.id,
@@ -91,6 +93,7 @@ export function FullBookingCalendar({ shopId, shopName }: BookingCalendarProps) 
         textColor: '#ffffff',
         classNames: [`booking-${booking.status}`],
         extendedProps: {
+          kind: 'booking',
           booking,
           status: booking.status,
           customerEmail: booking.customer_email,
@@ -98,8 +101,23 @@ export function FullBookingCalendar({ shopId, shopName }: BookingCalendarProps) 
           services: booking.services
         }
       }))
+
+      const eventCalendarBlocks = eventBlocks.map((eventBlock: CalendarEventBlock) => ({
+        id: `event-${eventBlock.id}`,
+        title: `Evento: ${eventBlock.name}`,
+        start: `${eventBlock.date}T${eventBlock.start_time}:00`,
+        end: `${eventBlock.date}T${eventBlock.end_time}:00`,
+        backgroundColor: '#0f766e',
+        borderColor: '#115e59',
+        textColor: '#ffffff',
+        classNames: ['calendar-event-block'],
+        extendedProps: {
+          kind: 'event',
+          eventBlock
+        }
+      }))
       
-      setEvents(calendarEvents)
+      setEvents([...calendarEvents, ...eventCalendarBlocks])
     } catch (error) {
       toast.error('Error al cargar reservas')
     } finally {
@@ -108,7 +126,15 @@ export function FullBookingCalendar({ shopId, shopName }: BookingCalendarProps) 
   }
 
   const handleEventClick = (clickInfo: any) => {
+    if (clickInfo.event.extendedProps.kind === 'event') {
+      setSelectedEventBlock(clickInfo.event.extendedProps.eventBlock)
+      setSelectedBooking(null)
+      setShowBookingDialog(true)
+      return
+    }
+
     const booking = clickInfo.event.extendedProps.booking
+    setSelectedEventBlock(null)
     setSelectedBooking(booking)
     setShowBookingDialog(true)
   }
@@ -250,6 +276,11 @@ export function FullBookingCalendar({ shopId, shopName }: BookingCalendarProps) 
               info.el.style.opacity = '1'
             }}
             eventDidMount={(info) => {
+              if (info.event.extendedProps.kind === 'event') {
+                info.el.setAttribute('title', `${info.event.title}`)
+                return
+              }
+
               info.el.setAttribute('title', `${info.event.title} - ${info.event.extendedProps.booking?.customer_email || ''}`)
             }}
             dayHeaderFormat={{
@@ -550,6 +581,42 @@ export function FullBookingCalendar({ shopId, shopName }: BookingCalendarProps) 
                   </Button>
                 </Flex>
               </Box>
+            </>
+          )}
+          {selectedEventBlock && (
+            <>
+              <DialogHeader bg="#0f766e" color="white" p={6} borderTopRadius="md">
+                <Flex align="center" justify="space-between">
+                  <VStack align="start" spacing={1}>
+                    <Box as={DialogTitle} color="white" fontSize="xl" fontWeight="bold">
+                      Bloque de Evento
+                    </Box>
+                    <Text fontSize="sm" opacity={0.9}>
+                      {selectedEventBlock.date} · {selectedEventBlock.start_time} - {selectedEventBlock.end_time}
+                    </Text>
+                  </VStack>
+                  <Badge bg="white" color="#0f766e">
+                    {selectedEventBlock.availability.available}/{selectedEventBlock.capacity}
+                  </Badge>
+                </Flex>
+              </DialogHeader>
+              <DialogBody p={6} bg={bgColor}>
+                <VStack spacing={4} align="stretch">
+                  <Box bg={cardBgColor} p={4} borderRadius="md" borderWidth="1px" borderColor={borderColor}>
+                    <Text fontWeight="semibold" color={headingColor}>{selectedEventBlock.name}</Text>
+                    {selectedEventBlock.description && (
+                      <Text fontSize="sm" color={textColor} mt={2}>{selectedEventBlock.description}</Text>
+                    )}
+                  </Box>
+                  <Box bg={blueBgColor} p={4} borderRadius="md" borderWidth="1px" borderColor={borderColor}>
+                    <VStack spacing={2} align="stretch">
+                      <Text fontSize="sm" color={headingColor}>Capacidad total: {selectedEventBlock.capacity}</Text>
+                      <Text fontSize="sm" color={headingColor}>Plazas reservadas: {selectedEventBlock.availability.reserved}</Text>
+                      <Text fontSize="sm" color={headingColor}>Plazas disponibles: {selectedEventBlock.availability.available}</Text>
+                    </VStack>
+                  </Box>
+                </VStack>
+              </DialogBody>
             </>
           )}
         </DialogContent>

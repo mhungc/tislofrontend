@@ -4,6 +4,7 @@ import { BookingService } from '@/lib/services/booking-service'
 import { ShopRepository } from '@/lib/repositories/shop-repository'
 import { BookingRepository } from '@/lib/repositories/booking-repository'
 import { BookingEmailService } from '@/lib/services/booking-email-service'
+import { EventService } from '@/lib/services/event.service'
 
 export async function GET(
   request: NextRequest,
@@ -82,6 +83,18 @@ export async function POST(
     }
 
     const bookingRepo = new BookingRepository()
+    const eventService = new EventService()
+
+    const isBlockedByEvent = await eventService.isTimeRangeBlockedByEvent(
+      shopId,
+      booking_date,
+      start_time,
+      end_time
+    )
+
+    if (isBlockedByEvent) {
+      return NextResponse.json({ error: 'Ese horario está ocupado por un evento' }, { status: 409 })
+    }
 
     // Crear reserva
     const booking = await bookingRepo.create(

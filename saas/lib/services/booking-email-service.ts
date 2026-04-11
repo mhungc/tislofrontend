@@ -25,6 +25,18 @@ interface BookingEmailData {
   locale?: 'es' | 'en'
 }
 
+interface EventBookingEmailData {
+  customerName: string
+  customerEmail: string
+  eventName: string
+  eventDate: string
+  startTime: string
+  endTime: string
+  spotsReserved: number
+  shopName: string
+  locale?: 'es' | 'en'
+}
+
 type ReminderEmailData = BookingEmailData & { reminderType: '24h' | '2h' };
 
 export class BookingEmailService {
@@ -608,6 +620,67 @@ export class BookingEmailService {
     } catch (error) {
       console.error('Error al enviar email de cancelación:', error)
       // No lanzar error para no interrumpir el flujo principal
+    }
+  }
+
+  async sendEventBookingConfirmationEmail(data: EventBookingEmailData): Promise<void> {
+    try {
+      if (!process.env.RESEND_API_KEY) {
+        console.log('⚠️ RESEND_API_KEY no configurada, email no enviado')
+        return
+      }
+
+      const locale = data.locale || 'es'
+      const formattedDate = this.formatDate(data.eventDate, locale)
+      const formattedStartTime = this.formatTime(data.startTime)
+      const formattedEndTime = this.formatTime(data.endTime)
+      const subject = locale === 'en' ? 'Event booking confirmed' : 'Event booking confirmed'
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${subject}</title>
+          </head>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+              <h1 style="color: white; margin: 0; font-size: 28px;">${subject}</h1>
+            </div>
+            <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+              <p style="font-size: 16px; margin-bottom: 20px;">
+                Hola <strong>${data.customerName}</strong>,
+              </p>
+              <p style="font-size: 16px; margin-bottom: 20px;">
+                Tu reserva para el evento <strong>${data.eventName}</strong> ha quedado registrada correctamente.
+              </p>
+              <div style="background: #f0fdfa; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #0f766e;">
+                <div style="margin: 12px 0;"><strong>Evento:</strong> ${data.eventName}</div>
+                <div style="margin: 12px 0;"><strong>Fecha:</strong> ${formattedDate}</div>
+                <div style="margin: 12px 0;"><strong>Horario:</strong> ${formattedStartTime} - ${formattedEndTime}</div>
+                <div style="margin: 12px 0;"><strong>Plazas reservadas:</strong> ${data.spotsReserved}</div>
+                <div style="margin: 12px 0;"><strong>Negocio:</strong> ${data.shopName}</div>
+              </div>
+              <p style="font-size: 14px; color: #6b7280; margin-top: 24px;">
+                Saludos,<br>
+                <strong>${data.shopName}</strong>
+              </p>
+            </div>
+          </body>
+        </html>
+      `
+
+      await this.resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || 'ReservaFácil <onboarding@resend.dev>',
+        to: data.customerEmail,
+        subject,
+        html
+      })
+
+      console.log(`✅ Email de evento enviado a ${data.customerEmail}`)
+    } catch (error) {
+      console.error('Error al enviar email de evento:', error)
     }
   }
 }

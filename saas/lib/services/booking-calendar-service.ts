@@ -17,6 +17,22 @@ export interface CalendarBooking {
   notes?: string
 }
 
+export interface CalendarEventBlock {
+  id: string
+  name: string
+  description?: string | null
+  date: string
+  start_time: string
+  end_time: string
+  capacity: number
+  price?: number | null
+  availability: {
+    capacity: number
+    reserved: number
+    available: number
+  }
+}
+
 export interface CalendarSlot {
   time: string
   booking?: CalendarBooking
@@ -66,6 +82,20 @@ export class BookingCalendarService {
       }
       throw error
     }
+  }
+
+  async getEvents(shopId: string) {
+    const response = await fetch(`/api/stores/${shopId}/events`, {
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Error de conexión' }))
+      throw new Error(error.error || 'Error al cargar eventos')
+    }
+
+    const data = await response.json()
+    return Array.isArray(data.events) ? data.events : []
   }
 
   async updateBookingStatus(shopId: string, bookingId: string, status: 'confirmed' | 'cancelled') {

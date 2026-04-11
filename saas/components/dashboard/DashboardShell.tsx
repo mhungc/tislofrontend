@@ -24,6 +24,7 @@ import {
   Store,
   Package,
   Calendar,
+  CalendarDays,
   Users,
   Clock,
   Settings,
@@ -72,6 +73,12 @@ export function DashboardShell({ children, locale, dict }: DashboardShellProps) 
       title: dict.dashboard.bookings,
       href: '/dashboard/bookings',
       icon: Calendar,
+      comingSoon: false,
+    },
+    {
+      title: isEnglish ? 'Events' : 'Eventos',
+      href: '/dashboard/events',
+      icon: CalendarDays,
       comingSoon: false,
     },
     {

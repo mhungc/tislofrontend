@@ -7,6 +7,7 @@ import { resolveBookingStatusByMode } from '@/lib/services/booking-service'
 import { VerificationService } from '@/lib/services/verification-service'
 import { BookingEmailService } from '@/lib/services/booking-email-service'
 import { calculateBookingTotals } from '@/lib/utils/booking-totals'
+import { EventService } from '@/lib/services/event.service'
 
 export async function POST(
   request: NextRequest,
@@ -17,6 +18,7 @@ export async function POST(
     const linkRepo = new BookingLinkRepository()
     const bookingRepo = new BookingRepository()
     const serviceRepo = new ServiceRepository()
+    const eventService = new EventService()
 
     const isValid = await linkRepo.isValidToken(token)
     if (!isValid) {
@@ -125,6 +127,17 @@ export async function POST(
     startDate.setHours(hours, minutes, 0, 0)
     const endDate = new Date(startDate.getTime() + totalDuration * 60000)
     const end_time = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`
+
+    const isBlockedByEvent = await eventService.isTimeRangeBlockedByEvent(
+      bookingLink.shops.id,
+      booking_date,
+      start_time,
+      end_time
+    )
+
+    if (isBlockedByEvent) {
+      return NextResponse.json({ error: 'Ese horario está ocupado por un evento' }, { status: 409 })
+    }
 
     // Gestionar cliente (crear o actualizar)
     const { createClient } = await import('@/lib/supabase/client')

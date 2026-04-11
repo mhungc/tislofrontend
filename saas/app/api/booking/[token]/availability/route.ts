@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { BookingLinkRepository } from '@/lib/repositories/booking-link-repository'
 import { BookingRepository } from '@/lib/repositories/booking-repository'
+import { EventService } from '@/lib/services/event.service'
 
 function parseDateWeekday(date: string): number {
   const [year, month, day] = date.split('-').map(Number)
@@ -39,6 +40,7 @@ export async function GET(
 
     const linkRepo = new BookingLinkRepository()
     const bookingRepo = new BookingRepository()
+    const eventService = new EventService()
 
     const isValid = await linkRepo.isValidToken(token)
     if (!isValid) {
@@ -119,28 +121,64 @@ export async function GET(
       timezone
     )
 
+    const dayEvents = await eventService.getEventsByStoreAndDate(bookingLink.shops.id, date)
+
+    const toMinutes = (value: string) => {
+      const [hours, minutes] = value.split(':').map(Number)
+      return hours * 60 + minutes
+    }
+
+    const blockedByEvent = (slotTime: string) => {
+      const slotStart = toMinutes(slotTime)
+      const slotEnd = slotStart + totalDuration
+
+      return dayEvents.some((event) => {
+        const eventStart = toMinutes(event.start_time)
+        const eventEnd = toMinutes(event.end_time)
+        return slotStart < eventEnd && slotEnd > eventStart
+      })
+    }
+
+    const markBlockedSlots = (slots: any[]) =>
+      slots.map((slot: any) => {
+        if (!slot?.available) {
+          return slot
+        }
+
+        if (!blockedByEvent(slot.time)) {
+          return slot
+        }
+
+        return {
+          ...slot,
+          available: false,
+          blockedByEvent: true
+        }
+      })
+
     const resultWithGaps = result && typeof result === 'object' && 'slots' in result && 'fillableGaps' in result
       ? result
       : null
-    const slotsForLog = resultWithGaps
-      ? resultWithGaps.slots
-      : (Array.isArray(result) ? result : [])
+    const filteredSlots = resultWithGaps
+      ? markBlockedSlots(resultWithGaps.slots)
+      : markBlockedSlots(Array.isArray(result) ? result : [])
     const fillableGapsForLog = resultWithGaps ? resultWithGaps.fillableGaps : []
 
     console.log(`${DEBUG_TAG} availability-server-output`, {
       requestedDate: date,
-      slotsCount: Array.isArray(slotsForLog) ? slotsForLog.length : 0,
-      availableSlotsCount: Array.isArray(slotsForLog) ? slotsForLog.filter((s: any) => s?.available).length : 0,
+      slotsCount: Array.isArray(filteredSlots) ? filteredSlots.length : 0,
+      availableSlotsCount: Array.isArray(filteredSlots) ? filteredSlots.filter((s: any) => s?.available).length : 0,
       fillableGapsCount: Array.isArray(fillableGapsForLog) ? fillableGapsForLog.length : 0,
-      firstSlots: Array.isArray(slotsForLog) ? slotsForLog.slice(0, 8) : slotsForLog
+      eventsCount: dayEvents.length,
+      firstSlots: Array.isArray(filteredSlots) ? filteredSlots.slice(0, 8) : filteredSlots
     })
 
     // Compatibilidad: si result tiene slots y fillableGaps, devolver ambos
     if (result && typeof result === 'object' && 'slots' in result && 'fillableGaps' in result) {
-      return NextResponse.json({ slots: result.slots, fillableGaps: result.fillableGaps })
+      return NextResponse.json({ slots: filteredSlots, fillableGaps: result.fillableGaps })
     }
     // Legacy: solo slots
-    return NextResponse.json({ slots: result })
+    return NextResponse.json({ slots: filteredSlots })
   } catch (error) {
     console.error('Error:', error)
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
