@@ -47,18 +47,28 @@ export function ScheduleViewer({
 
   const workingDays = Object.keys(schedulesByDay).length
 
-  const parseTime = (timeString: string) => {
+  const extractHHMM = (timeValue: string) => {
+    const timeString = String(timeValue)
+
     if (timeString.includes('T')) {
-      return new Date(timeString)
+      const hhmm = timeString.split('T')[1]?.slice(0, 5)
+      return hhmm || '00:00'
     }
-    return new Date(`1970-01-01T${timeString}`)
+
+    return timeString.slice(0, 5)
+  }
+
+  const toMinutes = (timeValue: string) => {
+    const hhmm = extractHHMM(timeValue)
+    const [hours, minutes] = hhmm.split(':').map((part) => Number(part))
+    return (hours || 0) * 60 + (minutes || 0)
   }
 
   const totalHours = schedules.reduce((total, schedule) => {
     try {
-      const start = parseTime(schedule.open_time)
-      const end = parseTime(schedule.close_time)
-      const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+      const start = toMinutes(schedule.open_time)
+      const end = toMinutes(schedule.close_time)
+      const hours = (end - start) / 60
       return total + (isNaN(hours) ? 0 : hours)
     } catch {
       return total
@@ -66,14 +76,7 @@ export function ScheduleViewer({
   }, 0)
 
   const formatTime = (timeString: string) => {
-    if (timeString.includes('T')) {
-      return new Date(timeString).toLocaleTimeString(locale === 'en' ? 'en-US' : 'es-ES', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      })
-    }
-    return timeString
+    return extractHHMM(timeString)
   }
 
   return (

@@ -229,8 +229,8 @@ export async function PATCH(
         return {
           shop_id: shopId,
           day_of_week: idx,
-          open_time: bh?.open ? `1970-01-01T${bh.open}:00.000` : `1970-01-01T09:00:00.000`,
-          close_time: bh?.close ? `1970-01-01T${bh.close}:00.000` : `1970-01-01T18:00:00.000`,
+          open_time: bh?.open ? `1970-01-01T${bh.open}:00.000Z` : `1970-01-01T09:00:00.000Z`,
+          close_time: bh?.close ? `1970-01-01T${bh.close}:00.000Z` : `1970-01-01T18:00:00.000Z`,
           is_working_day: bh?.is_open ?? false,
           block_order: 0
         }

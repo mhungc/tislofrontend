@@ -105,13 +105,10 @@ export function WeeklyScheduleEditor({
               timeBlocks: daySchedules.map(s => {
                 const formatTime = (timeString: string) => {
                   if (timeString.includes('T')) {
-                    return new Date(timeString).toLocaleTimeString(locale === 'en' ? 'en-US' : 'es-ES', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: false
-                    })
+                    const hhmm = timeString.split('T')[1]?.slice(0, 5)
+                    return hhmm || '00:00'
                   }
-                  return timeString
+                  return timeString.slice(0, 5)
                 }
 
                 return {
