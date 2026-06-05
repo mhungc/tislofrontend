@@ -289,7 +289,7 @@ export function ScheduleExceptionsEditor({
                         {!exception.is_closed && (
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Clock className="h-3 w-3" />
-                            <span>{exception.open_time} - {exception.close_time}</span>
+                            <span>{exception.open_time?.includes('T') ? exception.open_time.slice(11, 16) : exception.open_time} - {exception.close_time?.includes('T') ? exception.close_time.slice(11, 16) : exception.close_time}</span>
                           </div>
                         )}
 

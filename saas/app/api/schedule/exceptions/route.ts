@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
         shop_id,
         exception_date: new Date(exception_date),
         is_closed,
-        open_time: open_time ? open_time : null,
-        close_time: close_time ? close_time : null,
+        open_time: open_time ? `1970-01-01T${open_time}:00.000Z` : null,
+        close_time: close_time ? `1970-01-01T${close_time}:00.000Z` : null,
         reason: reason || null
       }
     })

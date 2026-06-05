@@ -86,7 +86,44 @@ export async function GET(
 
     const timezone = bookingLink.shops.timezone || 'UTC'
     const requestedDayOfWeek = parseDateWeekday(date)
-    const daySchedules = bookingLink.shops.schedules.filter((s: any) => s.day_of_week === requestedDayOfWeek)
+
+    // Verificar si hay una excepción de horario para la fecha solicitada
+    const dateException = bookingLink.shops.schedule_exceptions?.find(
+      (ex: any) => {
+        const exDate = ex.exception_date instanceof Date
+          ? ex.exception_date.toISOString().split('T')[0]
+          : String(ex.exception_date).split('T')[0]
+        return exDate === date
+      }
+    )
+
+    let effectiveSchedules = bookingLink.shops.schedules
+
+    if (dateException) {
+      if (dateException.is_closed) {
+        console.log(`${DEBUG_TAG} exception found: day is CLOSED`)
+        return NextResponse.json({ slots: [], fillableGaps: [] })
+      }
+
+      // Crear schedule sintético desde la excepción
+      if (!dateException.open_time || !dateException.close_time) {
+        console.log(`${DEBUG_TAG} exception found but missing hours, returning empty`)
+        return NextResponse.json({ slots: [], fillableGaps: [] })
+      }
+      effectiveSchedules = [{
+        day_of_week: requestedDayOfWeek,
+        open_time: dateException.open_time,
+        close_time: dateException.close_time,
+        is_working_day: true,
+        block_order: 1
+      }] as typeof effectiveSchedules
+      console.log(`${DEBUG_TAG} exception found: using synthetic schedule`, {
+        open_time: toHHMM(dateException.open_time),
+        close_time: toHHMM(dateException.close_time)
+      })
+    }
+
+    const daySchedules = effectiveSchedules.filter((s: any) => s.day_of_week === requestedDayOfWeek)
 
     console.log(`${DEBUG_TAG} availability-server-input`, {
       tokenPreview: token.slice(0, 8),
@@ -100,7 +137,9 @@ export async function GET(
       totalDuration,
       baseSlotMinutes,
       bufferMinutes,
-      schedulesCount: bookingLink.shops.schedules.length,
+      hasException: !!dateException,
+      exceptionClosed: dateException?.is_closed ?? false,
+      schedulesCount: effectiveSchedules.length,
       requestedDaySchedulesCount: daySchedules.length,
       requestedDaySchedules: daySchedules.map((s: any) => ({
         day_of_week: s.day_of_week,
@@ -114,7 +153,7 @@ export async function GET(
     const result = await bookingRepo.getAvailableSlots(
       bookingLink.shops.id,
       date,
-      bookingLink.shops.schedules,
+      effectiveSchedules,
       totalDuration,
       baseSlotMinutes,
       bufferMinutes,

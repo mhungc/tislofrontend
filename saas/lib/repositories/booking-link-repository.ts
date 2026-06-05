@@ -60,6 +60,7 @@ export class BookingLinkRepository {
               },
               orderBy: [{ day_of_week: 'asc' }, { block_order: 'asc' }]
             },
+            schedule_exceptions: true,
             services: {
               where: { is_active: true },
               include: {

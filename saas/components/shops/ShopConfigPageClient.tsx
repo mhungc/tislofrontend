@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { WeeklyScheduleEditor } from '@/components/schedule/WeeklyScheduleEditor'
 import { ScheduleViewer } from '@/components/schedule/ScheduleViewer'
+import { ScheduleExceptionsEditor } from '@/components/schedule/ScheduleExceptionsEditor'
 import { ServicesList } from '@/components/services/ServicesList'
 import { ServiceForm } from '@/components/services/ServiceForm'
 import { BookingLinks } from '@/components/booking/BookingLinks'
@@ -11,7 +12,7 @@ import { ScheduleService } from '@/lib/services/schedule-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger, TabsPanels } from '@/components/ui/tabs'
-import { ArrowLeft, Clock, Wrench, Store, Plus, Edit, Link } from 'lucide-react'
+import { ArrowLeft, Clock, Wrench, Store, Plus, Edit, Link, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Dictionary, Locale } from '@/lib/types/dictionary'
 
@@ -334,34 +335,57 @@ export default function ShopConfigPageClient({ shopId, locale, dict }: ShopConfi
           </TabsContent>
 
           <TabsContent value="schedule" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Gestión de Horarios</h2>
-              {scheduleMode === 'view' && schedules.length > 0 && (
-                <Button onClick={() => setScheduleMode('edit')} variant="outline">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar
-                </Button>
-              )}
-            </div>
-
             {scheduleMode === 'view' && schedules.length > 0 ? (
-              <ScheduleViewer
-                schedules={schedules}
-                shopName={shop?.name || scheduleDict.page.shopFallback}
-                locale={locale}
-                scheduleDict={scheduleDict}
-                onEdit={() => setScheduleMode('edit')}
-                onDelete={async () => {
-                  try {
-                    await fetch(`/api/shops/${shopId}/schedule`, { method: 'DELETE' })
-                    setSchedules([])
-                    setScheduleMode('create')
-                    toast.success('Horarios eliminados')
-                  } catch (error) {
-                    toast.error('Error al eliminar horarios')
-                  }
-                }}
-              />
+              <Tabs defaultValue="weekly" className="space-y-6">
+                <TabsList>
+                  <TabsTrigger value="weekly" className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Semanal
+                  </TabsTrigger>
+                  <TabsTrigger value="exceptions" className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Excepciones
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsPanels>
+                  <TabsContent>
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-semibold">Gestión de Horarios</h2>
+                      <Button onClick={() => setScheduleMode('edit')} variant="outline">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
+                      </Button>
+                    </div>
+                    <ScheduleViewer
+                      schedules={schedules}
+                      shopName={shop?.name || scheduleDict.page.shopFallback}
+                      locale={locale}
+                      scheduleDict={scheduleDict}
+                      onEdit={() => setScheduleMode('edit')}
+                      onDelete={async () => {
+                        try {
+                          await fetch(`/api/shops/${shopId}/schedule`, { method: 'DELETE' })
+                          setSchedules([])
+                          setScheduleMode('create')
+                          toast.success('Horarios eliminados')
+                        } catch (error) {
+                          toast.error('Error al eliminar horarios')
+                        }
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent>
+                    <ScheduleExceptionsEditor
+                      shopId={shopId}
+                      locale={locale}
+                      scheduleDict={scheduleDict}
+                      onExceptionUpdated={() => {}}
+                    />
+                  </TabsContent>
+                </TabsPanels>
+              </Tabs>
             ) : (
               <div className="space-y-4">
                 <WeeklyScheduleEditor
